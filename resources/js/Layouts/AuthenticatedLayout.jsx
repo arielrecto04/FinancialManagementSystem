@@ -4,6 +4,7 @@ import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import DarkModeToggle from '@/Components/DarkModeToggle';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
@@ -12,8 +13,8 @@ export default function AuthenticatedLayout({ header, children }) {
         useState(false);
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <nav className="border-b border-gray-100 bg-white">
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+            <nav className="border-b border-gray-100 bg-white dark:bg-gray-800 dark:border-gray-700">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between">
                         <div className="flex">
@@ -29,6 +30,24 @@ export default function AuthenticatedLayout({ header, children }) {
                                     active={route().current('dashboard')}
                                 >
                                     Dashboard
+                                </NavLink>
+                                <NavLink
+                                    href={route('statistics')}
+                                    active={route().current('statistics')}
+                                >
+                                    Statistics
+                                </NavLink>
+                                <NavLink
+                                    href={route('expenses.index')}
+                                    active={route().current('expenses.index')}
+                                >
+                                    Expenses
+                                </NavLink>
+                                <NavLink
+                                    href={route('reports')}
+                                    active={route().current('reports')}
+                                >
+                                    Reports
                                 </NavLink>
                             </div>
                         </div>
@@ -118,6 +137,10 @@ export default function AuthenticatedLayout({ header, children }) {
                                 </svg>
                             </button>
                         </div>
+
+                        <div className="flex items-center">
+                            <DarkModeToggle />
+                        </div>
                     </div>
                 </div>
 
@@ -133,6 +156,24 @@ export default function AuthenticatedLayout({ header, children }) {
                             active={route().current('dashboard')}
                         >
                             Dashboard
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('statistics')}
+                            active={route().current('statistics')}
+                        >
+                            Statistics
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('expenses.index')}
+                            active={route().current('expenses.index')}
+                        >
+                            Expenses
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('reports')}
+                            active={route().current('reports')}
+                        >
+                            Reports
                         </ResponsiveNavLink>
                     </div>
 
@@ -170,7 +211,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 </header>
             )}
 
-            <main>{children}</main>
+            <main className="dark:text-gray-100">{children}</main>
         </div>
     );
 }
