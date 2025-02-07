@@ -30,7 +30,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     // Statistics
-    Route::get('/statistics', [StatisticsController::class, 'index'])->name('statistics');
+    Route::get('/statistics', function () {
+        return Inertia::render('Statistics');
+    })->name('statistics');
 
     // Expenses
     Route::resource('expenses', ExpenseController::class);
