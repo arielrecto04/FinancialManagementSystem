@@ -3,6 +3,35 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
+// Add these component definitions before your Dashboard component
+const ExpenseSummaryCard = ({ title, amount }) => {
+    return (
+        <div className="p-6 bg-white shadow-sm sm:rounded-lg">
+            <h3 className="mb-2 text-sm font-medium text-gray-600">{title}</h3>
+            <div className="flex items-center">
+                <span className="text-2xl font-semibold">₱{amount}</span>
+                <button className="ml-auto text-sm text-gray-500 hover:text-gray-700">
+                    Update now
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const HighExpenseItem = ({ category, amount, date }) => {
+    return (
+        <div className="p-4 border rounded-lg">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h4 className="font-medium">{category}</h4>
+                    <p className="text-sm text-gray-500">{date}</p>
+                </div>
+                <span className="text-lg font-semibold">₱{amount}</span>
+            </div>
+        </div>
+    );
+};
+
 export default function Dashboard() {
     // Sample data for the bar chart
     const barChartOptions = {
@@ -108,35 +137,6 @@ export default function Dashboard() {
                 </div>
             </div>
         </AuthenticatedLayout>
-    );
-}
-
-// Helper Components
-function ExpenseSummaryCard({ title, amount }) {
-    return (
-        <div className="p-6 bg-white shadow-sm sm:rounded-lg">
-            <h3 className="mb-2 text-sm font-medium text-gray-600">{title}</h3>
-            <div className="flex items-center">
-                <span className="text-2xl font-semibold">₱{amount}</span>
-                <button className="ml-auto text-sm text-gray-500 hover:text-gray-700">
-                    Update now
-                </button>
-            </div>
-        </div>
-    );
-}
-
-function HighExpenseItem({ category, amount, date }) {
-    return (
-        <div className="p-4 border rounded-lg">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h4 className="font-medium">{category}</h4>
-                    <p className="text-sm text-gray-500">{date}</p>
-                </div>
-                <span className="text-lg font-semibold">₱{amount}</span>
-            </div>
-        </div>
     );
 }
 
