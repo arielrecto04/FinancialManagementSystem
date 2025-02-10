@@ -48,6 +48,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     Transaction
                                 </NavLink>
+                                <NavLink
+                                    href={route('request.form')}
+                                    active={route().current('request.form')}
+                                >
+                                    Request Form
+                                </NavLink>
                             </div>
                         </div>
 
@@ -169,6 +175,12 @@ export default function AuthenticatedLayout({ header, children }) {
                             active={route().current('reports')}
                         >
                             Reports
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('request.form')}
+                            active={route().current('request.form')}
+                        >
+                            Request Form
                         </ResponsiveNavLink>
                     </div>
 
