@@ -134,8 +134,6 @@ export default function Expenses() {
                                         <div>
                                             <label className="block mb-1 text-sm font-medium">Type</label>
                                             <select className="w-full px-3 py-2 border rounded-md">
-                                                <option>Petty Cash</option>
-                                                <option>Utilities</option>
                                                 <option>Expenses</option>
                                                 <option>Replenish</option>
                                             </select>

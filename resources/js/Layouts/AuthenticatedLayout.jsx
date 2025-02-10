@@ -46,7 +46,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                     href={route('reports')}
                                     active={route().current('reports')}
                                 >
-                                    Reports
+                                    Transaction
                                 </NavLink>
                             </div>
                         </div>
