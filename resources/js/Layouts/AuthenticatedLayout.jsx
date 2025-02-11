@@ -30,6 +30,30 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     Dashboard
                                 </NavLink>
+                                <NavLink
+                                    href={route('statistics')}
+                                    active={route().current('statistics')}
+                                >
+                                    Statistics
+                                </NavLink>
+                                <NavLink
+                                    href={route('expenses.index')}
+                                    active={route().current('expenses.index')}
+                                >
+                                    Expenses
+                                </NavLink>
+                                <NavLink
+                                    href={route('reports')}
+                                    active={route().current('reports')}
+                                >
+                                    Transaction
+                                </NavLink>
+                                <NavLink
+                                    href={route('request.form')}
+                                    active={route().current('request.form')}
+                                >
+                                    Request Form
+                                </NavLink>
                             </div>
                         </div>
 
@@ -133,6 +157,30 @@ export default function AuthenticatedLayout({ header, children }) {
                             active={route().current('dashboard')}
                         >
                             Dashboard
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('statistics')}
+                            active={route().current('statistics')}
+                        >
+                            Statistics
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('expenses.index')}
+                            active={route().current('expenses.index')}
+                        >
+                            Expenses
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('reports')}
+                            active={route().current('reports')}
+                        >
+                            Reports
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('request.form')}
+                            active={route().current('request.form')}
+                        >
+                            Request Form
                         </ResponsiveNavLink>
                     </div>
 
