@@ -256,11 +256,19 @@ export default function Statistics() {
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
-                            {/* Date Range Picker */}
+                            {/* Date Range Picker with Icons */}
                             <div className="mb-6">
-                                <h3 className="mb-2 text-lg font-semibold">Select Date Range</h3>
+                                <h3 className="mb-2 text-lg font-semibold flex items-center">
+                                    <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    Select Date Range
+                                </h3>
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
                                         <span>From:</span>
                                         <DatePicker
                                             selected={dateRange.startDate}
@@ -268,11 +276,14 @@ export default function Statistics() {
                                             selectsStart
                                             startDate={dateRange.startDate}
                                             endDate={dateRange.endDate}
-                                            className="px-3 py-2 border rounded-lg"
+                                            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             dateFormat="yyyy-MM-dd"
                                         />
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
                                         <span>To:</span>
                                         <DatePicker
                                             selected={dateRange.endDate}
@@ -281,79 +292,98 @@ export default function Statistics() {
                                             startDate={dateRange.startDate}
                                             endDate={dateRange.endDate}
                                             minDate={dateRange.startDate}
-                                            className="px-3 py-2 border rounded-lg"
+                                            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             dateFormat="yyyy-MM-dd"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            {/* View Options */}
+                            {/* View Options with Icons */}
                             <div className="mb-6">
                                 <div className="flex justify-between items-center">
                                     <div className="inline-flex rounded-lg border border-gray-200 p-1">
                                         <button
                                             onClick={() => setViewOption('daily')}
-                                            className={`px-4 py-2 rounded-lg ${
+                                            className={`flex items-center px-4 py-2 rounded-lg ${
                                                 viewOption === 'daily'
                                                     ? 'bg-blue-500 text-white'
                                                     : 'hover:bg-gray-100'
                                             }`}
                                         >
+                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
                                             Daily
                                         </button>
                                         <button
                                             onClick={() => setViewOption('weekly')}
-                                            className={`px-4 py-2 rounded-lg ${
+                                            className={`flex items-center px-4 py-2 rounded-lg ${
                                                 viewOption === 'weekly'
                                                     ? 'bg-blue-500 text-white'
                                                     : 'hover:bg-gray-100'
                                             }`}
                                         >
+                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
                                             Weekly
                                         </button>
                                         <button
                                             onClick={() => setViewOption('monthly')}
-                                            className={`px-4 py-2 rounded-lg ${
+                                            className={`flex items-center px-4 py-2 rounded-lg ${
                                                 viewOption === 'monthly'
                                                     ? 'bg-blue-500 text-white'
                                                     : 'hover:bg-gray-100'
                                             }`}
                                         >
+                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
                                             Monthly
                                         </button>
                                         <button
                                             onClick={() => setViewOption('annual')}
-                                            className={`px-4 py-2 rounded-lg ${
+                                            className={`flex items-center px-4 py-2 rounded-lg ${
                                                 viewOption === 'annual'
                                                     ? 'bg-blue-500 text-white'
                                                     : 'hover:bg-gray-100'
                                             }`}
                                         >
+                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
                                             Annual
                                         </button>
                                     </div>
-                                    
-                                    {/* Chart Type Toggle */}
+
+                                    {/* Chart Type Toggle with Icons */}
                                     <div className="inline-flex rounded-lg border border-gray-200 p-1">
                                         <button
                                             onClick={() => setChartType('pie')}
-                                            className={`px-4 py-2 rounded-lg ${
+                                            className={`flex items-center px-4 py-2 rounded-lg ${
                                                 chartType === 'pie'
                                                     ? 'bg-blue-500 text-white'
                                                     : 'hover:bg-gray-100'
                                             }`}
                                         >
+                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                                            </svg>
                                             Pie Chart
                                         </button>
                                         <button
                                             onClick={() => setChartType('stack')}
-                                            className={`px-4 py-2 rounded-lg ${
+                                            className={`flex items-center px-4 py-2 rounded-lg ${
                                                 chartType === 'stack'
                                                     ? 'bg-blue-500 text-white'
                                                     : 'hover:bg-gray-100'
                                             }`}
                                         >
+                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
                                             Stacked Column
                                         </button>
                                     </div>
@@ -390,10 +420,13 @@ export default function Statistics() {
                             {/* Category Summary Cards */}
                             <CategorySummary />
 
-                            {/* Chart */}
+                            {/* Chart Section */}
                             <div className="mt-6">
-                                <div className="p-6 bg-white rounded-lg shadow">
-                                    <h3 className="mb-4 text-lg font-semibold">
+                                <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 className="mb-4 text-lg font-semibold flex items-center">
+                                        <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        </svg>
                                         {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expense Distribution
                                     </h3>
                                     {chartType === 'pie' ? (

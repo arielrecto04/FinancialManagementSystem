@@ -24,7 +24,7 @@ export default function Login({ status }) {
 
                     <div className="text-center mb-8">
                         <h2 className="text-xl font-semibold text-gray-700">
-                            INNOVATO INFORMATION TECHNOLOGY SYSTEM INC.
+                            INNOVATO INFORMATION TECHNOLOGY SYSTEM
                         </h2>
                     </div>
 
