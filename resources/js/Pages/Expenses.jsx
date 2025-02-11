@@ -33,7 +33,7 @@ export default function Expenses() {
         <AuthenticatedLayout
             header={
                 <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    Expenses Table
+                    Petty Cash Table
                 </h2>
             }
         >
