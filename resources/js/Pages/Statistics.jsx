@@ -9,9 +9,10 @@ export default function Statistics() {
     const [viewOption, setViewOption] = useState('daily'); // 'daily', 'weekly', 'monthly', 'annual'
     const [chartType, setChartType] = useState('pie'); // 'pie' or 'stack'
     const [dateRange, setDateRange] = useState({
-        startDate: new Date(new Date().setDate(new Date().getDate() - 30)), // Last 30 days
+        startDate: new Date(),
         endDate: new Date()
     });
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [statistics] = useState({
         daily: {
             totalExpenses: 1200,
@@ -130,7 +131,7 @@ export default function Statistics() {
     };
 
     const chartData = getChartData();
-
+    
     // Updated chart options
     const pieChartOptions = {
         chart: {
@@ -253,199 +254,180 @@ export default function Statistics() {
             <Head title="Statistics" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            {/* Date Range Picker with Icons */}
-                            <div className="mb-6">
-                                <h3 className="mb-2 text-lg font-semibold flex items-center">
-                                    <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+                        {/* Date Range Section */}
+                        <h3 className="text-lg font-medium mb-4">Select Date Range</h3>
+
+                        {/* Date Range Inputs */}
+                        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                            <div className="flex-1">
+                                <label className="block text-sm text-gray-600 mb-1">From:</label>
+                                <input
+                                    type="date"
+                                    value={dateRange.startDate.toISOString().split('T')[0]}
+                                    onChange={(e) => setDateRange(prev => ({ ...prev, startDate: new Date(e.target.value) }))}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm text-gray-600 mb-1">To:</label>
+                                <input
+                                    type="date"
+                                    value={dateRange.endDate.toISOString().split('T')[0]}
+                                    onChange={(e) => setDateRange(prev => ({ ...prev, endDate: new Date(e.target.value) }))}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* View Options - Desktop */}
+                        <div className="hidden sm:flex justify-between items-center">
+                            <div className="flex space-x-2">
+                                {['Daily', 'Weekly', 'Monthly', 'Annual'].map((period) => (
+                                    <button
+                                        key={period}
+                                        onClick={() => setViewOption(period.toLowerCase())}
+                                        className={`px-4 py-2 rounded-md transition-colors ${
+                                            viewOption === period.toLowerCase()
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {period}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex space-x-2">
+                                {[
+                                    { type: 'pie', label: 'Pie Chart' },
+                                    { type: 'stack', label: 'Stacked Column' }
+                                ].map((chart) => (
+                                    <button
+                                        key={chart.type}
+                                        onClick={() => setChartType(chart.type)}
+                                        className={`px-4 py-2 rounded-md transition-colors ${
+                                            chartType === chart.type
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {chart.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* View Options - Mobile */}
+                        <div className="sm:hidden space-y-4">
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                    className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-md bg-white"
+                                >
+                                    <span>{viewOption.charAt(0).toUpperCase() + viewOption.slice(1)}</span>
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                     </svg>
-                                    Select Date Range
-                                </h3>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        <span>From:</span>
-                                        <DatePicker
-                                            selected={dateRange.startDate}
-                                            onChange={(date) => setDateRange(prev => ({ ...prev, startDate: date }))}
-                                            selectsStart
-                                            startDate={dateRange.startDate}
-                                            endDate={dateRange.endDate}
-                                            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            dateFormat="yyyy-MM-dd"
-                                        />
+                                </button>
+
+                                {isMobileMenuOpen && (
+                                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                                        {['Daily', 'Weekly', 'Monthly', 'Annual'].map((period) => (
+                                            <button
+                                                key={period}
+                                                onClick={() => {
+                                                    setViewOption(period.toLowerCase());
+                                                    setIsMobileMenuOpen(false);
+                                                }}
+                                                className="w-full text-left px-4 py-2 hover:bg-gray-50"
+                                            >
+                                                {period}
+                                            </button>
+                                        ))}
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        <span>To:</span>
-                                        <DatePicker
-                                            selected={dateRange.endDate}
-                                            onChange={(date) => setDateRange(prev => ({ ...prev, endDate: date }))}
-                                            selectsEnd
-                                            startDate={dateRange.startDate}
-                                            endDate={dateRange.endDate}
-                                            minDate={dateRange.startDate}
-                                            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            dateFormat="yyyy-MM-dd"
-                                        />
-                                    </div>
-                                </div>
+                                )}
                             </div>
 
-                            {/* View Options with Icons */}
-                            <div className="mb-6">
-                                <div className="flex justify-between items-center">
-                                    <div className="inline-flex rounded-lg border border-gray-200 p-1">
-                                        <button
-                                            onClick={() => setViewOption('daily')}
-                                            className={`flex items-center px-4 py-2 rounded-lg ${
-                                                viewOption === 'daily'
-                                                    ? 'bg-blue-500 text-white'
-                                                    : 'hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            Daily
-                                        </button>
-                                        <button
-                                            onClick={() => setViewOption('weekly')}
-                                            className={`flex items-center px-4 py-2 rounded-lg ${
-                                                viewOption === 'weekly'
-                                                    ? 'bg-blue-500 text-white'
-                                                    : 'hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            Weekly
-                                        </button>
-                                        <button
-                                            onClick={() => setViewOption('monthly')}
-                                            className={`flex items-center px-4 py-2 rounded-lg ${
-                                                viewOption === 'monthly'
-                                                    ? 'bg-blue-500 text-white'
-                                                    : 'hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                            </svg>
-                                            Monthly
-                                        </button>
-                                        <button
-                                            onClick={() => setViewOption('annual')}
-                                            className={`flex items-center px-4 py-2 rounded-lg ${
-                                                viewOption === 'annual'
-                                                    ? 'bg-blue-500 text-white'
-                                                    : 'hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                            </svg>
-                                            Annual
-                                        </button>
-                                    </div>
-
-                                    {/* Chart Type Toggle with Icons */}
-                                    <div className="inline-flex rounded-lg border border-gray-200 p-1">
-                                        <button
-                                            onClick={() => setChartType('pie')}
-                                            className={`flex items-center px-4 py-2 rounded-lg ${
-                                                chartType === 'pie'
-                                                    ? 'bg-blue-500 text-white'
-                                                    : 'hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-                                            </svg>
-                                            Pie Chart
-                                        </button>
-                                        <button
-                                            onClick={() => setChartType('stack')}
-                                            className={`flex items-center px-4 py-2 rounded-lg ${
-                                                chartType === 'stack'
-                                                    ? 'bg-blue-500 text-white'
-                                                    : 'hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                            </svg>
-                                            Stacked Column
-                                        </button>
-                                    </div>
-                                </div>
+                            <div className="flex rounded-md">
+                                <button
+                                    onClick={() => setChartType('pie')}
+                                    className={`flex-1 py-2 ${
+                                        chartType === 'pie'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'bg-gray-100 text-gray-700'
+                                    } rounded-l-md`}
+                                >
+                                    Pie Chart
+                                </button>
+                                <button
+                                    onClick={() => setChartType('stack')}
+                                    className={`flex-1 py-2 ${
+                                        chartType === 'stack'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'bg-gray-100 text-gray-700'
+                                    } rounded-r-md`}
+                                >
+                                    Stacked Column
+                                </button>
                             </div>
+                        </div>
+                    </div>
 
-                            {/* Summary Cards */}
-                            <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
-                                <div className="p-4 bg-white rounded-lg shadow">
-                                    <h3 className="text-lg font-semibold">Total Expenses</h3>
-                                    <p className="text-2xl font-bold">
-                                        ₱{getCurrentStats().totalExpenses.toLocaleString()}
-                                    </p>
-                                </div>
-                                <div className="p-4 bg-white rounded-lg shadow">
-                                    <h3 className="text-lg font-semibold">Average Expense</h3>
-                                    <p className="text-2xl font-bold">
-                                        ₱{getCurrentStats().averageExpense.toLocaleString()}
-                                    </p>
-                                </div>
-                                <div className="p-4 bg-white rounded-lg shadow">
-                                    <h3 className="text-lg font-semibold">
-                                        Highest {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)}
-                                    </h3>
-                                    <p className="text-2xl font-bold">
-                                        {getCurrentStats().highestDay || 
-                                         getCurrentStats().highestWeek || 
-                                         getCurrentStats().highestMonth ||
-                                         getCurrentStats().highestYear}
-                                    </p>
-                                </div>
-                            </div>
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
+                        <div className="p-4 bg-white rounded-lg shadow">
+                            <h3 className="text-lg font-semibold">Total Expenses</h3>
+                            <p className="text-2xl font-bold">
+                                ₱{getCurrentStats().totalExpenses.toLocaleString()}
+                            </p>
+                        </div>
+                        <div className="p-4 bg-white rounded-lg shadow">
+                            <h3 className="text-lg font-semibold">Average Expense</h3>
+                            <p className="text-2xl font-bold">
+                                ₱{getCurrentStats().averageExpense.toLocaleString()}
+                            </p>
+                        </div>
+                        <div className="p-4 bg-white rounded-lg shadow">
+                            <h3 className="text-lg font-semibold">
+                                Highest {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)}
+                            </h3>
+                            <p className="text-2xl font-bold">
+                                {getCurrentStats().highestDay || 
+                                 getCurrentStats().highestWeek || 
+                                 getCurrentStats().highestMonth ||
+                                 getCurrentStats().highestYear}
+                            </p>
+                        </div>
+                    </div>
 
-                            {/* Category Summary Cards */}
-                            <CategorySummary />
+                    {/* Category Summary Cards */}
+                    <CategorySummary />
 
-                            {/* Chart Section */}
-                            <div className="mt-6">
-                                <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                    <h3 className="mb-4 text-lg font-semibold flex items-center">
-                                        <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                        </svg>
-                                        {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expense Distribution
-                                    </h3>
-                                    {chartType === 'pie' ? (
-                                        <ReactApexChart
-                                            options={pieChartOptions}
-                                            series={chartData.series}
-                                            type="pie"
-                                            height={350}
-                                        />
-                                    ) : (
-                                        <ReactApexChart
-                                            options={stackedChartOptions}
-                                            series={chartData.series}
-                                            type="bar"
-                                            height={350}
-                                        />
-                                    )}
-                                </div>
-                            </div>
+                    {/* Chart Section */}
+                    <div className="mt-6">
+                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                            <h3 className="mb-4 text-lg font-semibold flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expense Distribution
+                            </h3>
+                            {chartType === 'pie' ? (
+                                <ReactApexChart
+                                    options={pieChartOptions}
+                                    series={chartData.series}
+                                    type="pie"
+                                    height={350}
+                                />
+                            ) : (
+                                <ReactApexChart
+                                    options={stackedChartOptions}
+                                    series={chartData.series}
+                                    type="bar"
+                                    height={350}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
