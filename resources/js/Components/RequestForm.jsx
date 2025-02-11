@@ -11,7 +11,6 @@ export default function RequestForm() {
         email: '',
         name: '',
         branch: '',
-        requestType: '',
         amount: '',
         items: '',
         description: ''
@@ -116,22 +115,11 @@ export default function RequestForm() {
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                     >
                                         <option value="">Select Branch</option>
+                                        <option value="Parañaque">Parañaque</option>
                                         <option value="Laguna">Laguna</option>
                                         <option value="Pampanga">Pampanga</option>
                                         <option value="Cebu">Cebu</option>
                                     </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Request Type
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={supplyForm.requestType}
-                                        onChange={(e) => setSupplyForm({...supplyForm, requestType: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                    />
                                 </div>
 
                                 <div>
@@ -220,6 +208,7 @@ export default function RequestForm() {
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                     >
                                         <option value="">Select Branch</option>
+                                        <option value="Parañaque">Parañaque</option>
                                         <option value="Laguna">Laguna</option>
                                         <option value="Pampanga">Pampanga</option>
                                         <option value="Cebu">Cebu</option>
