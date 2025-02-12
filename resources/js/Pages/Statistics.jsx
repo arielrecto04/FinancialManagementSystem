@@ -208,47 +208,6 @@ export default function Statistics() {
         return statistics[viewOption];
     };
 
-    // Add category summary cards
-    const CategorySummary = () => (
-        <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
-            <div className="p-4 bg-white rounded-lg shadow">
-                <h3 className="text-lg font-semibold">Top Categories</h3>
-                <div className="mt-2 space-y-2">
-                    {categories.slice(0, 3).map((category, index) => (
-                        <div key={category} className="flex justify-between">
-                            <span>{category}</span>
-                            <span className="font-semibold">₱{(50000 - index * 10000).toLocaleString()}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            <div className="p-4 bg-white rounded-lg shadow">
-                <h3 className="text-lg font-semibold">Category Growth</h3>
-                <div className="mt-2 space-y-2">
-                    {categories.slice(0, 3).map((category, index) => (
-                        <div key={category} className="flex justify-between">
-                            <span>{category}</span>
-                            <span className={`font-semibold ${index === 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                {index === 0 ? '+' : '-'}{(15 - index * 5)}%
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            <div className="p-4 bg-white rounded-lg shadow">
-                <h3 className="text-lg font-semibold">Category Count</h3>
-                <div className="mt-2 space-y-2">
-                    {categories.slice(0, 3).map((category, index) => (
-                        <div key={category} className="flex justify-between">
-                            <span>{category}</span>
-                            <span className="font-semibold">{30 - index * 5}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-
     return (
         <AuthenticatedLayout>
             <Head title="Statistics" />
@@ -400,9 +359,6 @@ export default function Statistics() {
                             </p>
                         </div>
                     </div>
-
-                    {/* Category Summary Cards */}
-                    <CategorySummary />
 
                     {/* Chart Section */}
                     <div className="mt-6">
