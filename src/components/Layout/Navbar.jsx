@@ -1,7 +1,8 @@
 import React from 'react';
 import { FiSearch, FiBell, FiSettings } from 'react-icons/fi';
+import NavLink from '@/Components/NavLink';
 
-const Navbar = () => {
+const Navbar = ({ user }) => {
   return (
     <nav className="bg-white border-b border-gray-200 px-4 py-2.5">
       <div className="flex justify-between items-center">
@@ -24,6 +25,22 @@ const Navbar = () => {
             <FiSettings className="w-6 h-6" />
           </button>
         </div>
+      </div>
+      
+      {/* Navigation Links */}
+      <div className="mt-2">
+        {user.role === 'admin' ? (
+          <div className="flex space-x-4">
+            <NavLink href={route('dashboard')}>Dashboard</NavLink>
+            <NavLink href={route('static')}>Static</NavLink>
+            <NavLink href={route('expenses')}>Expenses</NavLink>
+            <NavLink href={route('transactions')}>Transactions</NavLink>
+          </div>
+        ) : (
+          <div className="flex space-x-4">
+            <NavLink href={route('request-form')}>Request Form</NavLink>
+          </div>
+        )}
       </div>
     </nav>
   );

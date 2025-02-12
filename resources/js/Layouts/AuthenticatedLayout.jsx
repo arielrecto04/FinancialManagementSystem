@@ -30,24 +30,28 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     Dashboard
                                 </NavLink>
-                                <NavLink
-                                    href={route('statistics')}
-                                    active={route().current('statistics')}
-                                >
-                                    Statistics
-                                </NavLink>
-                                <NavLink
-                                    href={route('expenses.index')}
-                                    active={route().current('expenses.index')}
-                                >
-                                    Expenses
-                                </NavLink>
-                                <NavLink
-                                    href={route('reports')}
-                                    active={route().current('reports')}
-                                >
-                                    Transaction
-                                </NavLink>
+                                {user.role === 'admin' && (
+                                    <>
+                                        <NavLink
+                                            href={route('statistics')}
+                                            active={route().current('statistics')}
+                                        >
+                                            Statistics
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('expenses.index')}
+                                            active={route().current('expenses.index')}
+                                        >
+                                            Expenses
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('reports')}
+                                            active={route().current('reports')}
+                                        >
+                                            Transaction
+                                        </NavLink>
+                                    </>
+                                )}
                                 <NavLink
                                     href={route('request.form')}
                                     active={route().current('request.form')}
@@ -158,24 +162,28 @@ export default function AuthenticatedLayout({ header, children }) {
                         >
                             Dashboard
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            href={route('statistics')}
-                            active={route().current('statistics')}
-                        >
-                            Statistics
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            href={route('expenses.index')}
-                            active={route().current('expenses.index')}
-                        >
-                            Expenses
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            href={route('reports')}
-                            active={route().current('reports')}
-                        >
-                            Reports
-                        </ResponsiveNavLink>
+                        {user.role === 'admin' && (
+                            <>
+                                <ResponsiveNavLink
+                                    href={route('statistics')}
+                                    active={route().current('statistics')}
+                                >
+                                    Statistics
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('expenses.index')}
+                                    active={route().current('expenses.index')}
+                                >
+                                    Expenses
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('reports')}
+                                    active={route().current('reports')}
+                                >
+                                    Reports
+                                </ResponsiveNavLink>
+                            </>
+                        )}
                         <ResponsiveNavLink
                             href={route('request.form')}
                             active={route().current('request.form')}
