@@ -1,23 +1,46 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import RequestTable from '@/Components/RequestTable';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
+import RequestDetailsModal from '@/Components/RequestDetailsModal';
 
-export default function Reports() {
+export default function Reports({ requests, statistics, filters }) {
     const [dateRange, setDateRange] = useState({
-        startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
-        endDate: new Date()
+        startDate: filters.startDate ? new Date(filters.startDate) : new Date(new Date().setDate(new Date().getDate() - 30)),
+        endDate: filters.endDate ? new Date(filters.endDate) : new Date()
     });
-    const [selectedRequestType, setSelectedRequestType] = useState('all');
+    const [selectedRequestType, setSelectedRequestType] = useState(filters.requestType || 'all');
     const [isFiltersVisible, setIsFiltersVisible] = useState(true);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const statusColors = {
         pending: 'bg-yellow-100 text-yellow-800',
         approved: 'bg-green-100 text-green-800',
         rejected: 'bg-red-100 text-red-800'
     };
+
+    const handleRowClick = (request) => {
+        setSelectedRequest(request);
+        setIsModalOpen(true);
+    };
+
+    const handleFilterChange = () => {
+        router.get(route('reports.index'), {
+            startDate: dateRange.startDate ? dateRange.startDate.toISOString().split('T')[0] : null,
+            endDate: dateRange.endDate ? dateRange.endDate.toISOString().split('T')[0] : null,
+            requestType: selectedRequestType,
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    useEffect(() => {
+        handleFilterChange();
+    }, [dateRange, selectedRequestType]);
 
     return (
         <AuthenticatedLayout>
@@ -95,13 +118,13 @@ export default function Reports() {
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-xl font-semibold flex items-center">
                                     <svg className="w-6 h-6 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V17a2 2 0 01-2 2z" />
                                     </svg>
                                     Request Reports
                                 </h2>
                                 <div className="flex space-x-2">
                                     <button 
-                                        onClick={() => setIsFiltersVisible(!isFiltersVisible)}
+                                        onClick={() =>  setIsFiltersVisible(!isFiltersVisible)}
                                         className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                     >
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,7 +159,12 @@ export default function Reports() {
                                                 selectsRange={true}
                                                 startDate={dateRange.startDate}
                                                 endDate={dateRange.endDate}
-                                                onChange={(update) => setDateRange(update)}
+                                                onChange={(update) => {
+                                                    setDateRange({
+                                                        startDate: update[0],
+                                                        endDate: update[1]
+                                                    });
+                                                }}
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                                                 placeholderText="Select date range"
                                             />
@@ -160,9 +188,12 @@ export default function Reports() {
                                 </div>
                             )}
 
-                            {/* Enhanced Request Table */}
+                            {/* Request Table */}
                             <div className="mt-4 overflow-hidden border border-gray-200 rounded-lg">
-                                <RequestTable />
+                                <RequestTable 
+                                    requests={requests}
+                                    onRowClick={handleRowClick}
+                                />
                             </div>
 
                             {/* Pagination */}
@@ -213,6 +244,13 @@ export default function Reports() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal */}
+            <RequestDetailsModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                request={selectedRequest}
+            />
         </AuthenticatedLayout>
     );
 }
