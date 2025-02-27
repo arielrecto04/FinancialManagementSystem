@@ -1,7 +1,7 @@
 import React from 'react';
 import { usePage } from '@inertiajs/react';
 
-export default function RequestTable({ requests, onRowClick }) {
+export default function RequestTable({ requests, onRowClick, actionRenderer }) {
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString();
     };
@@ -11,7 +11,7 @@ export default function RequestTable({ requests, onRowClick }) {
             <thead className="bg-gray-50">
                 <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Request Number
+                        Request #
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Type
@@ -28,12 +28,15 @@ export default function RequestTable({ requests, onRowClick }) {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Date
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
                 </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
                 {requests.map((request) => (
-                    <tr 
-                        key={request.id}
+                    <tr
+                        key={`${request.type}-${request.id}-${request.request_number}`}
                         onClick={() => onRowClick(request)}
                         className="hover:bg-gray-50 cursor-pointer"
                     >
@@ -60,6 +63,9 @@ export default function RequestTable({ requests, onRowClick }) {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                             {formatDate(request.created_at)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                            {actionRenderer && actionRenderer(request)}
                         </td>
                     </tr>
                 ))}

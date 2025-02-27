@@ -6,6 +6,7 @@ use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SupplyRequestController;
 use App\Http\Controllers\ReimbursementRequestController;
+use App\Http\Controllers\LiquidationController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -41,8 +42,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Reports
     Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
-    Route::get('/reports/export/excel', [ReportsController::class, 'exportExcel'])->name('reports.export.excel');
-    Route::get('/reports/export/pdf', [ReportsController::class, 'exportPDF'])->name('reports.export.pdf');
+    Route::get('/reports/export-excel', [ReportsController::class, 'exportExcel'])->name('reports.export-excel');
+    Route::get('/reports/export-pdf', [ReportsController::class, 'exportPDF'])->name('reports.export-pdf');
+    Route::post('/reports/{id}/update-status', [ReportsController::class, 'updateStatus'])->name('reports.update-status');
     
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -53,8 +55,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('RequestForm');
     })->name('request.form');
 
+    // Supply and Reimbursement routes
     Route::post('/request/supply', [SupplyRequestController::class, 'store'])->name('request.supply.store');
     Route::post('/request/reimbursement', [ReimbursementRequestController::class, 'store'])->name('request.reimbursement.store');
+    
+    // Liquidation routes
+    Route::post('/request/liquidation', [LiquidationController::class, 'store'])->name('request.liquidation.store');
+    Route::get('/liquidations', [LiquidationController::class, 'index'])->name('liquidations.index');
+    Route::get('/liquidations/{liquidation}', [LiquidationController::class, 'show'])->name('liquidations.show');
+    Route::patch('/liquidations/{liquidation}', [LiquidationController::class, 'update'])->name('liquidations.update');
 });
+
+Route::get('/reports/export-excel', [ReportsController::class, 'exportExcel'])->name('reports.export-excel');
+Route::get('/reports/export-pdf', [ReportsController::class, 'exportPDF'])->name('reports.export-pdf');
 
 require __DIR__ . '/auth.php';
