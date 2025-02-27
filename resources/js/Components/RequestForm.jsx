@@ -60,7 +60,17 @@ const icons = {
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
         </svg>
-    )
+    ),
+    hrExpenses: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+    operatingExpenses: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
 };
 
 export default function RequestForm({ auth, errors = {} }) {
@@ -125,7 +135,9 @@ export default function RequestForm({ auth, errors = {} }) {
         { id: 'reimbursement', label: 'Reimbursement', icon: icons.reimbursement },
         { id: 'liquidation', label: 'Liquidation', icon: icons.liquidation },
         ...(auth.user.role === 'admin' ? [
-            { id: 'pettycash', label: 'Petty Cash Request', icon: icons.pettyCash }
+            { id: 'pettycash', label: 'Petty Cash Request', icon: icons.pettyCash },
+            { id: 'hrExpenses', label: 'HR Expenses Request', icon: icons.hrExpenses },
+            { id: 'operatingExpenses', label: 'Operating Expenses Request', icon: icons.operatingExpenses }
         ] : [])
     ];
 
@@ -416,6 +428,68 @@ export default function RequestForm({ auth, errors = {} }) {
             default:
                 return null;
         }
+    };
+
+    // HR Expenses Request form state
+    const { data: hrExpensesData, setData: setHrExpensesData, post: postHrExpenses, processing: hrExpensesProcessing } = useForm({
+        requestor_name: '',
+        date_of_request: '',
+        expenses_category: '',
+        description_of_expenses: '',
+        breakdown_of_expense: '',
+        total_amount_requested: '',
+        expected_payment_date: '',
+        additional_comment: '',
+    });
+
+    // HR Expenses Request form submission handler
+    const handleHrExpensesSubmit = (e) => {
+        e.preventDefault();
+        postHrExpenses(route('request.hrExpenses.store'), {
+            onSuccess: () => {
+                setHrExpensesData({
+                    requestor_name: '',
+                    date_of_request: '',
+                    expenses_category: '',
+                    description_of_expenses: '',
+                    breakdown_of_expense: '',
+                    total_amount_requested: '',
+                    expected_payment_date: '',
+                    additional_comment: '',
+                });
+            },
+        });
+    };
+
+    // Add Operating Expenses Request form state
+    const { data: operatingExpensesData, setData: setOperatingExpensesData, post: postOperatingExpenses, processing: operatingExpensesProcessing } = useForm({
+        requestor_name: '',
+        department_category: '',
+        date_of_request: '',
+        expenses_category: '',
+        breakdown: '',
+        payment_method: '',
+        expected_date_of_payment: '',
+        purpose_of_expense: '',
+    });
+
+    // Operating Expenses Request form submission handler
+    const handleOperatingExpensesSubmit = (e) => {
+        e.preventDefault();
+        postOperatingExpenses(route('request.operatingExpenses.store'), {
+            onSuccess: () => {
+                setOperatingExpensesData({
+                    requestor_name: '',
+                    department_category: '',
+                    date_of_request: '',
+                    expenses_category: '',
+                    breakdown: '',
+                    payment_method: '',
+                    expected_date_of_payment: '',
+                    purpose_of_expense: '',
+                });
+            },
+        });
     };
 
     return (
@@ -737,17 +811,18 @@ export default function RequestForm({ auth, errors = {} }) {
                     {formType === 'liquidation' && (
                         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                             <form onSubmit={handleLiquidationSubmit} className="space-y-4">
+                                {/* Department Selection */}
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.department}
                                         Department
                                     </label>
                                     <select
-                                        value={liquidationData.department}
-                                        onChange={(e) => setLiquidationData({
-                                            ...liquidationData,
+                                        value={liquidationData.department || ''}
+                                        onChange={(e) => setLiquidationData(prevData => ({
+                                            ...prevData,
                                             department: e.target.value
-                                        })}
+                                        }))}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     >
@@ -759,12 +834,13 @@ export default function RequestForm({ auth, errors = {} }) {
                                         ))}
                                     </select>
                                     {errors.department && (
-                                        <p className="mt-1 text-sm text-red-600">
+                                        <p className="mt-1 text-sm text-red-600" role="alert">
                                             {errors.department}
                                         </p>
                                     )}
                                 </div>
 
+                                {/* Date Input */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.date}
@@ -772,43 +848,45 @@ export default function RequestForm({ auth, errors = {} }) {
                                     </label>
                                     <input
                                         type="date"
-                                        value={liquidationData.date}
-                                        onChange={(e) => setLiquidationData({
-                                            ...liquidationData,
+                                        value={liquidationData.date || ''}
+                                        onChange={(e) => setLiquidationData(prevData => ({
+                                            ...prevData,
                                             date: e.target.value
-                                        })}
+                                        }))}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     />
                                     {errors.date && (
-                                        <p className="mt-1 text-sm text-red-600">
+                                        <p className="mt-1 text-sm text-red-600" role="alert">
                                             {errors.date}
                                         </p>
                                     )}
                                 </div>
 
+                                {/* Particulars Input */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.particulars}
                                         Particulars
                                     </label>
                                     <textarea
-                                        value={liquidationData.particulars}
-                                        onChange={(e) => setLiquidationData({
-                                            ...liquidationData,
+                                        value={liquidationData.particulars || ''}
+                                        onChange={(e) => setLiquidationData(prevData => ({
+                                            ...prevData,
                                             particulars: e.target.value
-                                        })}
+                                        }))}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         rows="3"
                                         required
                                     />
                                     {errors.particulars && (
-                                        <p className="mt-1 text-sm text-red-600">
+                                        <p className="mt-1 text-sm text-red-600" role="alert">
                                             {errors.particulars}
                                         </p>
                                     )}
                                 </div>
 
+                                {/* Cash Advance Amount Input */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.cashAdvanceAmount}
@@ -818,83 +896,100 @@ export default function RequestForm({ auth, errors = {} }) {
                                         type="number"
                                         step="0.01"
                                         min="0"
-                                        value={liquidationData.cash_advance_amount}
+                                        value={liquidationData.cash_advance_amount || ''}
                                         onChange={(e) => {
                                             const cashAdvance = parseFloat(e.target.value) || 0;
-                                            const totalAmount = liquidationData.total_amount;
-                                            setLiquidationData({
-                                                ...liquidationData,
+                                            const totalAmount = parseFloat(liquidationData.total_amount) || 0;
+                                            
+                                            setLiquidationData(prevData => ({
+                                                ...prevData,
                                                 cash_advance_amount: cashAdvance,
-                                                amount_to_refund: Math.max(0, cashAdvance - totalAmount),
-                                                amount_to_reimburse: Math.max(0, totalAmount - cashAdvance)
-                                            });
+                                                amount_to_refund: Math.max(0, cashAdvance - totalAmount).toFixed(2),
+                                                amount_to_reimburse: Math.max(0, totalAmount - cashAdvance).toFixed(2)
+                                            }));
                                         }}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     />
                                     {errors.cash_advance_amount && (
-                                        <p className="mt-1 text-sm text-red-600">
+                                        <p className="mt-1 text-sm text-red-600" role="alert">
                                             {errors.cash_advance_amount}
                                         </p>
                                     )}
                                 </div>
 
+                                {/* Items Section */}
                                 <div className="space-y-4">
-                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        {icons.items}
-                                        Items
-                                    </label>
+                                    <div className="flex justify-between items-center">
+                                        <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                            {icons.items}
+                                            Items
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => addLiquidationItem()}
+                                            className="text-sm text-blue-600 hover:text-blue-700"
+                                        >
+                                            + Add Item
+                                        </button>
+                                    </div>
+                                    
                                     {liquidationData.items.map((item, index) => (
-                                        <div key={index} className="grid grid-cols-3 gap-4 p-4 border rounded-md">
-                                            <div>
+                                        <div key={index} className="grid grid-cols-4 gap-4 p-4 border rounded-md">
+                                            <div className="col-span-1">
                                                 <input
                                                     type="text"
                                                     placeholder="Category"
-                                                    value={item.category}
+                                                    value={item.category || ''}
                                                     onChange={(e) => updateLiquidationItem(index, 'category', e.target.value)}
                                                     className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                                     required
                                                 />
                                             </div>
-                                            <div>
+                                            <div className="col-span-2">
                                                 <input
                                                     type="text"
                                                     placeholder="Description"
-                                                    value={item.description}
+                                                    value={item.description || ''}
                                                     onChange={(e) => updateLiquidationItem(index, 'description', e.target.value)}
                                                     className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                                     required
                                                 />
                                             </div>
-                                            <div>
+                                            <div className="col-span-1 flex gap-2">
                                                 <input
                                                     type="number"
                                                     step="0.01"
                                                     min="0"
                                                     placeholder="Amount"
-                                                    value={item.amount}
+                                                    value={item.amount || ''}
                                                     onChange={(e) => updateLiquidationItem(index, 'amount', e.target.value)}
                                                     className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                                     required
                                                 />
+                                                {index > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeLiquidationItem(index)}
+                                                        className="text-red-600 hover:text-red-700"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
-                                    <button
-                                        type="button"
-                                        onClick={addLiquidationItem}
-                                        className="mt-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-700"
-                                    >
-                                        + Add Item
-                                    </button>
                                 </div>
 
+                                {/* Summary Section */}
                                 <div className="grid grid-cols-3 gap-4 mt-6">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">Total Amount</label>
                                         <input
                                             type="number"
-                                            value={liquidationData.total_amount}
+                                            value={parseFloat(liquidationData.total_amount || 0).toFixed(2)}
                                             className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100"
                                             readOnly
                                         />
@@ -903,7 +998,7 @@ export default function RequestForm({ auth, errors = {} }) {
                                         <label className="block text-sm font-medium text-gray-700">Amount to Refund</label>
                                         <input
                                             type="number"
-                                            value={liquidationData.amount_to_refund}
+                                            value={parseFloat(liquidationData.amount_to_refund || 0).toFixed(2)}
                                             className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100"
                                             readOnly
                                         />
@@ -912,18 +1007,19 @@ export default function RequestForm({ auth, errors = {} }) {
                                         <label className="block text-sm font-medium text-gray-700">Amount to Reimburse</label>
                                         <input
                                             type="number"
-                                            value={liquidationData.amount_to_reimburse}
+                                            value={parseFloat(liquidationData.amount_to_reimburse || 0).toFixed(2)}
                                             className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100"
                                             readOnly
                                         />
                                     </div>
                                 </div>
 
+                                {/* Submit Button */}
                                 <div className="mt-6">
                                     <button
                                         type="submit"
                                         disabled={liquidationProcessing}
-                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                                     >
                                         {liquidationProcessing ? 'Processing...' : 'Submit Liquidation'}
                                     </button>
@@ -1102,6 +1198,286 @@ export default function RequestForm({ auth, errors = {} }) {
                             </form>
                         </div>
                     )}
+
+                    {/* HR Expenses Request Form */}
+                    {formType === 'hrExpenses' && (
+                        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                            <form onSubmit={handleHrExpensesSubmit} className="space-y-4">
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.hrExpenses}
+                                        Requestor Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={hrExpensesData.requestor_name}
+                                        onChange={(e) => setHrExpensesData('requestor_name', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.date}
+                                        Date of Request
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={hrExpensesData.date_of_request}
+                                        onChange={(e) => setHrExpensesData('date_of_request', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.hrExpenses}
+                                        Expenses Category
+                                    </label>
+                                    <select
+                                        value={hrExpensesData.expenses_category}
+                                        onChange={(e) => setHrExpensesData('expenses_category', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Category</option>
+                                        <option value="Salary">Salary</option>
+                                        <option value="Benefits">Benefits</option>
+                                        <option value="Recruitment">Recruitment</option>
+                                        <option value="Training">Training</option>
+                                        <option value="Employee Engagement">Employee Engagement</option>
+                                        <option value="Intern Allowance">Intern Allowance</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.hrExpenses}
+                                        Description of Expenses
+                                    </label>
+                                    <textarea
+                                        value={hrExpensesData.description_of_expenses}
+                                        onChange={(e) => setHrExpensesData('description_of_expenses', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.hrExpenses}
+                                        Breakdown of Expense
+                                    </label>
+                                    <textarea
+                                        value={hrExpensesData.breakdown_of_expense}
+                                        onChange={(e) => setHrExpensesData('breakdown_of_expense', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.amount}
+                                        Total Amount Requested
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={hrExpensesData.total_amount_requested}
+                                        onChange={(e) => setHrExpensesData('total_amount_requested', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.date}
+                                        Expected Payment Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={hrExpensesData.expected_payment_date}
+                                        onChange={(e) => setHrExpensesData('expected_payment_date', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.hrExpenses}
+                                        Additional Comment (if any)
+                                    </label>
+                                    <textarea
+                                        value={hrExpensesData.additional_comment}
+                                        onChange={(e) => setHrExpensesData('additional_comment', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                    />
+                                </div>
+
+                                <button 
+                                    type="submit" 
+                                    disabled={hrExpensesProcessing}
+                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                >
+                                    Submit HR Expenses Request
+                                </button>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Operating Expenses Request Form */}
+                    {formType === 'operatingExpenses' && (
+                        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                            <form onSubmit={handleOperatingExpensesSubmit} className="space-y-4">
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.operatingExpenses}
+                                        Requestor Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={operatingExpensesData.requestor_name}
+                                        onChange={(e) => setOperatingExpensesData('requestor_name', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.department}
+                                        Department Category
+                                    </label>
+                                    <select
+                                        value={operatingExpensesData.department_category}
+                                        onChange={(e) => setOperatingExpensesData('department_category', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Department</option>
+                                        <option value="Apptech">Apptech</option>
+                                        <option value="Business Dev.">Business Dev.</option>
+                                        <option value="HR">HR</option>
+                                        <option value="Admin">Admin</option>
+                                    </select>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.date}
+                                        Date of Request
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={operatingExpensesData.date_of_request}
+                                        onChange={(e) => setOperatingExpensesData('date_of_request', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.operatingExpenses}
+                                        Expenses Category
+                                    </label>
+                                    <select
+                                        value={operatingExpensesData.expenses_category}
+                                        onChange={(e) => setOperatingExpensesData('expenses_category', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Category</option>
+                                        <option value="Office Supplies">Office Supplies</option>
+                                        <option value="Software">Software</option>
+                                        <option value="Service">Service</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="Assets">Assets</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.operatingExpenses}
+                                        Breakdown
+                                    </label>
+                                    <textarea
+                                        value={operatingExpensesData.breakdown}
+                                        onChange={(e) => setOperatingExpensesData('breakdown', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.operatingExpenses}
+                                        Payment Method
+                                    </label>
+                                    <select
+                                        value={operatingExpensesData.payment_method}
+                                        onChange={(e) => setOperatingExpensesData('payment_method', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Payment Method</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Gcash">Gcash</option>
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                        <option value="Reimbursement">Reimbursement</option>
+                                    </select>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.date}
+                                        Expected Date of Payment
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={operatingExpensesData.expected_date_of_payment}
+                                        onChange={(e) => setOperatingExpensesData('expected_date_of_payment', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.purpose}
+                                        Purpose of Expense
+                                    </label>
+                                    <textarea
+                                        value={operatingExpensesData.purpose_of_expense}
+                                        onChange={(e) => setOperatingExpensesData('purpose_of_expense', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                </div>
+
+                                <button 
+                                    type="submit" 
+                                    disabled={operatingExpensesProcessing}
+                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                >
+                                    Submit Operating Expenses Request
+                                </button>
+                            </form>
+                        </div>
+                    )}
                 </div>
 
                 {/* Status Section - Takes up full width on mobile, 1 column on large screens */}
@@ -1187,4 +1563,4 @@ const handleRemovePettyCashItem = (index) => {
 const handlePettyCashSubmit = (e) => {
     e.preventDefault();
     router.post(route('petty-cash.store'), pettyCashData);
-}; 
+};
