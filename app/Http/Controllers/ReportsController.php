@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\SupplyRequest;
 use App\Models\ReimbursementRequest;
 use App\Models\Liquidation;
+use App\Models\AdminBudget;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RequestsExport;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 
 class ReportsController extends Controller
 {
@@ -182,6 +184,20 @@ class ReportsController extends Controller
             ? round((($statistics['completedRequests'] - $previousCompleted) / $previousCompleted) * 100, 1)
             : 0;
 
+        // Get admin budget
+        $adminBudget = null;
+        if (auth()->user()->isAdmin()) {
+            $adminBudget = AdminBudget::where('user_id', auth()->id())->first();
+            if (!$adminBudget) {
+                $adminBudget = AdminBudget::create([
+                    'user_id' => auth()->id(),
+                    'total_budget' => 1000000,
+                    'remaining_budget' => 1000000,
+                    'used_budget' => 0
+                ]);
+            }
+        }
+
         return Inertia::render('Reports', [
             'requests' => $allRequests,
             'statistics' => $statistics,
@@ -191,6 +207,7 @@ class ReportsController extends Controller
                 'requestType' => $requestType,
                 'isDateRangeActive' => $isDateRangeActive,
             ],
+            'adminBudget' => $adminBudget
         ]);
     }
 
@@ -324,19 +341,109 @@ class ReportsController extends Controller
             'remarks' => 'nullable|string'
         ]);
 
-        if ($request->type === 'Supply') {
-            $requestModel = SupplyRequest::findOrFail($id);
-        } else if ($request->type === 'Reimbursement') {
-            $requestModel = ReimbursementRequest::findOrFail($id);
-        } else {
-            $requestModel = Liquidation::findOrFail($id);
+        $adminBudget = AdminBudget::where('user_id', auth()->id())->first();
+        
+        if (!$adminBudget) {
+            return response()->json([
+                'error' => 'Admin budget not found'
+            ], 404);
         }
 
-        $requestModel->update([
-            'status' => $request->status,
-            'remarks' => $request->remarks
+        // Get request amount based on type and convert to float for comparison
+        $requestAmount = 0;
+        if ($request->type === 'Supply') {
+            $requestModel = SupplyRequest::findOrFail($id);
+            $requestAmount = floatval($requestModel->total_amount);
+        } else if ($request->type === 'Reimbursement') {
+            $requestModel = ReimbursementRequest::findOrFail($id);
+            $requestAmount = floatval($requestModel->amount);
+        } else {
+            $requestModel = Liquidation::findOrFail($id);
+            $requestAmount = floatval($requestModel->total_amount);
+        }
+
+        // Debug logging
+        \Log::info('Budget Check', [
+            'remaining_budget' => $adminBudget->remaining_budget,
+            'request_amount' => $requestAmount,
+            'comparison' => floatval($adminBudget->remaining_budget) < $requestAmount
         ]);
 
-        return back()->with('success', 'Request status updated successfully');
+        // Strict budget check for approvals
+        if ($request->status === 'approved') {
+            if (floatval($adminBudget->remaining_budget) < $requestAmount) {
+                return response()->json([
+                    'error' => 'Insufficient budget',
+                    'message' => 'You do not have sufficient budget to approve this request.',
+                    'remaining_budget' => $adminBudget->remaining_budget,
+                    'required_amount' => $requestAmount
+                ], 422);
+            }
+
+            DB::beginTransaction();
+            try {
+                // Update request status first
+                $requestModel->update([
+                    'status' => $request->status,
+                    'remarks' => $request->remarks
+                ]);
+
+                // Calculate new budget values
+                $newRemainingBudget = floatval($adminBudget->remaining_budget) - $requestAmount;
+                $newUsedBudget = floatval($adminBudget->used_budget) + $requestAmount;
+
+                // Update admin budget
+                $adminBudget->update([
+                    'remaining_budget' => $newRemainingBudget,
+                    'used_budget' => $newUsedBudget
+                ]);
+
+                // Debug logging for budget update
+                \Log::info('Budget Updated', [
+                    'previous_remaining' => $adminBudget->remaining_budget,
+                    'new_remaining' => $newRemainingBudget,
+                    'previous_used' => $adminBudget->used_budget,
+                    'new_used' => $newUsedBudget,
+                    'deducted_amount' => $requestAmount
+                ]);
+
+                DB::commit();
+                return back()->with('success', 'Request approved and budget updated successfully');
+            } catch (\Exception $e) {
+                DB::rollback();
+                \Log::error('Transaction failed: ' . $e->getMessage());
+                return response()->json([
+                    'error' => 'Transaction failed',
+                    'message' => 'Failed to process the approval: ' . $e->getMessage()
+                ], 500);
+            }
+        } else {
+            // For rejections, just update the status
+            $requestModel->update([
+                'status' => $request->status,
+                'remarks' => $request->remarks
+            ]);
+            return back()->with('success', 'Request rejected successfully');
+        }
+    }
+
+    public function getBudget()
+    {
+        if (!auth()->user()->isAdmin() && !auth()->user()->isSuperAdmin()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $adminBudget = AdminBudget::where('user_id', auth()->id())->first();
+        
+        if (!$adminBudget) {
+            $adminBudget = AdminBudget::create([
+                'user_id' => auth()->id(),
+                'total_budget' => 1000000,
+                'remaining_budget' => 1000000,
+                'used_budget' => 0
+            ]);
+        }
+        
+        return response()->json($adminBudget);
     }
 }

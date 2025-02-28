@@ -5,8 +5,9 @@ import { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import RequestDetailsModal from '@/Components/RequestDetailsModal';
+import axios from 'axios';
 
-export default function Reports({ requests, statistics, filters }) {
+export default function Reports({ auth, requests, statistics, filters }) {
     const [isDateRangeActive, setIsDateRangeActive] = useState(filters.isDateRangeActive ?? false);
     const [dateRange, setDateRange] = useState({
         startDate: filters.startDate ? new Date(filters.startDate) : new Date(new Date().setDate(new Date().getDate() - 30)),
@@ -20,6 +21,8 @@ export default function Reports({ requests, statistics, filters }) {
     const [actionType, setActionType] = useState(null);
     const [remarks, setRemarks] = useState('');
     const [localRemarks, setLocalRemarks] = useState('');
+    const [adminBudget, setAdminBudget] = useState(null);
+    const [localStatistics, setLocalStatistics] = useState(statistics);
 
     const statusColors = {
         pending: 'bg-yellow-100 text-yellow-800',
@@ -57,11 +60,35 @@ export default function Reports({ requests, statistics, filters }) {
         router.post(route('reports.update-status', selectedRequest.id), {
             status: actionType,
             type: selectedRequest.type,
-            remarks: remarks
+            remarks: localRemarks
         }, {
             onSuccess: () => {
+                // Update local statistics
+                setLocalStatistics(prev => ({
+                    ...prev,
+                    pendingRequests: prev.pendingRequests - 1,
+                    completedRequests: prev.completedRequests + 1,
+                }));
+
+                // Update adminBudget if action is 'approved'
+                if (actionType === 'approved' && adminBudget) {
+                    const requestAmount = selectedRequest.type === 'Reimbursement' 
+                        ? parseFloat(selectedRequest.amount) 
+                        : parseFloat(selectedRequest.total_amount);
+
+                    setAdminBudget(prev => ({
+                        ...prev,
+                        remaining_budget: parseFloat(prev.remaining_budget) - requestAmount,
+                        used_budget: parseFloat(prev.used_budget) + requestAmount
+                    }));
+                }
+
+                // Close modal and reset remarks
                 setIsActionModalOpen(false);
-                setRemarks('');
+                setLocalRemarks('');
+                
+                // Refresh the page to get updated data
+                router.reload();
             },
         });
     };
@@ -73,6 +100,18 @@ export default function Reports({ requests, statistics, filters }) {
 
         return () => clearTimeout(timeoutId);
     }, [dateRange, selectedRequestType, isDateRangeActive]);
+
+    useEffect(() => {
+        if (auth.user.role === 'admin') {
+            axios.get('/admin/budget')
+                .then(response => {
+                    setAdminBudget(response.data);
+                })
+                .catch(error => {
+                    console.error('Error fetching budget:', error);
+                });
+        }
+    }, []);
 
     const RemarksTextarea = ({ value, onChange }) => {
         return (
@@ -93,34 +132,24 @@ export default function Reports({ requests, statistics, filters }) {
     };
 
     const ActionModalContent = ({ selectedRequest, actionType, localRemarks, setLocalRemarks, onCancel, onConfirm }) => {
-        const formatAmount = () => {
-            try {
-                let amount = 0;
-                
-                if (selectedRequest.type === 'Supply' && selectedRequest.total_amount) {
-                    amount = parseFloat(selectedRequest.total_amount);
-                } else if (selectedRequest.type === 'Reimbursement' && selectedRequest.amount) {
-                    amount = parseFloat(selectedRequest.amount);
-                } else if (selectedRequest.type === 'Liquidation') {
-                    amount = parseFloat(selectedRequest.total_amount);
-                }
+        const requestAmount = selectedRequest.type === 'Reimbursement' 
+            ? parseFloat(selectedRequest.amount) 
+            : parseFloat(selectedRequest.total_amount);
 
-                return isNaN(amount) ? '₱0.00' : `₱${amount.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                })}`;
-            } catch (error) {
-                console.error('Error formatting amount:', error);
-                return '₱0.00';
-            }
-        };
+        // Add proper number comparison
+        const isInsufficientBudget = actionType === 'approved' && 
+            adminBudget && 
+            parseFloat(adminBudget.remaining_budget) < requestAmount;
 
-        const handleRemarksChange = (e) => {
-            setLocalRemarks(e.target.value);
-        };
+        // Debug logging
+        console.log('Budget Check:', {
+            remainingBudget: adminBudget?.remaining_budget,
+            requestAmount,
+            isInsufficientBudget
+        });
 
         return (
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all">
+            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
                 {/* Header */}
                 <div className="mb-5">
                     <h3 className={`text-xl font-semibold ${
@@ -163,7 +192,7 @@ export default function Reports({ requests, statistics, filters }) {
                                 {selectedRequest.type === 'Liquidation' ? 'Total Amount (Cash Advance)' : 'Total Amount'}
                             </p>
                             <p className="font-medium">
-                                {formatAmount()}
+                                {requestAmount.toLocaleString()}
                                 {selectedRequest.type === 'Liquidation' && 
                                     ` (₱${parseFloat(selectedRequest.cash_advance_amount).toLocaleString(undefined, {
                                         minimumFractionDigits: 2,
@@ -200,11 +229,36 @@ export default function Reports({ requests, statistics, filters }) {
                 {/* Remarks Input */}
                 <RemarksTextarea 
                     value={localRemarks} 
-                    onChange={handleRemarksChange} 
+                    onChange={setLocalRemarks} 
                 />
 
+                {/* Add budget information */}
+                {actionType === 'approved' && adminBudget && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm text-gray-600">Available Budget</p>
+                                <p className="font-medium text-lg">
+                                    ₱{parseFloat(adminBudget.remaining_budget).toLocaleString()}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600">Request Amount</p>
+                                <p className="font-medium text-lg">
+                                    ₱{requestAmount.toLocaleString()}
+                                </p>
+                            </div>
+                        </div>
+                        {isInsufficientBudget && (
+                            <div className="mt-2 p-2 bg-red-50 text-red-700 rounded">
+                                Insufficient budget to approve this request
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* Action Buttons */}
-                <div className="flex justify-end space-x-3">
+                <div className="flex justify-end space-x-3 mt-4">
                     <button
                         type="button"
                         onClick={onCancel}
@@ -215,9 +269,12 @@ export default function Reports({ requests, statistics, filters }) {
                     <button
                         type="button"
                         onClick={onConfirm}
+                        disabled={isInsufficientBudget}
                         className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
                             actionType === 'approved' 
-                                ? 'bg-green-600 hover:bg-green-700' 
+                                ? isInsufficientBudget 
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-green-600 hover:bg-green-700' 
                                 : 'bg-red-600 hover:bg-red-700'
                         }`}
                     >
@@ -357,12 +414,77 @@ export default function Reports({ requests, statistics, filters }) {
         document.body.removeChild(form);
     };
 
+    // Add budget summary component
+    const BudgetSummary = ({ adminBudget }) => {
+        if (!adminBudget) return null;
+
+        return (
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-600">Total Budget</p>
+                            <h3 className="text-2xl font-semibold text-gray-900">
+                                ₱{parseFloat(adminBudget.total_budget).toLocaleString()}
+                            </h3>
+                        </div>
+                        <div className="p-3 bg-blue-100 rounded-full">
+                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-600">Remaining Budget</p>
+                            <h3 className="text-2xl font-semibold text-green-600">
+                                ₱{parseFloat(adminBudget.remaining_budget).toLocaleString()}
+                            </h3>
+                        </div>
+                        <div className="p-3 bg-green-100 rounded-full">
+                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-600">Used Budget</p>
+                            <h3 className="text-2xl font-semibold text-blue-600">
+                                ₱{parseFloat(adminBudget.used_budget).toLocaleString()}
+                            </h3>
+                        </div>
+                        <div className="p-3 bg-blue-100 rounded-full">
+                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div className="mt-2">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                                className="bg-blue-600 h-2 rounded-full" 
+                                style={{ width: `${(adminBudget.used_budget / adminBudget.total_budget) * 100}%` }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title="Reports" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    {auth.user.role === 'admin' && <BudgetSummary adminBudget={adminBudget} />}
+
                     {/* Summary Cards */}
                     <div className="grid gap-4 mb-6 md:grid-cols-3">
                         {/* Total Requests Card */}
@@ -371,7 +493,7 @@ export default function Reports({ requests, statistics, filters }) {
                                 <div>
                                     <p className="text-sm text-gray-600">Total Requests</p>
                                     <h3 className="text-2xl font-semibold">
-                                        {statistics.totalRequests.toLocaleString()}
+                                        {localStatistics.totalRequests.toLocaleString()}
                                     </h3>
                                 </div>
                                 <div className="p-3 bg-blue-100 rounded-full">
@@ -400,7 +522,7 @@ export default function Reports({ requests, statistics, filters }) {
                                 <div>
                                     <p className="text-sm text-gray-600">Pending Requests</p>
                                     <h3 className="text-2xl font-semibold">
-                                        {statistics.pendingRequests.toLocaleString()}
+                                        {localStatistics.pendingRequests.toLocaleString()}
                                     </h3>
                                 </div>
                                 <div className="p-3 bg-yellow-100 rounded-full">
@@ -422,7 +544,7 @@ export default function Reports({ requests, statistics, filters }) {
                                 <div>
                                     <p className="text-sm text-gray-600">Completed Requests</p>
                                     <h3 className="text-2xl font-semibold">
-                                        {statistics.completedRequests.toLocaleString()}
+                                        {localStatistics.completedRequests.toLocaleString()}
                                     </h3>
                                 </div>
                                 <div className="p-3 bg-green-100 rounded-full">

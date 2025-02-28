@@ -64,6 +64,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/liquidations', [LiquidationController::class, 'index'])->name('liquidations.index');
     Route::get('/liquidations/{liquidation}', [LiquidationController::class, 'show'])->name('liquidations.show');
     Route::patch('/liquidations/{liquidation}', [LiquidationController::class, 'update'])->name('liquidations.update');
+
+    // Admin budget routes
+    Route::get('/admin/budget', [ReportsController::class, 'getBudget'])->name('admin.budget');
 });
 
 Route::get('/reports/export-excel', [ReportsController::class, 'exportExcel'])->name('reports.export-excel');

@@ -51,4 +51,19 @@ class User extends Authenticatable
     {
         return $this->hasOne(Profile::class);
     }
+
+    public function adminBudget()
+    {
+        return $this->hasOne(AdminBudget::class);
+    }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isSuperAdmin()
+    {
+        return $this->role === 'superadmin';
+    }
 }

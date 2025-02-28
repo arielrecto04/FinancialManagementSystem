@@ -32,18 +32,13 @@ export default function AuthenticatedLayout({ header, children }) {
                                 </NavLink>
                                 {user.role === 'admin' && (
                                     <>
-                                        <NavLink
+                                        <NavLink    
                                             href={route('statistics')}
                                             active={route().current('statistics')}
                                         >
                                             Statistics
                                         </NavLink>
-                                        <NavLink
-                                            href={route('expenses.index')}
-                                            active={route().current('expenses.index')}
-                                        >
-                                            Expenses
-                                        </NavLink>
+
                                         <NavLink
                                             href={route('reports.index')}
                                             active={route().current('reports.index')}
@@ -170,12 +165,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     Statistics
                                 </ResponsiveNavLink>
-                                <ResponsiveNavLink
-                                    href={route('expenses.index')}
-                                    active={route().current('expenses.index')}
-                                >
-                                    Expenses
-                                </ResponsiveNavLink>
+                      
                                 <ResponsiveNavLink
                                     href={route('reports.index')}
                                     active={route().current('reports.index')}

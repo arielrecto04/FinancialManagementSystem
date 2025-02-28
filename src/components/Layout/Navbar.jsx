@@ -29,15 +29,17 @@ const Navbar = ({ user }) => {
       
       {/* Navigation Links */}
       <div className="mt-2">
-        {user.role === 'admin' ? (
+        {(user.role === 'admin' || user.role === 'superadmin') ? (
           <div className="flex space-x-4">
             <NavLink href={route('dashboard')}>Dashboard</NavLink>
-            <NavLink href={route('static')}>Static</NavLink>
-            <NavLink href={route('expenses')}>Expenses</NavLink>
-            <NavLink href={route('transactions')}>Transactions</NavLink>
+            <NavLink href={route('statistics')}>Statistics</NavLink>
+            <NavLink href={route('expenses.index')}>Expenses</NavLink>
+            <NavLink href={route('reports.index')}>Reports</NavLink>
+            <NavLink href={route('approvals.index')}>Approvals</NavLink>
           </div>
         ) : (
           <div className="flex space-x-4">
+            <NavLink href={route('dashboard')}>Dashboard</NavLink>
             <NavLink href={route('request-form')}>Request Form</NavLink>
           </div>
         )}

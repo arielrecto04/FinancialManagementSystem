@@ -139,7 +139,7 @@ export default function Dashboard({ auth }) {
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    {user.role === 'admin' ? (
+                    {(user.role === 'admin' || user.role === 'superadmin') ? (
                         // Admin view
                         <>
                             {/* Expense Summary Cards */}
