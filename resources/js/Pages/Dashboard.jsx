@@ -51,7 +51,9 @@ const HighExpenseItem = ({ category, amount, date, icon }) => {
     );
 };
 
-export default function Dashboard() {
+export default function Dashboard({ auth }) {
+    const { user } = auth;
+    
     // Sample data for the bar chart
     const barChartOptions = {
         chart: {
@@ -125,102 +127,129 @@ export default function Dashboard() {
     };
 
     return (
-        <AuthenticatedLayout>
+        <AuthenticatedLayout
+            user={user}
+            header={
+                <h2 className="font-semibold text-xl text-gray-800 leading-tight">
+                    Dashboard
+                </h2>
+            }
+        >
             <Head title="Dashboard" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    {/* Expense Summary Cards */}
-                    <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
-                        <ExpenseSummaryCard title="Daily Expenses" amount="0.00" icon={summaryCardIcons.daily} />
-                        <ExpenseSummaryCard title="Weekly Expenses" amount="0.00" icon={summaryCardIcons.weekly} />
-                        <ExpenseSummaryCard title="Monthly Expenses" amount="0.00" icon={summaryCardIcons.monthly} />
-                        <ExpenseSummaryCard title="Annual Expenses" amount="0.00" icon={summaryCardIcons.annual} />
-                    </div>
+                    {(user.role === 'admin' || user.role === 'superadmin') ? (
+                        // Admin view
+                        <>
+                            {/* Expense Summary Cards */}
+                            <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+                                <ExpenseSummaryCard title="Daily Expenses" amount="0.00" icon={summaryCardIcons.daily} />
+                                <ExpenseSummaryCard title="Weekly Expenses" amount="0.00" icon={summaryCardIcons.weekly} />
+                                <ExpenseSummaryCard title="Monthly Expenses" amount="0.00" icon={summaryCardIcons.monthly} />
+                                <ExpenseSummaryCard title="Annual Expenses" amount="0.00" icon={summaryCardIcons.annual} />
+                            </div>
 
-                    {/* Charts Section */}
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                        {/* Bar Chart */}
-                        <div className="col-span-2 p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold">Monthly Expenses</h3>
-                                <div className="flex space-x-2">
-                                    <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                        </svg>
-                                    </button>
-                                    <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                        </svg>
-                                    </button>
+                            {/* Charts Section */}
+                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                {/* Bar Chart */}
+                                <div className="col-span-2 p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-semibold">Monthly Expenses</h3>
+                                        <div className="flex space-x-2">
+                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                                </svg>
+                                            </button>
+                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <ReactApexChart
+                                        options={barChartOptions}
+                                        series={barChartSeries}
+                                        type="bar"
+                                        height={350}
+                                    />
+                                </div>
+
+                                {/* Highest Expense Log */}
+                                <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-semibold">Highest Expense Log</h3>
+                                        <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <HighExpenseItem
+                                            category="Utilities"
+                                            amount="15,000.00"
+                                            date="2024-03-15"
+                                            icon={categoryIcons.Utilities}
+                                        />
+                                        {/* Add more high expense items */}
+                                    </div>
                                 </div>
                             </div>
-                            <ReactApexChart
-                                options={barChartOptions}
-                                series={barChartSeries}
-                                type="bar"
-                                height={350}
-                            />
-                        </div>
 
-                        {/* Highest Expense Log */}
-                        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold">Highest Expense Log</h3>
-                                <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div className="space-y-4">
-                                <HighExpenseItem
-                                    category="Utilities"
-                                    amount="15,000.00"
-                                    date="2024-03-15"
-                                    icon={categoryIcons.Utilities}
-                                />
-                                {/* Add more high expense items */}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Recent Logs */}
-                    <div className="mt-4 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold">Recent Logs</h3>
-                                <div className="flex space-x-2">
-                                    <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                                        </svg>
-                                    </button>
-                                    <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                        </svg>
-                                    </button>
+                            {/* Recent Logs */}
+                            <div className="mt-4 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
+                                <div className="p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-semibold">Recent Logs</h3>
+                                        <div className="flex space-x-2">
+                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                                </svg>
+                                            </button>
+                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="text-left bg-gray-50">
+                                                <th className="p-3">Date</th>
+                                                <th className="p-3">Description</th>
+                                                <th className="p-3">Category</th>
+                                                <th className="p-3">Amount</th>
+                                                <th className="p-3">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {/* Add your recent log items here */}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="text-left bg-gray-50">
-                                        <th className="p-3">Date</th>
-                                        <th className="p-3">Description</th>
-                                        <th className="p-3">Category</th>
-                                        <th className="p-3">Amount</th>
-                                        <th className="p-3">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {/* Add your recent log items here */}
-                                </tbody>
-                            </table>
+                        </>
+                    ) : (
+                        // User view
+                        <div className="p-6 bg-white shadow-sm sm:rounded-lg">
+                            <h3 className="text-lg font-semibold mb-4">User Dashboard</h3>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="p-6 border rounded-lg hover:shadow-md transition-shadow">
+                                    <h4 className="font-medium mb-2">Supply Request</h4>
+                                    <p className="text-sm text-gray-600">Manage your supply requests here</p>
+                                </div>
+                                <div className="p-6 border rounded-lg hover:shadow-md transition-shadow">
+                                    <h4 className="font-medium mb-2">Reimbursement</h4>
+                                    <p className="text-sm text-gray-600">Submit and track reimbursement requests</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>

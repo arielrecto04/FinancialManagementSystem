@@ -1,33 +1,101 @@
 import { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
+import RequestDetailsModal from '@/Components/RequestDetailsModal';
+import axios from 'axios';
 
-export default function RequestForm() {
-    const [formType, setFormType] = useState('supply'); // 'supply' or 'reimbursement'
+// Add this constant at the top of your file, outside the component
+const departmentOptions = [
+    { value: 'Development', label: 'Development' },
+    { value: 'AppTech', label: 'AppTech' },
+    { value: 'Human Resource', label: 'Human Resource' },
+    { value: 'Marketing', label: 'Marketing' }
+];
+
+// Add these icons at the top of your component
+const icons = {
+    supply: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+    ),
+    reimbursement: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+    liquidation: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+    ),
+    pettyCash: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+    ),
+    // Field icons
+    department: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+    ),
+    date: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+    ),
+    purpose: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+    ),
+    amount: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+    items: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+    ),
+    hrExpenses: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+    operatingExpenses: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+};
+
+export default function RequestForm({ auth, errors = {} }) {
+    const [formType, setFormType] = useState('supply');
+    const [items, setItems] = useState([{ name: '', quantity: '', unit: '', price: '' }]);
     
-    // Supply Request Form State
-    const [supplyForm, setSupplyForm] = useState({
-        email: '',
-        name: '',
-        branch: '',
-        amount: '',
-        items: '',
-        description: ''
+    // Supply Request Form State - Matching database fields
+    const { data, setData, post, processing } = useForm({
+        department: '',
+        purpose: '',
+        date_needed: '',
+        items: items,
+        total_amount: 0,
+        remarks: '',
     });
 
     // Reimbursement Form State
-    const [reimbursementForm, setReimbursementForm] = useState({
-        email: '',
-        name: '',
-        branch: '',
-        date: new Date(),
-        timeFrom: '',
-        timeTo: '',
-        particular: '',
-        breakdown: '',
-        totalAmount: '',
-        receipt: null
+    const { data: reimbursementData, setData: setReimbursementData, post: postReimbursement, processing: reimbursementProcessing } = useForm({
+        department: '',
+        expense_date: '',
+        expense_type: '',
+        amount: '',
+        description: '',
+        receipt: null,
+        remarks: '',
     });
 
     // Sample request status data
@@ -38,15 +106,190 @@ export default function RequestForm() {
     ]);
 
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const handleSupplySubmit = (e) => {
+    // Update the liquidation form state
+    const { data: liquidationData, setData: setLiquidationData, post: postLiquidation, processing: liquidationProcessing, reset: resetLiquidation } = useForm({
+        date: new Date().toISOString().split('T')[0],
+        particulars: '',
+        items: [{ category: '', description: '', amount: '' }],
+        total_amount: 0,
+        cash_advance_amount: '',
+        amount_to_refund: 0,
+        amount_to_reimburse: 0,
+    });
+
+    // Update the petty cash state
+    const [pettyCashData, setPettyCashData] = useState({
+        date: '',
+        dateNeeded: '',
+        purpose: '',
+        amount: '',
+        items: [{ category: '', description: '', amount: '' }]  // Updated structure
+    });
+
+    // Update your tab rendering logic to include petty cash for admins
+    const tabs = [
+        { id: 'supply', label: 'Supply Request', icon: icons.supply },
+        { id: 'reimbursement', label: 'Reimbursement', icon: icons.reimbursement },
+        { id: 'liquidation', label: 'Liquidation', icon: icons.liquidation },
+        ...(auth.user.role === 'admin' ? [
+            { id: 'pettycash', label: 'Petty Cash Request', icon: icons.pettyCash },
+            { id: 'hrExpenses', label: 'HR Expenses Request', icon: icons.hrExpenses },
+            { id: 'operatingExpenses', label: 'Operating Expenses Request', icon: icons.operatingExpenses }
+        ] : [])
+    ];
+
+    // Add new item row
+    const addItem = () => {
+        const newItems = [...items, { name: '', quantity: '', unit: '', price: '' }];
+        setItems(newItems);
+        updateFormData(newItems);
+    };
+
+    // Remove item row
+    const removeItem = (index) => {
+        const newItems = items.filter((_, i) => i !== index);
+        setItems(newItems);
+        updateFormData(newItems);
+    };
+
+    // Update item and calculate total
+    const updateItem = (index, field, value) => {
+        const newItems = [...items];
+        newItems[index][field] = value;
+        setItems(newItems);
+        updateFormData(newItems);
+    };
+
+    // Update form data with new items and total
+    const updateFormData = (newItems) => {
+        const total = newItems.reduce((sum, item) => {
+            return sum + (Number(item.quantity) * Number(item.price) || 0);
+        }, 0);
+        
+        setData(data => ({
+            ...data,
+            items: newItems,
+            total_amount: total
+        }));
+    };
+
+    const handleSubmit = (e) => {
         e.preventDefault();
-        // Handle supply form submission
+        
+        // Validate items before submission
+        if (items.some(item => !item.name || !item.quantity || !item.unit || !item.price)) {
+            alert('Please fill in all item fields');
+            return;
+        }
+
+        // Submit the form
+        post(route('request.supply.store'), {
+            onSuccess: () => {
+                // Reset form
+                setItems([{ name: '', quantity: '', unit: '', price: '' }]);
+                setData({
+                    department: '',
+                    purpose: '',
+                    date_needed: '',
+                    items: [],
+                    total_amount: 0,
+                    remarks: '',
+                });
+            },
+            onError: (errors) => {
+                console.error(errors);
+            },
+        });
     };
 
     const handleReimbursementSubmit = (e) => {
         e.preventDefault();
-        // Handle reimbursement form submission
+        
+        const formData = new FormData();
+        for (let key in reimbursementData) {
+            formData.append(key, reimbursementData[key]);
+        }
+
+        postReimbursement(route('request.reimbursement.store'), {
+            onSuccess: () => {
+                // Reset form
+                setReimbursementData({
+                    department: '',
+                    expense_date: '',
+                    expense_type: '',
+                    amount: '',
+                    description: '',
+                    receipt: null,
+                    remarks: '',
+                });
+            },
+        });
+    };
+
+    // Update the handleLiquidationSubmit function
+    const handleLiquidationSubmit = (e) => {
+        e.preventDefault();
+        console.log('Submitting liquidation:', liquidationData);
+
+        // Use axios directly to debug the request
+        axios.post('/request/liquidation', liquidationData)
+            .then(response => {
+                console.log('Success:', response);
+                resetLiquidation();
+            })
+            .catch(error => {
+                console.error('Error:', error.response);
+            });
+
+        // Or use the Inertia form
+        /*
+        postLiquidation('/request/liquidation', {
+            preserveScroll: true,
+            onSuccess: () => {
+                console.log('Success!');
+                resetLiquidation();
+            },
+            onError: (errors) => {
+                console.error('Submission errors:', errors);
+            }
+        });
+        */
+    };
+
+    // Add/Remove Liquidation Items
+    const addLiquidationItem = () => {
+        setLiquidationData(data => ({
+            ...data,
+            items: [...data.items, { category: '', description: '', amount: '' }]
+        }));
+    };
+
+    const removeLiquidationItem = (index) => {
+        setLiquidationData(data => ({
+            ...data,
+            items: data.items.filter((_, i) => i !== index)
+        }));
+    };
+
+    // Update Liquidation Item
+    const updateLiquidationItem = (index, field, value) => {
+        const newItems = [...liquidationData.items];
+        newItems[index][field] = value;
+        
+        // Calculate total amount
+        const total = newItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        const cashAdvance = Number(liquidationData.cash_advance_amount) || 0;
+        
+        setLiquidationData(data => ({
+            ...data,
+            items: newItems,
+            total_amount: total,
+            amount_to_refund: cashAdvance > total ? cashAdvance - total : 0,
+            amount_to_reimburse: total > cashAdvance ? total - cashAdvance : 0
+        }));
     };
 
     // Component for the date range and period selector
@@ -187,37 +430,89 @@ export default function RequestForm() {
         }
     };
 
+    // HR Expenses Request form state
+    const { data: hrExpensesData, setData: setHrExpensesData, post: postHrExpenses, processing: hrExpensesProcessing } = useForm({
+        requestor_name: '',
+        date_of_request: '',
+        expenses_category: '',
+        description_of_expenses: '',
+        breakdown_of_expense: '',
+        total_amount_requested: '',
+        expected_payment_date: '',
+        additional_comment: '',
+    });
+
+    // HR Expenses Request form submission handler
+    const handleHrExpensesSubmit = (e) => {
+        e.preventDefault();
+        postHrExpenses(route('request.hrExpenses.store'), {
+            onSuccess: () => {
+                setHrExpensesData({
+                    requestor_name: '',
+                    date_of_request: '',
+                    expenses_category: '',
+                    description_of_expenses: '',
+                    breakdown_of_expense: '',
+                    total_amount_requested: '',
+                    expected_payment_date: '',
+                    additional_comment: '',
+                });
+            },
+        });
+    };
+
+    // Add Operating Expenses Request form state
+    const { data: operatingExpensesData, setData: setOperatingExpensesData, post: postOperatingExpenses, processing: operatingExpensesProcessing } = useForm({
+        requestor_name: '',
+        department_category: '',
+        date_of_request: '',
+        expenses_category: '',
+        breakdown: '',
+        payment_method: '',
+        expected_date_of_payment: '',
+        purpose_of_expense: '',
+    });
+
+    // Operating Expenses Request form submission handler
+    const handleOperatingExpensesSubmit = (e) => {
+        e.preventDefault();
+        postOperatingExpenses(route('request.operatingExpenses.store'), {
+            onSuccess: () => {
+                setOperatingExpensesData({
+                    requestor_name: '',
+                    department_category: '',
+                    date_of_request: '',
+                    expenses_category: '',
+                    breakdown: '',
+                    payment_method: '',
+                    expected_date_of_payment: '',
+                    purpose_of_expense: '',
+                });
+            },
+        });
+    };
+
     return (
         <div className="max-w-7xl mx-auto py-4 px-2 sm:px-4 lg:px-8">
             {/* Form Type Toggle - More responsive */}
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4">
-                    <button
-                        className={`flex items-center justify-center px-4 py-3 rounded-lg transition-all w-full sm:w-auto ${
-                            formType === 'supply' 
-                                ? 'bg-blue-500 text-white shadow-lg' 
-                                : 'bg-gray-100 hover:bg-gray-200'
-                        }`}
-                        onClick={() => setFormType('supply')}
-                    >
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                        Supply Request
-                    </button>
-                    <button
-                        className={`flex items-center justify-center px-4 py-3 rounded-lg transition-all w-full sm:w-auto ${
-                            formType === 'reimbursement' 
-                                ? 'bg-blue-500 text-white shadow-lg' 
-                                : 'bg-gray-100 hover:bg-gray-200'
-                        }`}
-                        onClick={() => setFormType('reimbursement')}
-                    >
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Reimbursement
-                    </button>
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            className={`flex items-center justify-center px-4 py-3 rounded-lg transition-all w-full sm:w-auto ${
+                                formType === tab.id 
+                                    ? 'bg-blue-500 text-white shadow-lg' 
+                                    : 'bg-gray-100 hover:bg-gray-200'
+                            }`}
+                            onClick={() => setFormType(tab.id)}
+                        >
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                {tab.icon}
+                            </svg>
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -227,115 +522,146 @@ export default function RequestForm() {
                 <div className="lg:col-span-2 order-2 lg:order-1">
                     {formType === 'supply' && (
                         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
-                            <form onSubmit={handleSupplySubmit} className="space-y-4">
-                                {/* Two column layout for form fields on larger screens */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                                            </svg>
-                                            Email
-                                        </label>
-                                        <input
-                                            type="email"
-                                            value={supplyForm.email}
-                                            onChange={(e) => setSupplyForm({...supplyForm, email: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                            </svg>
-                                            Name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={supplyForm.name}
-                                            onChange={(e) => setSupplyForm({...supplyForm, name: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Full width fields */}
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                            </svg>
-                                            Branch
-                                        </label>
-                                        <select
-                                            value={supplyForm.branch}
-                                            onChange={(e) => setSupplyForm({...supplyForm, branch: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        >
-                                            <option value="">Select Branch</option>
-                                            <option value="Parañaque">Parañaque</option>
-                                            <option value="Laguna">Laguna</option>
-                                            <option value="Pampanga">Pampanga</option>
-                                            <option value="Cebu">Cebu</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            Amount
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={supplyForm.amount}
-                                            onChange={(e) => setSupplyForm({...supplyForm, amount: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                            </svg>
-                                            Items
-                                        </label>
-                                        <textarea
-                                            value={supplyForm.items}
-                                            onChange={(e) => setSupplyForm({...supplyForm, items: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                            rows={3}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                            Description
-                                        </label>
-                                        <textarea
-                                            value={supplyForm.description}
-                                            onChange={(e) => setSupplyForm({...supplyForm, description: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                            rows={3}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="pt-4">
-                                    <button
-                                        type="submit"
-                                        className="w-full flex items-center justify-center bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.department}
+                                        Department
+                                    </label>
+                                    <select
+                                        value={data.department}
+                                        onChange={(e) => setData('department', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
                                     >
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        Submit Supply Request
-                                    </button>
+                                        <option value="">Select Department</option>
+                                        {departmentOptions.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors?.department && (
+                                        <p className="mt-1 text-sm text-red-600">
+                                            {errors.department}
+                                        </p>
+                                    )}
                                 </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.purpose}
+                                        Purpose
+                                    </label>
+                                    <textarea
+                                        value={data.purpose}
+                                        onChange={e => setData('purpose', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        required
+                                    />
+                                    {errors?.purpose && <div className="text-red-500 text-sm mt-1">{errors.purpose}</div>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.date}
+                                        Date Needed
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={data.date_needed}
+                                        onChange={e => setData('date_needed', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        required
+                                    />
+                                    {errors?.date_needed && <div className="text-red-500 text-sm mt-1">{errors.date_needed}</div>}
+                                </div>
+
+                                {/* Items Section */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="block text-sm font-medium text-gray-700">Items</label>
+                                        <button
+                                            type="button"
+                                            onClick={addItem}
+                                            className="text-blue-500 hover:text-blue-700"
+                                        >
+                                            + Add Item
+                                        </button>
+                                    </div>
+                                    
+                                    {items.map((item, index) => (
+                                        <div key={index} className="grid grid-cols-12 gap-2 mb-2">
+                                            <div className="col-span-4">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Item name"
+                                                    value={item.name}
+                                                    onChange={e => updateItem(index, 'name', e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <input
+                                                    type="number"
+                                                    placeholder="Qty"
+                                                    value={item.quantity}
+                                                    onChange={e => updateItem(index, 'quantity', e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Unit"
+                                                    value={item.unit}
+                                                    onChange={e => updateItem(index, 'unit', e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <input
+                                                    type="number"
+                                                    placeholder="Price"
+                                                    value={item.price}
+                                                    onChange={e => updateItem(index, 'price', e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                {items.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeItem(index)}
+                                                        className="text-red-500 hover:text-red-700"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {errors?.items && (
+                                        <div className="text-red-500 text-sm mt-1">{errors.items}</div>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
+                                    <textarea
+                                        value={data.remarks}
+                                        onChange={e => setData('remarks', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    />
+                                </div>
+
+                                <button 
+                                    type="submit" 
+                                    disabled={processing}
+                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                >
+                                    Submit Supply Request
+                                </button>
                             </form>
                         </div>
                     )}
@@ -343,166 +669,812 @@ export default function RequestForm() {
                     {formType === 'reimbursement' && (
                         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                             <form onSubmit={handleReimbursementSubmit} className="space-y-4">
-                                {/* Two column layout for form fields on larger screens */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                                            </svg>
-                                            Email
-                                        </label>
-                                        <input
-                                            type="email"
-                                            value={reimbursementForm.email}
-                                            onChange={(e) => setReimbursementForm({...reimbursementForm, email: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                            </svg>
-                                            Name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={reimbursementForm.name}
-                                            onChange={(e) => setReimbursementForm({...reimbursementForm, name: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                        </svg>
-                                        Branch
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.department}
+                                        Department
                                     </label>
                                     <select
-                                        value={reimbursementForm.branch}
-                                        onChange={(e) => setReimbursementForm({...reimbursementForm, branch: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                        value={reimbursementData.department}
+                                        onChange={(e) => setReimbursementData({
+                                            ...reimbursementData,
+                                            department: e.target.value
+                                        })}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
                                     >
-                                        <option value="">Select Branch</option>
-                                        <option value="Parañaque">Parañaque</option>
-                                        <option value="Laguna">Laguna</option>
-                                        <option value="Pampanga">Pampanga</option>
-                                        <option value="Cebu">Cebu</option>
+                                        <option value="">Select Department</option>
+                                        {departmentOptions.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
                                     </select>
+                                    {errors.department && (
+                                        <p className="mt-1 text-sm text-red-600">
+                                            {errors.department}
+                                        </p>
+                                    )}
                                 </div>
+
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                        </svg>
-                                        Date
-                                    </label>
-                                    <DatePicker
-                                        selected={reimbursementForm.date}
-                                        onChange={(date) => setReimbursementForm({...reimbursementForm, date})}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        dateFormat="MMMM d, yyyy"
-                                    />
-                                </div>
-                                <div className="flex space-x-4">
-                                    <div className="flex-1">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            Time From
-                                        </label>
-                                        <input
-                                            type="time"
-                                            value={reimbursementForm.timeFrom}
-                                            onChange={(e) => setReimbursementForm({...reimbursementForm, timeFrom: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        />
-                                    </div>
-                                    <div className="flex-1">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            Time To
-                                        </label>
-                                        <input
-                                            type="time"
-                                            value={reimbursementForm.timeTo}
-                                            onChange={(e) => setReimbursementForm({...reimbursementForm, timeTo: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                        </svg>
-                                        Particular
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.date}
+                                        Expense Date
                                     </label>
                                     <input
-                                        type="text"
-                                        value={reimbursementForm.particular}
-                                        onChange={(e) => setReimbursementForm({...reimbursementForm, particular: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                        type="date"
+                                        value={reimbursementData.expense_date}
+                                        onChange={e => setReimbursementData('expense_date', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        required
                                     />
+                                    {errors?.expense_date && (
+                                        <div className="text-red-500 text-sm mt-1">{errors.expense_date}</div>
+                                    )}
                                 </div>
+
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                        </svg>
-                                        Breakdown
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.expenseType}
+                                        Expense Type
                                     </label>
-                                    <textarea
-                                        value={reimbursementForm.breakdown}
-                                        onChange={(e) => setReimbursementForm({...reimbursementForm, breakdown: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        rows={3}
-                                    />
+                                    <select
+                                        value={reimbursementData.expense_type}
+                                        onChange={e => setReimbursementData('expense_type', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        required
+                                    >
+                                        <option value="">Select Expense Type</option>
+                                        <option value="Transportation">Transportation</option>
+                                        <option value="Meals">Meals</option>
+                                        <option value="Office Supplies">Office Supplies</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    {errors?.expense_type && (
+                                        <div className="text-red-500 text-sm mt-1">{errors.expense_type}</div>
+                                    )}
                                 </div>
+
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        Total Amount
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.amount}
+                                        Amount
                                     </label>
                                     <input
                                         type="number"
-                                        value={reimbursementForm.totalAmount}
-                                        onChange={(e) => setReimbursementForm({...reimbursementForm, totalAmount: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                        step="0.01"
+                                        value={reimbursementData.amount}
+                                        onChange={e => setReimbursementData('amount', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        required
                                     />
+                                    {errors?.amount && (
+                                        <div className="text-red-500 text-sm mt-1">{errors.amount}</div>
+                                    )}
                                 </div>
+
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                        </svg>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.description}
+                                        Description
+                                    </label>
+                                    <textarea
+                                        value={reimbursementData.description}
+                                        onChange={e => setReimbursementData('description', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        required
+                                    />
+                                    {errors?.description && (
+                                        <div className="text-red-500 text-sm mt-1">{errors.description}</div>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.receipt}
                                         Receipt
                                     </label>
                                     <input
                                         type="file"
-                                        onChange={(e) => setReimbursementForm({...reimbursementForm, receipt: e.target.files[0]})}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                        onChange={e => setReimbursementData('receipt', e.target.files[0])}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        required
+                                    />
+                                    {errors?.receipt && (
+                                        <div className="text-red-500 text-sm mt-1">{errors.receipt}</div>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
+                                    <textarea
+                                        value={reimbursementData.remarks}
+                                        onChange={e => setReimbursementData('remarks', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
                                     />
                                 </div>
-                                <div className="pt-4">
+
+                                <button 
+                                    type="submit" 
+                                    disabled={reimbursementProcessing}
+                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                >
+                                    Submit Reimbursement Request
+                                </button>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Liquidation Form */}
+                    {formType === 'liquidation' && (
+                        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                            <form onSubmit={handleLiquidationSubmit} className="space-y-4">
+                                {/* Department Selection */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.department}
+                                        Department
+                                    </label>
+                                    <select
+                                        value={liquidationData.department || ''}
+                                        onChange={(e) => setLiquidationData(prevData => ({
+                                            ...prevData,
+                                            department: e.target.value
+                                        }))}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Department</option>
+                                        {departmentOptions.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.department && (
+                                        <p className="mt-1 text-sm text-red-600" role="alert">
+                                            {errors.department}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Date Input */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.date}
+                                        Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={liquidationData.date || ''}
+                                        onChange={(e) => setLiquidationData(prevData => ({
+                                            ...prevData,
+                                            date: e.target.value
+                                        }))}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                    {errors.date && (
+                                        <p className="mt-1 text-sm text-red-600" role="alert">
+                                            {errors.date}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Particulars Input */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.particulars}
+                                        Particulars
+                                    </label>
+                                    <textarea
+                                        value={liquidationData.particulars || ''}
+                                        onChange={(e) => setLiquidationData(prevData => ({
+                                            ...prevData,
+                                            particulars: e.target.value
+                                        }))}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                    {errors.particulars && (
+                                        <p className="mt-1 text-sm text-red-600" role="alert">
+                                            {errors.particulars}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Cash Advance Amount Input */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.cashAdvanceAmount}
+                                        Cash Advance Amount
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={liquidationData.cash_advance_amount || ''}
+                                        onChange={(e) => {
+                                            const cashAdvance = parseFloat(e.target.value) || 0;
+                                            const totalAmount = parseFloat(liquidationData.total_amount) || 0;
+                                            
+                                            setLiquidationData(prevData => ({
+                                                ...prevData,
+                                                cash_advance_amount: cashAdvance,
+                                                amount_to_refund: Math.max(0, cashAdvance - totalAmount).toFixed(2),
+                                                amount_to_reimburse: Math.max(0, totalAmount - cashAdvance).toFixed(2)
+                                            }));
+                                        }}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                    {errors.cash_advance_amount && (
+                                        <p className="mt-1 text-sm text-red-600" role="alert">
+                                            {errors.cash_advance_amount}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Items Section */}
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                            {icons.items}
+                                            Items
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => addLiquidationItem()}
+                                            className="text-sm text-blue-600 hover:text-blue-700"
+                                        >
+                                            + Add Item
+                                        </button>
+                                    </div>
+                                    
+                                    {liquidationData.items.map((item, index) => (
+                                        <div key={index} className="grid grid-cols-4 gap-4 p-4 border rounded-md">
+                                            <div className="col-span-1">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Category"
+                                                    value={item.category || ''}
+                                                    onChange={(e) => updateLiquidationItem(index, 'category', e.target.value)}
+                                                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Description"
+                                                    value={item.description || ''}
+                                                    onChange={(e) => updateLiquidationItem(index, 'description', e.target.value)}
+                                                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-span-1 flex gap-2">
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    placeholder="Amount"
+                                                    value={item.amount || ''}
+                                                    onChange={(e) => updateLiquidationItem(index, 'amount', e.target.value)}
+                                                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    required
+                                                />
+                                                {index > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeLiquidationItem(index)}
+                                                        className="text-red-600 hover:text-red-700"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Summary Section */}
+                                <div className="grid grid-cols-3 gap-4 mt-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Total Amount</label>
+                                        <input
+                                            type="number"
+                                            value={parseFloat(liquidationData.total_amount || 0).toFixed(2)}
+                                            className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100"
+                                            readOnly
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Amount to Refund</label>
+                                        <input
+                                            type="number"
+                                            value={parseFloat(liquidationData.amount_to_refund || 0).toFixed(2)}
+                                            className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100"
+                                            readOnly
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Amount to Reimburse</label>
+                                        <input
+                                            type="number"
+                                            value={parseFloat(liquidationData.amount_to_reimburse || 0).toFixed(2)}
+                                            className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100"
+                                            readOnly
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Submit Button */}
+                                <div className="mt-6">
                                     <button
                                         type="submit"
-                                        className="w-full flex items-center justify-center bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                        disabled={liquidationProcessing}
+                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                                     >
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        Submit Reimbursement
+                                        {liquidationProcessing ? 'Processing...' : 'Submit Liquidation'}
                                     </button>
                                 </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Petty Cash Form */}
+                    {formType === 'pettycash' && auth.user.role === 'admin' && (
+                        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                            <form onSubmit={handlePettyCashSubmit} className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                            {icons.date}
+                                            Date Requested
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={pettyCashData.date}
+                                            onChange={(e) => setPettyCashData({
+                                                ...pettyCashData,
+                                                date: e.target.value
+                                            })}
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                            {icons.date}
+                                            Date Needed
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={pettyCashData.dateNeeded}
+                                            onChange={(e) => setPettyCashData({
+                                                ...pettyCashData,
+                                                dateNeeded: e.target.value
+                                            })}
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.purpose}
+                                        Purpose
+                                    </label>
+                                    <textarea
+                                        value={pettyCashData.purpose}
+                                        onChange={(e) => setPettyCashData({
+                                            ...pettyCashData,
+                                            purpose: e.target.value
+                                        })}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.amount}
+                                        Amount
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={pettyCashData.amount}
+                                        onChange={(e) => setPettyCashData({
+                                            ...pettyCashData,
+                                            amount: e.target.value
+                                        })}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                {/* Items Section */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.items}
+                                        Items
+                                    </label>
+                                    {pettyCashData.items.map((item, index) => (
+                                        <div key={index} className="grid grid-cols-12 gap-4 mb-2">
+                                            <div className="col-span-3">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Category"
+                                                    value={item.category}
+                                                    onChange={(e) => handlePettyCashItemChange(index, 'category', e.target.value)}
+                                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-span-6">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Description"
+                                                    value={item.description}
+                                                    onChange={(e) => handlePettyCashItemChange(index, 'description', e.target.value)}
+                                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    placeholder="Amount"
+                                                    value={item.amount}
+                                                    onChange={(e) => handlePettyCashItemChange(index, 'amount', e.target.value)}
+                                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-span-1 flex items-center">
+                                                {index > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemovePettyCashItem(index)}
+                                                        className="text-red-600 hover:text-red-800"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={handleAddPettyCashItem}
+                                        className="mt-2 text-sm text-blue-600 hover:text-blue-700 flex items-center"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                                        </svg>
+                                        Add Item
+                                    </button>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        {icons.amount}
+                                        Total Amount
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={pettyCashData.amount}
+                                        className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm"
+                                        readOnly
+                                    />
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                    >
+                                        {processing ? 'Processing...' : 'Submit Request'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* HR Expenses Request Form */}
+                    {formType === 'hrExpenses' && (
+                        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                            <form onSubmit={handleHrExpensesSubmit} className="space-y-4">
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.hrExpenses}
+                                        Requestor Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={hrExpensesData.requestor_name}
+                                        onChange={(e) => setHrExpensesData('requestor_name', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.date}
+                                        Date of Request
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={hrExpensesData.date_of_request}
+                                        onChange={(e) => setHrExpensesData('date_of_request', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.hrExpenses}
+                                        Expenses Category
+                                    </label>
+                                    <select
+                                        value={hrExpensesData.expenses_category}
+                                        onChange={(e) => setHrExpensesData('expenses_category', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Category</option>
+                                        <option value="Salary">Salary</option>
+                                        <option value="Benefits">Benefits</option>
+                                        <option value="Recruitment">Recruitment</option>
+                                        <option value="Training">Training</option>
+                                        <option value="Employee Engagement">Employee Engagement</option>
+                                        <option value="Intern Allowance">Intern Allowance</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.hrExpenses}
+                                        Description of Expenses
+                                    </label>
+                                    <textarea
+                                        value={hrExpensesData.description_of_expenses}
+                                        onChange={(e) => setHrExpensesData('description_of_expenses', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.hrExpenses}
+                                        Breakdown of Expense
+                                    </label>
+                                    <textarea
+                                        value={hrExpensesData.breakdown_of_expense}
+                                        onChange={(e) => setHrExpensesData('breakdown_of_expense', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.amount}
+                                        Total Amount Requested
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={hrExpensesData.total_amount_requested}
+                                        onChange={(e) => setHrExpensesData('total_amount_requested', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.date}
+                                        Expected Payment Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={hrExpensesData.expected_payment_date}
+                                        onChange={(e) => setHrExpensesData('expected_payment_date', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.hrExpenses}
+                                        Additional Comment (if any)
+                                    </label>
+                                    <textarea
+                                        value={hrExpensesData.additional_comment}
+                                        onChange={(e) => setHrExpensesData('additional_comment', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                    />
+                                </div>
+
+                                <button 
+                                    type="submit" 
+                                    disabled={hrExpensesProcessing}
+                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                >
+                                    Submit HR Expenses Request
+                                </button>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Operating Expenses Request Form */}
+                    {formType === 'operatingExpenses' && (
+                        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                            <form onSubmit={handleOperatingExpensesSubmit} className="space-y-4">
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.operatingExpenses}
+                                        Requestor Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={operatingExpensesData.requestor_name}
+                                        onChange={(e) => setOperatingExpensesData('requestor_name', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.department}
+                                        Department Category
+                                    </label>
+                                    <select
+                                        value={operatingExpensesData.department_category}
+                                        onChange={(e) => setOperatingExpensesData('department_category', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Department</option>
+                                        <option value="Apptech">Apptech</option>
+                                        <option value="Business Dev.">Business Dev.</option>
+                                        <option value="HR">HR</option>
+                                        <option value="Admin">Admin</option>
+                                    </select>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.date}
+                                        Date of Request
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={operatingExpensesData.date_of_request}
+                                        onChange={(e) => setOperatingExpensesData('date_of_request', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.operatingExpenses}
+                                        Expenses Category
+                                    </label>
+                                    <select
+                                        value={operatingExpensesData.expenses_category}
+                                        onChange={(e) => setOperatingExpensesData('expenses_category', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Category</option>
+                                        <option value="Office Supplies">Office Supplies</option>
+                                        <option value="Software">Software</option>
+                                        <option value="Service">Service</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="Assets">Assets</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.operatingExpenses}
+                                        Breakdown
+                                    </label>
+                                    <textarea
+                                        value={operatingExpensesData.breakdown}
+                                        onChange={(e) => setOperatingExpensesData('breakdown', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.operatingExpenses}
+                                        Payment Method
+                                    </label>
+                                    <select
+                                        value={operatingExpensesData.payment_method}
+                                        onChange={(e) => setOperatingExpensesData('payment_method', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Payment Method</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Gcash">Gcash</option>
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                        <option value="Reimbursement">Reimbursement</option>
+                                    </select>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.date}
+                                        Expected Date of Payment
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={operatingExpensesData.expected_date_of_payment}
+                                        onChange={(e) => setOperatingExpensesData('expected_date_of_payment', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.purpose}
+                                        Purpose of Expense
+                                    </label>
+                                    <textarea
+                                        value={operatingExpensesData.purpose_of_expense}
+                                        onChange={(e) => setOperatingExpensesData('purpose_of_expense', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                </div>
+
+                                <button 
+                                    type="submit" 
+                                    disabled={operatingExpensesProcessing}
+                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                >
+                                    Submit Operating Expenses Request
+                                </button>
                             </form>
                         </div>
                     )}
@@ -511,67 +1483,84 @@ export default function RequestForm() {
                 {/* Status Section - Takes up full width on mobile, 1 column on large screens */}
                 <div className="lg:col-span-1 order-1 lg:order-2">
                     <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
-                        <h3 className="text-lg font-medium mb-4 flex items-center">
-                            <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                            Recent Requests
-                        </h3>
-
-                        {/* Responsive status cards */}
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                        <h3 className="text-lg font-medium mb-4">Recent Requests</h3>
+                        <div className="space-y-3">
                             {requests.map(request => (
-                                <div key={request.id} 
-                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
+                                <div 
+                                    key={request.id} 
+                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                                    onClick={() => {
+                                        setSelectedRequest(request);
+                                        setIsModalOpen(true);
+                                    }}
                                 >
                                     <div>
-                                        <h4 className="font-medium">Request #{request.id}</h4>
+                                        <p className="font-medium">Request #{request.id}</p>
                                         <p className="text-sm text-gray-500">{request.type}</p>
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                        request.status === 'Approved' 
-                                            ? 'bg-green-100 text-green-800'
-                                            : request.status === 'Pending'
-                                            ? 'bg-yellow-100 text-yellow-800'
-                                            : 'bg-red-100 text-red-800'
+                                    <span className={`px-2 py-1 rounded-full text-sm ${
+                                        request.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                                        request.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                        'bg-red-100 text-red-800'
                                     }`}>
                                         {request.status}
                                     </span>
                                 </div>
                             ))}
                         </div>
-
-                        {/* Quick Stats - Responsive grid */}
-                        <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-4 border-t pt-4">
-                            <div className="text-center">
-                                <p className="text-sm font-medium text-gray-500">Pending</p>
-                                <p className="text-lg font-semibold text-yellow-600">
-                                    {requests.filter(r => r.status === 'Pending').length}
-                                </p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-sm font-medium text-gray-500">Approved</p>
-                                <p className="text-lg font-semibold text-green-600">
-                                    {requests.filter(r => r.status === 'Approved').length}
-                                </p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-sm font-medium text-gray-500">Rejected</p>
-                                <p className="text-lg font-semibold text-red-600">
-                                    {requests.filter(r => r.status === 'Rejected').length}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Responsive button */}
-                        <button 
-                            className="mt-6 w-full text-sm bg-gray-50 text-gray-600 px-4 py-2 rounded-md hover:bg-gray-100 transition-colors"
-                        >
-                            View All Requests
-                        </button>
                     </div>
                 </div>
             </div>
+
+            {/* Modal */}
+            <RequestDetailsModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                request={selectedRequest}
+            />
         </div>
     );
-} 
+}
+
+// Update the handlers for the new structure
+const handlePettyCashItemChange = (index, field, value) => {
+    const newItems = [...pettyCashData.items];
+    newItems[index] = { ...newItems[index], [field]: value };
+    
+    // Calculate new total
+    const total = newItems.reduce((sum, item) => 
+        sum + (parseFloat(item.amount) || 0), 0
+    );
+
+    setPettyCashData(prev => ({
+        ...prev,
+        items: newItems,
+        amount: total.toFixed(2)
+    }));
+};
+
+const handleAddPettyCashItem = () => {
+    setPettyCashData(prev => ({
+        ...prev,
+        items: [...prev.items, { category: '', description: '', amount: '' }]
+    }));
+};
+
+const handleRemovePettyCashItem = (index) => {
+    setPettyCashData(prev => {
+        const newItems = prev.items.filter((_, i) => i !== index);
+        const total = newItems.reduce((sum, item) => 
+            sum + (parseFloat(item.amount) || 0), 0
+        );
+        return {
+            ...prev,
+            items: newItems,
+            amount: total.toFixed(2)
+        };
+    });
+};
+
+const handlePettyCashSubmit = (e) => {
+    e.preventDefault();
+    router.post(route('petty-cash.store'), pettyCashData);
+};

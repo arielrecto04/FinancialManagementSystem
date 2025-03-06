@@ -1,17 +1,28 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import RequestTable from '@/Components/RequestTable';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
+import RequestDetailsModal from '@/Components/RequestDetailsModal';
+import axios from 'axios';
 
-export default function Reports() {
+export default function Reports({ auth, requests, statistics, filters }) {
+    const [isDateRangeActive, setIsDateRangeActive] = useState(filters.isDateRangeActive ?? false);
     const [dateRange, setDateRange] = useState({
-        startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
-        endDate: new Date()
+        startDate: filters.startDate ? new Date(filters.startDate) : new Date(new Date().setDate(new Date().getDate() - 30)),
+        endDate: filters.endDate ? new Date(filters.endDate) : new Date()
     });
-    const [selectedRequestType, setSelectedRequestType] = useState('all');
+    const [selectedRequestType, setSelectedRequestType] = useState(filters.requestType || 'all');
     const [isFiltersVisible, setIsFiltersVisible] = useState(true);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+    const [actionType, setActionType] = useState(null);
+    const [remarks, setRemarks] = useState('');
+    const [localRemarks, setLocalRemarks] = useState('');
+    const [adminBudget, setAdminBudget] = useState(null);
+    const [localStatistics, setLocalStatistics] = useState(statistics);
 
     const statusColors = {
         pending: 'bg-yellow-100 text-yellow-800',
@@ -19,19 +30,471 @@ export default function Reports() {
         rejected: 'bg-red-100 text-red-800'
     };
 
+    const handleRowClick = (request) => {
+        setSelectedRequest(request);
+        setIsModalOpen(true);
+    };
+
+    const handleFilterChange = () => {
+        if (!route().current('reports.index')) return;
+
+        router.get(route('reports.index'), {
+            startDate: isDateRangeActive ? dateRange.startDate.toISOString().split('T')[0] : null,
+            endDate: isDateRangeActive ? dateRange.endDate.toISOString().split('T')[0] : null,
+            requestType: selectedRequestType,
+            isDateRangeActive: isDateRangeActive,
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const handleAction = (request, action) => {
+        setSelectedRequest(request);
+        setActionType(action);
+        setLocalRemarks('');
+        setIsActionModalOpen(true);
+    };
+
+    const submitAction = () => {
+        router.post(route('reports.update-status', selectedRequest.id), {
+            status: actionType,
+            type: selectedRequest.type,
+            remarks: localRemarks
+        }, {
+            onSuccess: () => {
+                // Update local statistics
+                setLocalStatistics(prev => ({
+                    ...prev,
+                    pendingRequests: prev.pendingRequests - 1,
+                    completedRequests: prev.completedRequests + 1,
+                }));
+
+                // Update adminBudget if action is 'approved'
+                if (actionType === 'approved' && adminBudget) {
+                    const requestAmount = selectedRequest.type === 'Reimbursement' 
+                        ? parseFloat(selectedRequest.amount) 
+                        : parseFloat(selectedRequest.total_amount);
+
+                    setAdminBudget(prev => ({
+                        ...prev,
+                        remaining_budget: parseFloat(prev.remaining_budget) - requestAmount,
+                        used_budget: parseFloat(prev.used_budget) + requestAmount
+                    }));
+                }
+
+                // Close modal and reset remarks
+                setIsActionModalOpen(false);
+                setLocalRemarks('');
+                
+                // Refresh the page to get updated data
+                router.reload();
+            },
+        });
+    };
+
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            handleFilterChange();
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [dateRange, selectedRequestType, isDateRangeActive]);
+
+    useEffect(() => {
+        if (auth.user.role === 'admin') {
+            axios.get('/admin/budget')
+                .then(response => {
+                    setAdminBudget(response.data);
+                })
+                .catch(error => {
+                    console.error('Error fetching budget:', error);
+                });
+        }
+    }, []);
+
+    const RemarksTextarea = ({ value, onChange }) => {
+        return (
+            <div className="mb-5">
+                <label htmlFor="remarks" className="block text-sm font-medium text-gray-700 mb-2">
+                    Remarks
+                </label>
+                <textarea
+                    id="remarks"
+                    value={value}
+                    onChange={onChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    rows="3"
+                    placeholder="Enter your remarks here (optional)"
+                />
+            </div>
+        );
+    };
+
+    const ActionModalContent = ({ selectedRequest, actionType, localRemarks, setLocalRemarks, onCancel, onConfirm }) => {
+        const requestAmount = selectedRequest.type === 'Reimbursement' 
+            ? parseFloat(selectedRequest.amount) 
+            : parseFloat(selectedRequest.total_amount);
+
+        // Add proper number comparison
+        const isInsufficientBudget = actionType === 'approved' && 
+            adminBudget && 
+            parseFloat(adminBudget.remaining_budget) < requestAmount;
+
+        // Debug logging
+        console.log('Budget Check:', {
+            remainingBudget: adminBudget?.remaining_budget,
+            requestAmount,
+            isInsufficientBudget
+        });
+
+        return (
+            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+                {/* Header */}
+                <div className="mb-5">
+                    <h3 className={`text-xl font-semibold ${
+                        actionType === 'approved' ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                        {actionType === 'approved' ? 'Approve Request' : 'Reject Request'}
+                    </h3>
+                    <p className="mt-2 text-sm text-gray-600">
+                        Request Number: <span className="font-medium">{selectedRequest.request_number || 'N/A'}</span>
+                    </p>
+                </div>
+
+                {/* Request Details */}
+                <div className="mb-5 p-4 bg-gray-50 rounded-lg">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="col-span-2">
+                            <p className="text-gray-600">Requested By</p>
+                            <p className="font-medium">{selectedRequest.user_name || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-gray-600">Type</p>
+                            <p className="font-medium">{selectedRequest.type || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-gray-600">Department</p>
+                            <p className="font-medium">{selectedRequest.department || 'N/A'}</p>
+                        </div>
+                        <div className="col-span-2">
+                            <p className="text-gray-600">
+                                {selectedRequest.type === 'Liquidation' ? 'Date' : 'Department'}
+                            </p>
+                            <p className="font-medium">
+                                {selectedRequest.type === 'Liquidation' 
+                                    ? selectedRequest.date 
+                                    : selectedRequest.department || 'N/A'}
+                            </p>
+                        </div>
+                        <div className="col-span-2">
+                            <p className="text-gray-600">
+                                {selectedRequest.type === 'Liquidation' ? 'Total Amount (Cash Advance)' : 'Total Amount'}
+                            </p>
+                            <p className="font-medium">
+                                {requestAmount.toLocaleString()}
+                                {selectedRequest.type === 'Liquidation' && 
+                                    ` (₱${parseFloat(selectedRequest.cash_advance_amount).toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    })})`
+                                }
+                            </p>
+                        </div>
+                        {selectedRequest.type === 'Liquidation' && (
+                            <>
+                                <div>
+                                    <p className="text-gray-600">Amount to Refund</p>
+                                    <p className="font-medium">
+                                        ₱{parseFloat(selectedRequest.amount_to_refund).toLocaleString(undefined, {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        })}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-600">Amount to Reimburse</p>
+                                    <p className="font-medium">
+                                        ₱{parseFloat(selectedRequest.amount_to_reimburse).toLocaleString(undefined, {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        })}
+                                    </p>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {/* Remarks Input */}
+                <RemarksTextarea 
+                    value={localRemarks} 
+                    onChange={setLocalRemarks} 
+                />
+
+                {/* Add budget information */}
+                {actionType === 'approved' && adminBudget && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm text-gray-600">Available Budget</p>
+                                <p className="font-medium text-lg">
+                                    ₱{parseFloat(adminBudget.remaining_budget).toLocaleString()}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600">Request Amount</p>
+                                <p className="font-medium text-lg">
+                                    ₱{requestAmount.toLocaleString()}
+                                </p>
+                            </div>
+                        </div>
+                        {isInsufficientBudget && (
+                            <div className="mt-2 p-2 bg-red-50 text-red-700 rounded">
+                                Insufficient budget to approve this request
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 mt-4">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onConfirm}
+                        disabled={isInsufficientBudget}
+                        className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+                            actionType === 'approved' 
+                                ? isInsufficientBudget 
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-green-600 hover:bg-green-700' 
+                                : 'bg-red-600 hover:bg-red-700'
+                        }`}
+                    >
+                        {actionType === 'approved' ? 'Approve' : 'Reject'}
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    const ActionModal = () => {
+        if (!isActionModalOpen || !selectedRequest) return null;
+
+        return (
+            <div className="fixed inset-0 z-50 overflow-y-auto">
+                <div className="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+                    <div 
+                        className="fixed inset-0 bg-gray-500/75 backdrop-blur-sm transition-opacity" 
+                        onClick={() => setIsActionModalOpen(false)}
+                    />
+                    
+                    <ActionModalContent 
+                        selectedRequest={selectedRequest}
+                        actionType={actionType}
+                        localRemarks={localRemarks}
+                        setLocalRemarks={setLocalRemarks}
+                        onCancel={() => {
+                            setIsActionModalOpen(false);
+                            setLocalRemarks('');
+                        }}
+                        onConfirm={() => {
+                            setRemarks(localRemarks);
+                            submitAction();
+                        }}
+                    />
+                </div>
+            </div>
+        );
+    };
+
+    // Update the RequestTable component to include action buttons
+    const ActionButtons = ({ request }) => (
+        <div className="flex space-x-2">
+            {request.status === 'pending' && (
+                <>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleAction(request, 'approved');
+                        }}
+                        className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                    >
+                        Approve
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleAction(request, 'rejected');
+                        }}
+                        className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                    >
+                        Reject
+                    </button>
+                </>
+            )}
+        </div>
+    );
+
+    // Add liquidation to request type options
+    const requestTypeOptions = [
+        { value: 'all', label: 'All Requests' },
+        { value: 'supply', label: 'Supply Requests' },
+        { value: 'reimbursement', label: 'Reimbursement Requests' },
+        { value: 'liquidation', label: 'Liquidation Requests' }
+    ];
+
+    // Add percentage calculation helper
+    const calculatePercentage = (current, previous) => {
+        if (!previous) return 0;
+        return ((current - previous) / previous * 100).toFixed(1);
+    };
+
+    // Add these functions to handle exports
+    const handleExcelExport = () => {
+        const form = document.createElement('form');
+        form.method = 'GET';
+        form.action = '/reports/export-excel';
+
+        // Add hidden fields for the filters
+        const filters = {
+            startDate: isDateRangeActive ? dateRange.startDate.toISOString().split('T')[0] : null,
+            endDate: isDateRangeActive ? dateRange.endDate.toISOString().split('T')[0] : null,
+            requestType: selectedRequestType,
+            isDateRangeActive: isDateRangeActive,
+        };
+
+        Object.keys(filters).forEach(key => {
+            if (filters[key] !== null) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = filters[key];
+                form.appendChild(input);
+            }
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    };
+
+    const handlePDFExport = () => {
+        const form = document.createElement('form');
+        form.method = 'GET';
+        form.action = '/reports/export-pdf';
+
+        // Add hidden fields for the filters
+        const filters = {
+            startDate: isDateRangeActive ? dateRange.startDate.toISOString().split('T')[0] : null,
+            endDate: isDateRangeActive ? dateRange.endDate.toISOString().split('T')[0] : null,
+            requestType: selectedRequestType,
+            isDateRangeActive: isDateRangeActive,
+        };
+
+        Object.keys(filters).forEach(key => {
+            if (filters[key] !== null) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = filters[key];
+                form.appendChild(input);
+            }
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    };
+
+    // Add budget summary component
+    const BudgetSummary = ({ adminBudget }) => {
+        if (!adminBudget) return null;
+
+        return (
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-600">Total Budget</p>
+                            <h3 className="text-2xl font-semibold text-gray-900">
+                                ₱{parseFloat(adminBudget.total_budget).toLocaleString()}
+                            </h3>
+                        </div>
+                        <div className="p-3 bg-blue-100 rounded-full">
+                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-600">Remaining Budget</p>
+                            <h3 className="text-2xl font-semibold text-green-600">
+                                ₱{parseFloat(adminBudget.remaining_budget).toLocaleString()}
+                            </h3>
+                        </div>
+                        <div className="p-3 bg-green-100 rounded-full">
+                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-600">Used Budget</p>
+                            <h3 className="text-2xl font-semibold text-blue-600">
+                                ₱{parseFloat(adminBudget.used_budget).toLocaleString()}
+                            </h3>
+                        </div>
+                        <div className="p-3 bg-blue-100 rounded-full">
+                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div className="mt-2">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                                className="bg-blue-600 h-2 rounded-full" 
+                                style={{ width: `${(adminBudget.used_budget / adminBudget.total_budget) * 100}%` }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title="Reports" />
 
             <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    {auth.user.role === 'admin' && <BudgetSummary adminBudget={adminBudget} />}
+
                     {/* Summary Cards */}
                     <div className="grid gap-4 mb-6 md:grid-cols-3">
+                        {/* Total Requests Card */}
                         <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Total Requests</p>
-                                    <h3 className="text-2xl font-semibold">1,234</h3>
+                                    <h3 className="text-2xl font-semibold">
+                                        {localStatistics.totalRequests.toLocaleString()}
+                                    </h3>
                                 </div>
                                 <div className="p-3 bg-blue-100 rounded-full">
                                     <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,20 +503,27 @@ export default function Reports() {
                                 </div>
                             </div>
                             <div className="mt-4">
-                                <span className="text-sm text-green-600 flex items-center">
-                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <span className={`text-sm flex items-center ${
+                                    statistics.totalRequestsChange >= 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                    <svg className={`w-4 h-4 mr-1 transform ${
+                                        statistics.totalRequestsChange >= 0 ? 'rotate-0' : 'rotate-180'
+                                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                     </svg>
-                                    12% increase
+                                    {Math.abs(statistics.totalRequestsChange)}% from last period
                                 </span>
                             </div>
                         </div>
 
+                        {/* Pending Requests Card */}
                         <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Pending Requests</p>
-                                    <h3 className="text-2xl font-semibold">45</h3>
+                                    <h3 className="text-2xl font-semibold">
+                                        {localStatistics.pendingRequests.toLocaleString()}
+                                    </h3>
                                 </div>
                                 <div className="p-3 bg-yellow-100 rounded-full">
                                     <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,15 +532,20 @@ export default function Reports() {
                                 </div>
                             </div>
                             <div className="mt-4">
-                                <span className="text-sm text-yellow-600">Requires attention</span>
+                                <span className="text-sm text-yellow-600">
+                                    Requires attention
+                                </span>
                             </div>
                         </div>
 
+                        {/* Completed Requests Card */}
                         <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Completed Requests</p>
-                                    <h3 className="text-2xl font-semibold">892</h3>
+                                    <h3 className="text-2xl font-semibold">
+                                        {localStatistics.completedRequests.toLocaleString()}
+                                    </h3>
                                 </div>
                                 <div className="p-3 bg-green-100 rounded-full">
                                     <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,11 +554,15 @@ export default function Reports() {
                                 </div>
                             </div>
                             <div className="mt-4">
-                                <span className="text-sm text-green-600 flex items-center">
-                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <span className={`text-sm flex items-center ${
+                                    statistics.completedRequestsChange >= 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                    <svg className={`w-4 h-4 mr-1 transform ${
+                                        statistics.completedRequestsChange >= 0 ? 'rotate-0' : 'rotate-180'
+                                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                     </svg>
-                                    8% increase
+                                    {Math.abs(statistics.completedRequestsChange)}% from last period
                                 </span>
                             </div>
                         </div>
@@ -95,13 +574,13 @@ export default function Reports() {
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-xl font-semibold flex items-center">
                                     <svg className="w-6 h-6 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V17a2 2 0 01-2 2z" />
                                     </svg>
                                     Request Reports
                                 </h2>
                                 <div className="flex space-x-2">
                                     <button 
-                                        onClick={() => setIsFiltersVisible(!isFiltersVisible)}
+                                        onClick={() =>  setIsFiltersVisible(!isFiltersVisible)}
                                         className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                     >
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,13 +588,19 @@ export default function Reports() {
                                         </svg>
                                         {isFiltersVisible ? 'Hide Filters' : 'Show Filters'}
                                     </button>
-                                    <button className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                    <button 
+                                        onClick={handleExcelExport}
+                                        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                    >
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                         </svg>
                                         Export Excel
                                     </button>
-                                    <button className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                    <button 
+                                        onClick={handlePDFExport}
+                                        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                    >
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                         </svg>
@@ -127,18 +612,41 @@ export default function Reports() {
                             {/* Filters Section */}
                             {isFiltersVisible && (
                                 <div className="p-4 mb-6 bg-gray-50 rounded-lg border border-gray-200">
-                                    <div className="space-y-4">
+                                    <div className="flex flex-col space-y-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Date Range
-                                            </label>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <label className="block text-sm font-medium text-gray-700">
+                                                    Date Range Filter
+                                                </label>
+                                                <button
+                                                    onClick={() => setIsDateRangeActive(!isDateRangeActive)}
+                                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                                                        isDateRangeActive ? 'bg-blue-600' : 'bg-gray-200'
+                                                    }`}
+                                                >
+                                                    <span className="sr-only">Use date range</span>
+                                                    <span
+                                                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                            isDateRangeActive ? 'translate-x-5' : 'translate-x-0'
+                                                        }`}
+                                                    />
+                                                </button>
+                                            </div>
                                             <DatePicker
                                                 selectsRange={true}
                                                 startDate={dateRange.startDate}
                                                 endDate={dateRange.endDate}
-                                                onChange={(update) => setDateRange(update)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                                onChange={(update) => {
+                                                    setDateRange({
+                                                        startDate: update[0],
+                                                        endDate: update[1]
+                                                    });
+                                                }}
+                                                className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
+                                                    !isDateRangeActive ? 'opacity-50 cursor-not-allowed' : ''
+                                                }`}
                                                 placeholderText="Select date range"
+                                                disabled={!isDateRangeActive}
                                             />
                                         </div>
 
@@ -151,18 +659,24 @@ export default function Reports() {
                                                 onChange={(e) => setSelectedRequestType(e.target.value)}
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                                             >
-                                                <option value="all">All Requests</option>
-                                                <option value="supply">Supply Requests</option>
-                                                <option value="reimbursement">Reimbursement Requests</option>
+                                                {requestTypeOptions.map((option) => (
+                                                    <option key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Enhanced Request Table */}
+                            {/* Request Table */}
                             <div className="mt-4 overflow-hidden border border-gray-200 rounded-lg">
-                                <RequestTable />
+                                <RequestTable 
+                                    requests={requests}
+                                    onRowClick={handleRowClick}
+                                    actionRenderer={(request) => <ActionButtons request={request} />}
+                                />
                             </div>
 
                             {/* Pagination */}
@@ -213,6 +727,16 @@ export default function Reports() {
                     </div>
                 </div>
             </div>
+
+            {/* Add Action Modal */}
+            <ActionModal />
+
+            {/* Existing Modal */}
+            <RequestDetailsModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                request={selectedRequest}
+            />
         </AuthenticatedLayout>
     );
 }
