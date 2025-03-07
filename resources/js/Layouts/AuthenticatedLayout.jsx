@@ -7,9 +7,7 @@ import { useState } from 'react';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
-
-    const [showingNavigationDropdown, setShowingNavigationDropdown] =
-        useState(false);
+    const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
 
     return (
         <div className="min-h-screen bg-gray-100">
@@ -44,6 +42,13 @@ export default function AuthenticatedLayout({ header, children }) {
                                             active={route().current('reports.index')}
                                         >
                                             Reports
+                                        </NavLink>
+
+                                        <NavLink
+                                            href={route('users.index')}
+                                            active={route().current('users.index')}
+                                        >
+                                            User Management
                                         </NavLink>
                                     </>
                                 )}
@@ -171,6 +176,13 @@ export default function AuthenticatedLayout({ header, children }) {
                                     active={route().current('reports.index')}
                                 >
                                     Reports
+                                </ResponsiveNavLink>
+
+                                <ResponsiveNavLink
+                                    href={route('users.index')}
+                                    active={route().current('users.index')}
+                                >
+                                    User Management
                                 </ResponsiveNavLink>
                             </>
                         )}

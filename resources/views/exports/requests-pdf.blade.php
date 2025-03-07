@@ -5,230 +5,198 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Requests Report</title>
     <style>
-        /* Reset and Base Styles */
-        body { 
-            font-family: DejaVu Sans, sans-serif;
-            margin: 0;
-            padding: 30px;
+        @font-face {
+            font-family: 'DejaVu Sans';
+            src: url('{{ storage_path('fonts/DejaVuSans.ttf') }}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 10px;
+            line-height: 1.3;
+            margin: 20px;
             color: #374151;
-            line-height: 1.5;
         }
-
-        /* Header Styles */
-        .header { 
-            margin-bottom: 40px;
+        .header {
             text-align: center;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
         }
-
         .logo {
-            max-width: 180px;
+            max-width: 120px;
             height: auto;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
-
         .company-name {
-            font-size: 28px;
+            font-size: 16px;
             font-weight: bold;
-            margin: 15px 0;
+            margin-bottom: 5px;
             color: #1e40af;
-            letter-spacing: 0.5px;
         }
-
         .report-title {
-            font-size: 22px;
-            margin: 10px 0;
-            color: #4b5563;
+            font-size: 14px;
+            margin-bottom: 5px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            color: #4b5563;
         }
-
-        .date { 
+        .date {
+            font-size: 10px;
             color: #6b7280;
-            margin: 10px 0;
-            font-size: 14px;
         }
-
-        /* Table Styles */
-        .table-container {
-            margin: 20px 0;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 9px;
         }
-
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            background-color: white;
-            font-size: 14px;
+        th, td {
+            border: 0.5px solid #e5e7eb;
+            padding: 6px;
+            text-align: left;
         }
-
-        th { 
+        th {
             background-color: #1e40af;
             color: white;
-            padding: 15px 12px;
-            text-align: left;
-            font-weight: 600;
+            font-weight: bold;
             text-transform: uppercase;
-            font-size: 13px;
-            letter-spacing: 0.5px;
+            font-size: 8px;
         }
-
-        td { 
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-            color: #4b5563;
-        }
-
         tr:nth-child(even) {
             background-color: #f8fafc;
         }
-
-        tr:hover {
-            background-color: #f3f4f6;
-        }
-
-        /* Status Badges */
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: capitalize;
-        }
-
         .status-pending {
-            background-color: #fef3c7;
-            color: #92400e;
+            color: #f59e0b;
+            font-weight: 600;
         }
-
         .status-approved {
-            background-color: #dcfce7;
-            color: #166534;
+            color: #10b981;
+            font-weight: 600;
         }
-
         .status-rejected {
-            background-color: #fee2e2;
-            color: #991b1b;
+            color: #ef4444;
+            font-weight: 600;
         }
-
-        /* Amount Column */
         .amount {
-            font-family: DejaVu Sans Mono, monospace;
+            text-align: right;
+            font-family: 'Courier New', monospace;
             font-weight: 600;
         }
-
-        /* Summary and Footer Styles */
-        .summary-and-footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 2px solid #e5e7eb;
-        }
-
-        .summary {
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            padding: 4px 0;
-        }
-
-        .summary-label {
-            color: #6b7280;
-            font-weight: 500;
-        }
-
-        .summary-value {
-            font-weight: 600;
-            color: #1e40af;
-        }
-
-        .footer {
-            text-align: center;
-            font-size: 12px;
-            color: #6b7280;
+        .summary-section {
             margin-top: 20px;
-            padding-top: 20px;
+            padding-top: 15px;
             border-top: 1px solid #e5e7eb;
         }
-
-        .page-number {
-            text-align: right;
+        .summary-title {
             font-size: 12px;
-            color: #9ca3af;
-            margin-top: 10px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .summary-item {
+            background-color: #f8fafc;
+            padding: 8px;
+            border-radius: 4px;
+            border: 0.5px solid #e5e7eb;
+        }
+        .summary-label {
+            font-size: 8px;
+            color: #6b7280;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        .summary-value {
+            font-size: 10px;
+            font-weight: bold;
+            color: #374151;
+        }
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 8px;
+            text-align: center;
+            color: #6b7280;
+        }
+        .page-break {
+            page-break-after: always;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <img src="{{ public_path('images/logo.png') }}" class="logo" alt="Company Logo">
-        <div class="company-name">Innvoato Information Technology Solutions</div>
-        <div class="report-title">Requests Report</div>
+        <div class="company-name">{{ $companyName }}</div>
+        <div class="report-title">{{ $reportTitle }}</div>
         <div class="date">Generated on: {{ $date }}</div>
     </div>
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Request Number</th>
-                    <th>Type</th>
-                    <th>Requested By</th>
-                    <th>Department</th>
-                    <th>Status</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($requests as $request)
-                    <tr>
-                        <td>{{ $request['request_number'] }}</td>
-                        <td>{{ $request['type'] }}</td>
-                        <td>{{ $request['user_name'] }}</td>
-                        <td>{{ $request['department'] }}</td>
-                        <td>
-                            <span class="status-badge status-{{ strtolower($request['status']) }}">
-                                {{ ucfirst($request['status']) }}
-                            </span>
-                        </td>
-                        <td class="amount">PHP {{ number_format($request['total_amount'] ?? $request['amount'] ?? 0, 2) }}</td>
-                        <td>{{ $request['created_at'] }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+    <div class="report-header">
+        <h1>{{ $reportTitle }}</h1>
+        <p>Generated on: {{ $date }}</p>
+        @if($isDateRangeActive)
+        <p>Date Range: {{ $startDate }} - {{ $endDate }}</p>
+        @endif
     </div>
 
-    <div class="summary-and-footer">
-        <div class="summary">
-            <div class="summary-row">
-                <span class="summary-label">Total Requests:</span>
-                <span class="summary-value">{{ count($requests) }}</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label">Total Amount:</span>
-                <span class="summary-value">PHP {{ number_format(collect($requests)->sum(function($request) {
-                    return $request['total_amount'] ?? $request['amount'] ?? 0;
-                }), 2) }}</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label">Date Range:</span>
-                <span class="summary-value">{{ isset($startDate) ? $startDate . ' - ' . $endDate : 'All Time' }}</span>
-            </div>
-        </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Request #</th>
+                <th>Type</th>
+                <th>Requestor</th>
+                <th>Department</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($requests as $request)
+                <tr>
+                    <td>{{ $request['request_number'] }}</td>
+                    <td>{{ $request['type'] }}</td>
+                    <td>{{ $request['user_name'] }}</td>
+                    <td>{{ $request['department'] }}</td>
+                    <td class="amount">PHP {{ number_format($request['total_amount'] ?? $request['amount'] ?? 0, 2) }}</td>
+                    <td class="status-{{ strtolower($request['status']) }}">{{ $request['status'] }}</td>
+                    <td>{{ $request['created_at'] }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
 
-        <div class="footer">
-            <p>© {{ date('Y') }} Innvoato Information Technology Solutions. All rights reserved.</p>
-            <div class="page-number">Page 1 of 1</div>
+    <div class="summary-section">
+        <div class="summary-title">Summary Breakdown</div>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="summary-label">Total Requests</div>
+                <div class="summary-value">{{ count($requests) }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Total Amount</div>
+                <div class="summary-value">PHP {{ number_format(collect($requests)->sum(function($request) {
+                    return $request['total_amount'] ?? $request['amount'] ?? 0;
+                }), 2) }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Date Range</div>
+                <div class="summary-value">{{ isset($startDate) ? $startDate . ' - ' . $endDate : 'All Time' }}</div>
+            </div>
         </div>
+    </div>
+
+    <div class="footer">
+        <p>© {{ date('Y') }} {{ $companyName }}. All rights reserved.</p>
+        <div>Page 1</div>
     </div>
 </body>
 </html> 

@@ -6,6 +6,8 @@ use App\Models\SupplyRequest;
 use App\Models\ReimbursementRequest;
 use App\Models\Liquidation;
 use App\Models\AdminBudget;
+use App\Models\HrExpense;
+use App\Models\OperatingExpense;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -31,106 +33,12 @@ class ReportsController extends Controller
         }
 
         $requestType = strtolower($request->input('requestType', 'all'));
+        $page = $request->input('page', 1);
+        $perPage = 10;
 
-        // Query supply requests
-        $supplyRequests = SupplyRequest::with('user');
-        if ($isDateRangeActive) {
-            $supplyRequests = $supplyRequests->whereBetween('created_at', [$startDate, $endDate]);
-        }
-            
-        // Apply type filter for supply requests
-        if ($requestType !== 'all' && $requestType !== 'supply') {
-            $supplyRequests = collect([]);
-        } else {
-            $supplyRequests = $supplyRequests->get()->map(function ($request) {
-                return [
-                    'id' => $request->id,
-                    'request_number' => $request->request_number,
-                    'type' => 'Supply',
-                    'department' => $request->department,
-                    'status' => $request->status,
-                    'purpose' => $request->purpose,
-                    'date_needed' => $request->date_needed,
-                    'items_json' => json_decode($request->items_json, true),
-                    'total_amount' => $request->total_amount,
-                    'remarks' => $request->remarks,
-                    'created_at' => $request->created_at,
-                    'user_name' => $request->user->name,
-                    'created_at_formatted' => Carbon::parse($request->created_at)->format('M d, Y'),
-                ];
-            });
-        }
-
-        // Query reimbursement requests
-        $reimbursementRequests = ReimbursementRequest::with('user');
-        if ($isDateRangeActive) {
-            $reimbursementRequests = $reimbursementRequests->whereBetween('created_at', [$startDate, $endDate]);
-        }
-
-        // Apply type filter for reimbursement requests
-        if ($requestType !== 'all' && $requestType !== 'reimbursement') {
-            $reimbursementRequests = collect([]);
-        } else {
-            $reimbursementRequests = $reimbursementRequests->get()->map(function ($request) {
-                return [
-                    'id' => $request->id,
-                    'request_number' => $request->request_number,
-                    'type' => 'Reimbursement',
-                    'department' => $request->department,
-                    'status' => $request->status,
-                    'expense_date' => $request->expense_date,
-                    'expense_type' => $request->expense_type,
-                    'amount' => $request->amount,
-                    'description' => $request->description,
-                    'receipt_path' => $request->receipt_path,
-                    'remarks' => $request->remarks,
-                    'created_at' => $request->created_at,
-                    'user_name' => $request->user->name,
-                    'created_at_formatted' => Carbon::parse($request->created_at)->format('M d, Y'),
-                ];
-            });
-        }
-
-        // Query liquidation requests
-        $liquidationRequests = Liquidation::with('user', 'items');
-        if ($isDateRangeActive) {
-            $liquidationRequests = $liquidationRequests->whereBetween('created_at', [$startDate, $endDate]);
-        }
-
-        // Apply type filter for liquidation requests
-        if ($requestType !== 'all' && $requestType !== 'liquidation') {
-            $liquidationRequests = collect([]);
-        } else {
-            $liquidationRequests = $liquidationRequests->get()->map(function ($request) {
-                return [
-                    'id' => $request->id,
-                    'request_number' => 'LIQ-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
-                    'type' => 'Liquidation',
-                    'department' => $request->department,
-                    'status' => $request->status,
-                    'date' => $request->date,
-                    'particulars' => $request->particulars,
-                    'total_amount' => $request->total_amount,
-                    'cash_advance_amount' => $request->cash_advance_amount,
-                    'amount_to_refund' => $request->amount_to_refund,
-                    'amount_to_reimburse' => $request->amount_to_reimburse,
-                    'items' => $request->items,
-                    'created_at' => $request->created_at,
-                    'user_name' => $request->user->name,
-                    'user_email' => $request->user->email,
-                    'created_at_formatted' => Carbon::parse($request->created_at)->format('M d, Y'),
-                    'remarks' => $request->remarks,
-                ];
-            });
-        }
-
-        // Merge and sort all requests
-        $allRequests = $supplyRequests->concat($reimbursementRequests)
-                                    ->concat($liquidationRequests)
-                                    ->sortByDesc('created_at')
-                                    ->values()
-                                    ->all();
-
+        // Get filtered requests
+        $allRequests = $this->getFilteredRequests($request);
+        
         // Calculate statistics for the current period
         $statistics = [
             'totalRequests' => count($allRequests),
@@ -168,9 +76,18 @@ class ReportsController extends Controller
                 return ['status' => $request->status];
             });
 
+        // Get previous period HR expense requests
+        $previousHrExpenseRequests = HrExpense::with('user')
+            ->whereBetween('created_at', [$previousStartDate, $previousEndDate])
+            ->get()
+            ->map(function ($request) {
+                return ['status' => $request->status];
+            });
+
         $previousRequests = $previousSupplyRequests
             ->concat($previousReimbursementRequests)
-            ->concat($previousLiquidationRequests);
+            ->concat($previousLiquidationRequests)
+            ->concat($previousHrExpenseRequests);
 
         // Calculate change percentages
         $previousTotal = $previousRequests->count();
@@ -186,8 +103,9 @@ class ReportsController extends Controller
 
         // Get admin budget
         $adminBudget = null;
-        if (auth()->user()->isAdmin()) {
+        if (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin()) {
             $adminBudget = AdminBudget::where('user_id', auth()->id())->first();
+            
             if (!$adminBudget) {
                 $adminBudget = AdminBudget::create([
                     'user_id' => auth()->id(),
@@ -198,14 +116,26 @@ class ReportsController extends Controller
             }
         }
 
+        // Paginate the results
+        $paginatedRequests = collect($allRequests)->forPage($page, $perPage)->values();
+        $totalPages = ceil(count($allRequests) / $perPage);
+
         return Inertia::render('Reports', [
-            'requests' => $allRequests,
+            'requests' => $paginatedRequests,
+            'pagination' => [
+                'current_page' => (int)$page,
+                'per_page' => $perPage,
+                'total' => count($allRequests),
+                'total_pages' => $totalPages,
+            ],
             'statistics' => $statistics,
             'filters' => [
                 'startDate' => $isDateRangeActive ? $startDate->toDateString() : null,
                 'endDate' => $isDateRangeActive ? $endDate->toDateString() : null,
                 'requestType' => $requestType,
+                'status' => $request->input('status', 'all'),
                 'isDateRangeActive' => $isDateRangeActive,
+                'sortOrder' => $request->input('sortOrder', 'newest'),
             ],
             'adminBudget' => $adminBudget
         ]);
@@ -222,46 +152,74 @@ class ReportsController extends Controller
     public function exportPDF(Request $request)
     {
         $requests = $this->getFilteredRequests($request);
+        $isDateRangeActive = $request->boolean('isDateRangeActive', false);
+        
+        // Get the date range for the PDF title
+        $dateRangeText = '';
+        if ($isDateRangeActive) {
+            $startDate = Carbon::parse($request->input('startDate'))->format('M d, Y');
+            $endDate = Carbon::parse($request->input('endDate'))->format('M d, Y');
+            $dateRangeText = "($startDate - $endDate)";
+        }
         
         $pdf = PDF::loadView('exports.requests-pdf', [
             'requests' => $requests,
             'date' => Carbon::now()->format('F d, Y'),
             'companyName' => 'Innovato Information Technology Solutions',
-            'reportTitle' => 'Requests Report'
+            'reportTitle' => 'Requests Report ' . $dateRangeText,
+            'isDateRangeActive' => $isDateRangeActive,
+            'startDate' => $isDateRangeActive ? $startDate : null,
+            'endDate' => $isDateRangeActive ? $endDate : null
         ]);
         
-        $pdf->setPaper('a4', 'landscape');
+        $pdf->setPaper('a4', 'portrait');
 
         return $pdf->download('requests_report_' . Carbon::now()->format('Y-m-d') . '.pdf');
     }
 
-    private function getFilteredRequests($request)
+    private function getFilteredRequests(Request $request)
     {
         $isDateRangeActive = $request->boolean('isDateRangeActive', false);
         
+        // Set date range based on active state
         if ($isDateRangeActive) {
             $startDate = $request->input('startDate') ? Carbon::parse($request->input('startDate')) : Carbon::now()->subDays(30);
             $endDate = $request->input('endDate') ? Carbon::parse($request->input('endDate')) : Carbon::now();
         } else {
-            $startDate = Carbon::createFromTimestamp(0);
-            $endDate = Carbon::now()->addYear();
+            // When inactive, don't apply date filter
+            $startDate = Carbon::createFromTimestamp(0); // Unix epoch start
+            $endDate = Carbon::now()->addYear(); // Future date to include all
         }
-
+        
         $requestType = strtolower($request->input('requestType', 'all'));
-
-        // Reuse your existing query logic
+        $status = strtolower($request->input('status', 'all'));
+        
+        // Initialize query builders
         $supplyRequests = SupplyRequest::with('user');
         $reimbursementRequests = ReimbursementRequest::with('user');
-        $liquidationRequests = Liquidation::with('user', 'items');
-
+        $liquidationRequests = Liquidation::with('user');
+        $hrExpenseRequests = HrExpense::with('user');
+        $operatingExpenseRequests = OperatingExpense::with('user');
+        
         // Apply date filters
         if ($isDateRangeActive) {
             $supplyRequests = $supplyRequests->whereBetween('created_at', [$startDate, $endDate]);
             $reimbursementRequests = $reimbursementRequests->whereBetween('created_at', [$startDate, $endDate]);
             $liquidationRequests = $liquidationRequests->whereBetween('created_at', [$startDate, $endDate]);
+            $hrExpenseRequests = $hrExpenseRequests->whereBetween('created_at', [$startDate, $endDate]);
+            $operatingExpenseRequests = $operatingExpenseRequests->whereBetween('created_at', [$startDate, $endDate]);
         }
-
-        // Apply type filters and transform data
+        
+        // Apply status filter
+        if ($status !== 'all') {
+            $supplyRequests = $supplyRequests->where('status', $status);
+            $reimbursementRequests = $reimbursementRequests->where('status', $status);
+            $liquidationRequests = $liquidationRequests->where('status', $status);
+            $hrExpenseRequests = $hrExpenseRequests->where('status', $status);
+            $operatingExpenseRequests = $operatingExpenseRequests->where('status', $status);
+        }
+        
+        // Get filtered requests based on request type
         $supplyRequests = $requestType === 'all' || $requestType === 'supply' ? 
             $supplyRequests->get()->map($this->transformSupplyRequest()) : collect([]);
         
@@ -270,12 +228,31 @@ class ReportsController extends Controller
         
         $liquidationRequests = $requestType === 'all' || $requestType === 'liquidation' ? 
             $liquidationRequests->get()->map($this->transformLiquidationRequest()) : collect([]);
+        
+        $hrExpenseRequests = $requestType === 'all' || $requestType === 'hrexpense' ? 
+            $hrExpenseRequests->get()->map($this->transformHrExpenseRequest()) : collect([]);
+            
+        $operatingExpenseRequests = $requestType === 'all' || $requestType === 'operatingexpense' ? 
+            $operatingExpenseRequests->get()->map($this->transformOperatingExpenseRequest()) : collect([]);
 
-        return $supplyRequests->concat($reimbursementRequests)
+        // Get sort order from request
+        $sortOrder = $request->input('sortOrder', 'newest');
+        
+        // Apply sorting based on sortOrder parameter
+        // For 'newest', we want descending order (true for sortByDesc)
+        // For 'oldest', we want ascending order (false for sortByDesc)
+        $sortedRequests = $supplyRequests->concat($reimbursementRequests)
             ->concat($liquidationRequests)
-            ->sortByDesc('created_at')
-            ->values()
-            ->all();
+            ->concat($hrExpenseRequests)
+            ->concat($operatingExpenseRequests);
+        
+        if ($sortOrder === 'newest') {
+            $sortedRequests = $sortedRequests->sortByDesc('created_at');
+        } else {
+            $sortedRequests = $sortedRequests->sortBy('created_at');
+        }
+        
+        return $sortedRequests->values()->all();
     }
 
     // Transform functions for consistent data structure
@@ -290,7 +267,8 @@ class ReportsController extends Controller
                 'status' => $request->status,
                 'total_amount' => $request->total_amount,
                 'created_at' => $request->created_at->format('Y-m-d'),
-                'remarks' => $request->remarks
+                'remarks' => $request->remarks,
+                'items_json' => $request->items_json
             ];
         };
     }
@@ -309,7 +287,8 @@ class ReportsController extends Controller
                 'created_at' => $request->created_at->format('Y-m-d'),
                 'remarks' => $request->remarks,
                 'expense_type' => $request->expense_type,
-                'description' => $request->description
+                'description' => $request->description,
+                'receipt_path' => $request->receipt_path
             ];
         };
     }
@@ -328,19 +307,70 @@ class ReportsController extends Controller
                 'remarks' => $request->remarks,
                 'cash_advance_amount' => $request->cash_advance_amount,
                 'amount_to_refund' => $request->amount_to_refund,
-                'amount_to_reimburse' => $request->amount_to_reimburse
+                'amount_to_reimburse' => $request->amount_to_reimburse,
+                'particulars' => $request->particulars,
+                'items' => $request->items,
+                'receipt_path' => $request->receipt_path
             ];
         };
     }
 
-    public function updateStatus(Request $request, $id)
+    private function transformHrExpenseRequest()
     {
+        return function ($request) {
+            return [
+                'request_number' => 'HR-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
+                'type' => 'HR Expense',
+                'user_name' => $request->user->name,
+                'department' => 'HR',
+                'status' => $request->status,
+                'total_amount' => $request->total_amount_requested,
+                'created_at' => $request->created_at->format('Y-m-d'),
+                'remarks' => $request->rejection_reason,
+                'expenses_category' => $request->expenses_category,
+                'description' => $request->description_of_expenses,
+                'breakdown' => $request->breakdown_of_expense,
+                'expected_payment_date' => $request->expected_payment_date
+            ];
+        };
+    }
+
+    private function transformOperatingExpenseRequest()
+    {
+        return function ($request) {
+            return [
+                'request_number' => 'OP-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
+                'type' => 'Operating Expense',
+                'user_name' => $request->user->name,
+                'department' => $request->department,
+                'status' => $request->status,
+                'total_amount' => $request->total_amount,
+                'created_at' => $request->created_at->format('Y-m-d'),
+                'remarks' => $request->remarks,
+                'expense_type' => $request->expense_type,
+                'description' => $request->description,
+                'receipt_path' => $request->receipt_path,
+                'expected_payment_date' => $request->expected_payment_date,
+                'breakdown' => $request->breakdown
+            ];
+        };
+    }
+
+    private function formatNumber($number)
+    {
+        return number_format((float)$number, 2, '.', ',');
+    }
+
+    public function updateStatus($id, Request $request)
+    {
+        // Validate the request
         $request->validate([
             'status' => 'required|in:approved,rejected',
-            'type' => 'required|in:Supply,Reimbursement,Liquidation',
+            'type' => 'required|string',
             'remarks' => 'nullable|string'
         ]);
 
+        // Get admin budget
         $adminBudget = AdminBudget::where('user_id', auth()->id())->first();
         
         if (!$adminBudget) {
@@ -351,19 +381,83 @@ class ReportsController extends Controller
 
         // Get request amount based on type and convert to float for comparison
         $requestAmount = 0;
-        if ($request->type === 'Supply') {
-            $requestModel = SupplyRequest::findOrFail($id);
-            $requestAmount = floatval($requestModel->total_amount);
-        } else if ($request->type === 'Reimbursement') {
-            $requestModel = ReimbursementRequest::findOrFail($id);
-            $requestAmount = floatval($requestModel->amount);
-        } else {
-            $requestModel = Liquidation::findOrFail($id);
-            $requestAmount = floatval($requestModel->total_amount);
+        $requestModel = null;
+        
+        // Normalize the type string to match our model lookups
+        $type = strtolower($request->type);
+        
+        // Log the incoming ID for debugging
+        \Log::info('Received ID for update', [
+            'id' => $id,
+            'type' => $type
+        ]);
+        
+        // Try to find the model with the exact ID first
+        if (strpos($type, 'supply') !== false) {
+            $requestModel = SupplyRequest::find($id);
+            
+            // If not found, try to find by request_number
+            if (!$requestModel) {
+                $requestModel = SupplyRequest::where('request_number', 'LIKE', "SR-%".$id)->first();
+            }
+            
+            $requestAmount = $requestModel ? floatval($requestModel->total_amount) : 0;
+        } else if (strpos($type, 'reimbursement') !== false) {
+            $requestModel = ReimbursementRequest::find($id);
+            
+            // If not found, try to find by request_number
+            if (!$requestModel) {
+                $requestModel = ReimbursementRequest::where('request_number', 'LIKE', "RR-%".$id)->first();
+            }
+            
+            $requestAmount = $requestModel ? floatval($requestModel->amount) : 0;
+        } else if (strpos($type, 'hrexpense') !== false || strpos($type, 'hr expense') !== false) {
+            $requestModel = HrExpense::find($id);
+            
+            // If not found, try to find by request_number
+            if (!$requestModel) {
+                $requestModel = HrExpense::where('request_number', 'LIKE', "HR-%".$id)->first();
+            }
+            
+            $requestAmount = $requestModel ? floatval($requestModel->total_amount_requested) : 0;
+        } else if (strpos($type, 'operatingexpense') !== false || strpos($type, 'operating expense') !== false) {
+            $requestModel = OperatingExpense::find($id);
+            
+            // If not found, try to find by request_number
+            if (!$requestModel) {
+                $requestModel = OperatingExpense::where('request_number', 'LIKE', "OP-%".$id)->first();
+            }
+            
+            $requestAmount = $requestModel ? floatval($requestModel->total_amount) : 0;
+        } else if (strpos($type, 'liquidation') !== false) {
+            $requestModel = Liquidation::find($id);
+            
+            // If not found, try to find by request_number
+            if (!$requestModel) {
+                $requestModel = Liquidation::where('request_number', 'LIKE', "LIQ-%".$id)->first();
+            }
+            
+            $requestAmount = $requestModel ? floatval($requestModel->total_amount) : 0;
+        }
+        
+        if (!$requestModel) {
+            \Log::error('Request model not found', [
+                'id' => $id,
+                'type' => $request->type,
+                'normalized_type' => $type
+            ]);
+            return response()->json([
+                'error' => 'Request not found',
+                'message' => 'Could not find the request with ID: ' . $id
+            ], 404);
         }
 
         // Debug logging
         \Log::info('Budget Check', [
+            'id' => $id,
+            'type' => $request->type,
+            'normalized_type' => $type,
+            'model_found' => $requestModel ? get_class($requestModel) : 'None',
             'remaining_budget' => $adminBudget->remaining_budget,
             'request_amount' => $requestAmount,
             'comparison' => floatval($adminBudget->remaining_budget) < $requestAmount
@@ -375,8 +469,8 @@ class ReportsController extends Controller
                 return response()->json([
                     'error' => 'Insufficient budget',
                     'message' => 'You do not have sufficient budget to approve this request.',
-                    'remaining_budget' => $adminBudget->remaining_budget,
-                    'required_amount' => $requestAmount
+                    'remaining_budget' => $this->formatNumber($adminBudget->remaining_budget),
+                    'required_amount' => $this->formatNumber($requestAmount)
                 ], 422);
             }
 
@@ -385,7 +479,7 @@ class ReportsController extends Controller
                 // Update request status first
                 $requestModel->update([
                     'status' => $request->status,
-                    'remarks' => $request->remarks
+                    'remarks' => $request->remarks ?? ''
                 ]);
 
                 // Calculate new budget values
@@ -396,15 +490,6 @@ class ReportsController extends Controller
                 $adminBudget->update([
                     'remaining_budget' => $newRemainingBudget,
                     'used_budget' => $newUsedBudget
-                ]);
-
-                // Debug logging for budget update
-                \Log::info('Budget Updated', [
-                    'previous_remaining' => $adminBudget->remaining_budget,
-                    'new_remaining' => $newRemainingBudget,
-                    'previous_used' => $adminBudget->used_budget,
-                    'new_used' => $newUsedBudget,
-                    'deducted_amount' => $requestAmount
                 ]);
 
                 DB::commit();
@@ -421,7 +506,7 @@ class ReportsController extends Controller
             // For rejections, just update the status
             $requestModel->update([
                 'status' => $request->status,
-                'remarks' => $request->remarks
+                'remarks' => $request->remarks ?? ''
             ]);
             return back()->with('success', 'Request rejected successfully');
         }
@@ -444,6 +529,10 @@ class ReportsController extends Controller
             ]);
         }
         
-        return response()->json($adminBudget);
+        return response()->json([
+            'total_budget' => $this->formatNumber($adminBudget->total_budget),
+            'remaining_budget' => $this->formatNumber($adminBudget->remaining_budget),
+            'used_budget' => $this->formatNumber($adminBudget->used_budget)
+        ]);
     }
 }

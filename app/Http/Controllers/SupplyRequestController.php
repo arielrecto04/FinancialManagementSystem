@@ -11,32 +11,33 @@ class SupplyRequestController extends Controller
 {
     public function store(Request $request)
     {
-        $request->validate([
-            'department' => 'required|string',
-            'purpose' => 'required|string',
-            'date_needed' => 'required|date',
-            'items' => 'required|array|min:1',
-            'items.*.name' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:1',
-            'items.*.unit' => 'required|string',
-            'items.*.price' => 'required|numeric|min:0',
-            'total_amount' => 'required|numeric|min:0',
-            'remarks' => 'nullable|string',
-        ]);
+        try {
+            $validated = $request->validate([
+                'department' => 'required|string',
+                'purpose' => 'required|string',
+                'date_needed' => 'required|date',
+                'items_json' => 'required|json',
+                'total_amount' => 'required|numeric',
+                'remarks' => 'nullable|string',
+                'request_number' => 'required|string|unique:supply_requests'
+            ]);
 
-        // Create the supply request
-        $supplyRequest = SupplyRequest::create([
-            'user_id' => auth()->id(),
-            'request_number' => 'SR-' . Str::random(8),
-            'department' => $request->department,
-            'status' => 'pending',
-            'purpose' => $request->purpose,
-            'date_needed' => $request->date_needed,
-            'items_json' => json_encode($request->items),
-            'total_amount' => $request->total_amount,
-            'remarks' => $request->remarks,
-        ]);
+            $supplyRequest = new SupplyRequest($validated);
+            $supplyRequest->user_id = auth()->id();
+            $supplyRequest->status = 'pending';
+            $supplyRequest->save();
 
-        return redirect()->route('dashboard')->with('success', 'Supply request submitted successfully!');
+            return redirect()->back()->with('success', 'Supply request submitted successfully!');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Supply request submission error: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Failed to submit supply request')
+                ->withInput();
+        }
     }
 } 

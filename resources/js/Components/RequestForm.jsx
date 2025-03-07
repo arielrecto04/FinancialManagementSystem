@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import RequestDetailsModal from '@/Components/RequestDetailsModal';
+import FlashMessage from '@/Components/FlashMessage';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 // Add this constant at the top of your file, outside the component
 const departmentOptions = [
@@ -76,9 +78,10 @@ const icons = {
 export default function RequestForm({ auth, errors = {} }) {
     const [formType, setFormType] = useState('supply');
     const [items, setItems] = useState([{ name: '', quantity: '', unit: '', price: '' }]);
+    const [processing, setProcessing] = useState(false);
     
-    // Supply Request Form State - Matching database fields
-    const { data, setData, post, processing } = useForm({
+    // Supply Request Form State
+    const { data, setData, post } = useForm({
         department: '',
         purpose: '',
         date_needed: '',
@@ -88,7 +91,7 @@ export default function RequestForm({ auth, errors = {} }) {
     });
 
     // Reimbursement Form State
-    const { data: reimbursementData, setData: setReimbursementData, post: postReimbursement, processing: reimbursementProcessing } = useForm({
+    const { data: reimbursementData, setData: setReimbursementData, post: postReimbursement } = useForm({
         department: '',
         expense_date: '',
         expense_type: '',
@@ -96,6 +99,17 @@ export default function RequestForm({ auth, errors = {} }) {
         description: '',
         receipt: null,
         remarks: '',
+    });
+
+    // Petty Cash Form State
+    const [pettyCashData, setPettyCashData] = useState({
+        date: new Date().toISOString().split('T')[0],
+        dateNeeded: new Date().toISOString().split('T')[0],
+        purpose: '',
+        amount: '',
+        category: '',
+        description: '',
+        department: auth?.user?.department || ''
     });
 
     // Sample request status data
@@ -108,9 +122,13 @@ export default function RequestForm({ auth, errors = {} }) {
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [flashMessage, setFlashMessage] = useState('');
+
+    // Add this near the top of your component with other state declarations
+    const [liquidationProcessing, setLiquidationProcessing] = useState(false);
 
     // Update the liquidation form state
-    const { data: liquidationData, setData: setLiquidationData, post: postLiquidation, processing: liquidationProcessing, reset: resetLiquidation } = useForm({
+    const { data: liquidationData, setData: setLiquidationData, post: postLiquidation, reset: resetLiquidation } = useForm({
         date: new Date().toISOString().split('T')[0],
         particulars: '',
         items: [{ category: '', description: '', amount: '' }],
@@ -120,14 +138,75 @@ export default function RequestForm({ auth, errors = {} }) {
         amount_to_reimburse: 0,
     });
 
-    // Update the petty cash state
-    const [pettyCashData, setPettyCashData] = useState({
-        date: '',
-        dateNeeded: '',
-        purpose: '',
-        amount: '',
-        items: [{ category: '', description: '', amount: '' }]  // Updated structure
-    });
+    // Add this near the top with other state declarations
+    const [reimbursementProcessing, setReimbursementProcessing] = useState(false);
+
+    // Update the handleReimbursementSubmit function
+    const handleReimbursementSubmit = (e) => {
+        e.preventDefault();
+        setReimbursementProcessing(true);
+
+        try {
+            const formData = new FormData();
+            for (let key in reimbursementData) {
+                formData.append(key, reimbursementData[key]);
+            }
+            formData.append('request_number', `RR-${new Date().getTime()}`);
+
+            router.post(route('request.reimbursement.store'), formData, {
+                onSuccess: () => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Your reimbursement request has been submitted successfully.',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+
+                    // Reset form
+                    setReimbursementData({
+                        department: '',
+                        expense_date: '',
+                        expense_type: '',
+                        amount: '',
+                        description: '',
+                        receipt: null,
+                        remarks: '',
+                    });
+                    setReimbursementProcessing(false);
+                },
+                onError: (errors) => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'There was an error submitting your reimbursement request. Please check all fields and try again.',
+                        confirmButtonColor: '#3085d6',
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+                    console.error('Reimbursement submission errors:', errors);
+                    setReimbursementProcessing(false);
+                }
+            });
+
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Unexpected Error',
+                text: 'Something went wrong with your reimbursement request. Please try again later.',
+                confirmButtonColor: '#3085d6',
+                customClass: {
+                    popup: 'animated fadeInDown'
+                }
+            });
+            console.error('Error submitting reimbursement request:', error);
+            setReimbursementProcessing(false);
+        }
+    };
 
     // Update your tab rendering logic to include petty cash for admins
     const tabs = [
@@ -138,6 +217,9 @@ export default function RequestForm({ auth, errors = {} }) {
             { id: 'pettycash', label: 'Petty Cash Request', icon: icons.pettyCash },
             { id: 'hrExpenses', label: 'HR Expenses Request', icon: icons.hrExpenses },
             { id: 'operatingExpenses', label: 'Operating Expenses Request', icon: icons.operatingExpenses }
+        ] : []),
+        ...(auth.user.role === 'hr' ? [
+            { id: 'hrExpenses', label: 'HR Expenses Request', icon: icons.hrExpenses }
         ] : [])
     ];
 
@@ -176,87 +258,147 @@ export default function RequestForm({ auth, errors = {} }) {
         }));
     };
 
+    // Function to show flash message
+    const showFlashMessage = (message, type = 'success') => {
+        if (window.Flash) {
+            window.Flash(message, type);
+        } else {
+            alert(message);
+        }
+    };
+
+    // Update the handleSubmit function for supply requests
     const handleSubmit = (e) => {
         e.preventDefault();
+        setProcessing(true);
         
         // Validate items before submission
         if (items.some(item => !item.name || !item.quantity || !item.unit || !item.price)) {
-            alert('Please fill in all item fields');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Incomplete Form',
+                text: 'Please fill in all item fields',
+                confirmButtonColor: '#3085d6'
+            });
+            setProcessing(false);
             return;
         }
 
-        // Submit the form
-        post(route('request.supply.store'), {
-            onSuccess: () => {
-                // Reset form
-                setItems([{ name: '', quantity: '', unit: '', price: '' }]);
-                setData({
-                    department: '',
-                    purpose: '',
-                    date_needed: '',
-                    items: [],
-                    total_amount: 0,
-                    remarks: '',
-                });
-            },
-            onError: (errors) => {
-                console.error(errors);
-            },
-        });
-    };
+        // Generate request number with SR prefix and timestamp
+        const timestamp = new Date().getTime();
+        const requestNumber = `SR-${timestamp}`;
 
-    const handleReimbursementSubmit = (e) => {
-        e.preventDefault();
-        
-        const formData = new FormData();
-        for (let key in reimbursementData) {
-            formData.append(key, reimbursementData[key]);
+        try {
+            // Submit the form
+            router.post(route('request.supply.store'), {
+                ...data,
+                request_number: requestNumber,
+                items_json: JSON.stringify(items)
+            }, {
+                onSuccess: () => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Supply request submitted successfully!',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+
+                    // Reset form
+                    setItems([{ name: '', quantity: '', unit: '', price: '' }]);
+                    setData({
+                        department: '',
+                        purpose: '',
+                        date_needed: '',
+                        items: [],
+                        total_amount: 0,
+                        remarks: '',
+                    });
+                    setProcessing(false);
+                },
+                onError: (errors) => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'There was an error submitting your request. Please check the form for errors.',
+                        confirmButtonColor: '#3085d6',
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+                    console.error('Supply request errors:', errors);
+                    setProcessing(false);
+                }
+            });
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Unexpected Error',
+                text: 'Something went wrong with your supply request. Please try again later.',
+                confirmButtonColor: '#3085d6',
+                customClass: {
+                    popup: 'animated fadeInDown'
+                }
+            });
+            console.error('Error submitting supply request:', error);
+            setProcessing(false);
         }
-
-        postReimbursement(route('request.reimbursement.store'), {
-            onSuccess: () => {
-                // Reset form
-                setReimbursementData({
-                    department: '',
-                    expense_date: '',
-                    expense_type: '',
-                    amount: '',
-                    description: '',
-                    receipt: null,
-                    remarks: '',
-                });
-            },
-        });
     };
 
     // Update the handleLiquidationSubmit function
     const handleLiquidationSubmit = (e) => {
         e.preventDefault();
-        console.log('Submitting liquidation:', liquidationData);
+        setLiquidationProcessing(true);
 
-        // Use axios directly to debug the request
-        axios.post('/request/liquidation', liquidationData)
-            .then(response => {
-                console.log('Success:', response);
-                resetLiquidation();
-            })
-            .catch(error => {
-                console.error('Error:', error.response);
+        try {
+            router.post(route('request.liquidation.store'), liquidationData, {
+                onSuccess: () => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Your liquidation request has been submitted successfully.',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+
+                    // Reset form
+                    resetLiquidation();
+                    setLiquidationProcessing(false);
+                },
+                onError: (errors) => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'There was an error submitting your liquidation request. Please check all fields and try again.',
+                        confirmButtonColor: '#3085d6',
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+                    console.error('Validation errors:', errors);
+                    setLiquidationProcessing(false);
+                }
             });
 
-        // Or use the Inertia form
-        /*
-        postLiquidation('/request/liquidation', {
-            preserveScroll: true,
-            onSuccess: () => {
-                console.log('Success!');
-                resetLiquidation();
-            },
-            onError: (errors) => {
-                console.error('Submission errors:', errors);
-            }
-        });
-        */
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Unexpected Error',
+                text: 'Something went wrong with your liquidation request. Please try again later.',
+                confirmButtonColor: '#3085d6',
+                customClass: {
+                    popup: 'animated fadeInDown'
+                }
+            });
+            console.error('Error submitting liquidation request:', error);
+            setLiquidationProcessing(false);
+        }
     };
 
     // Add/Remove Liquidation Items
@@ -415,7 +557,7 @@ export default function RequestForm({ auth, errors = {} }) {
             case 'chart-bar':
                 return (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                 );
             case 'chart-pie':
@@ -432,7 +574,6 @@ export default function RequestForm({ auth, errors = {} }) {
 
     // HR Expenses Request form state
     const { data: hrExpensesData, setData: setHrExpensesData, post: postHrExpenses, processing: hrExpensesProcessing } = useForm({
-        requestor_name: '',
         date_of_request: '',
         expenses_category: '',
         description_of_expenses: '',
@@ -443,57 +584,243 @@ export default function RequestForm({ auth, errors = {} }) {
     });
 
     // HR Expenses Request form submission handler
-    const handleHrExpensesSubmit = (e) => {
+    const handleHrExpensesSubmit = async (e) => {
         e.preventDefault();
-        postHrExpenses(route('request.hrExpenses.store'), {
-            onSuccess: () => {
-                setHrExpensesData({
-                    requestor_name: '',
-                    date_of_request: '',
-                    expenses_category: '',
-                    description_of_expenses: '',
-                    breakdown_of_expense: '',
-                    total_amount_requested: '',
-                    expected_payment_date: '',
-                    additional_comment: '',
-                });
-            },
-        });
+        setProcessing(true);
+
+        try {
+            const formData = {
+                date_of_request: hrExpensesData.date_of_request,
+                expenses_category: hrExpensesData.expenses_category,
+                description_of_expenses: hrExpensesData.description_of_expenses,
+                breakdown_of_expense: hrExpensesData.breakdown_of_expense,
+                total_amount_requested: hrExpensesData.total_amount_requested,
+                expected_payment_date: hrExpensesData.expected_payment_date,
+                additional_comment: hrExpensesData.additional_comment
+            };
+
+            // Use the correct route name from web.php
+            router.post(route('request.hrExpenses.store'), formData, {
+                onSuccess: () => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Your HR expense request has been submitted successfully.',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+
+                    // Reset form
+                    setHrExpensesData({
+                        date_of_request: new Date().toISOString().split('T')[0],
+                        expenses_category: '',
+                        description_of_expenses: '',
+                        breakdown_of_expense: '',
+                        total_amount_requested: '',
+                        expected_payment_date: '',
+                        additional_comment: ''
+                    });
+                    setProcessing(false);
+                },
+                onError: (errors) => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'There was an error submitting your HR expense request. Please check all fields and try again.',
+                        confirmButtonColor: '#3085d6',
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+                    console.error('Validation errors:', errors);
+                    setProcessing(false);
+                }
+            });
+
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Unexpected Error',
+                text: 'Something went wrong with your HR expense request. Please try again later.',
+                confirmButtonColor: '#3085d6',
+                customClass: {
+                    popup: 'animated fadeInDown'
+                }
+            });
+            console.error('Error submitting HR expense request:', error);
+            setProcessing(false);
+        }
     };
 
     // Add Operating Expenses Request form state
     const { data: operatingExpensesData, setData: setOperatingExpensesData, post: postOperatingExpenses, processing: operatingExpensesProcessing } = useForm({
-        requestor_name: '',
-        department_category: '',
-        date_of_request: '',
-        expenses_category: '',
-        breakdown: '',
-        payment_method: '',
-        expected_date_of_payment: '',
-        purpose_of_expense: '',
+        date_of_request: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+        expense_category: '',
+        description: '',
+        breakdown_of_expense: '',
+        total_amount: '',
+        expected_payment_date: '',
+        additional_comment: '',
     });
 
     // Operating Expenses Request form submission handler
     const handleOperatingExpensesSubmit = (e) => {
         e.preventDefault();
-        postOperatingExpenses(route('request.operatingExpenses.store'), {
-            onSuccess: () => {
-                setOperatingExpensesData({
-                    requestor_name: '',
-                    department_category: '',
-                    date_of_request: '',
-                    expenses_category: '',
-                    breakdown: '',
-                    payment_method: '',
-                    expected_date_of_payment: '',
-                    purpose_of_expense: '',
-                });
-            },
-        });
+        setProcessing(true);
+
+        try {
+            const formData = {
+                date_of_request: operatingExpensesData.date_of_request,
+                expense_category: operatingExpensesData.expense_category,
+                description: operatingExpensesData.description,
+                breakdown_of_expense: operatingExpensesData.breakdown_of_expense,
+                total_amount: operatingExpensesData.total_amount,
+                expected_payment_date: operatingExpensesData.expected_payment_date,
+                additional_comment: operatingExpensesData.additional_comment
+            };
+
+            // Use Inertia post with the correct route name
+            router.post(route('request.operatingExpenses.store'), formData, {
+                onSuccess: () => {
+                    // Show success message with Swal
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Your operating expense request has been submitted successfully.',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+
+                    // Reset form
+                    setOperatingExpensesData({
+                        date_of_request: new Date().toISOString().split('T')[0],
+                        expense_category: '',
+                        description: '',
+                        breakdown_of_expense: '',
+                        total_amount: '',
+                        expected_payment_date: '',
+                        additional_comment: ''
+                    });
+                    setProcessing(false);
+                },
+                onError: (errors) => {
+                    // Show error message with Swal
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'There was an error submitting your operating expense request. Please check all fields and try again.',
+                        confirmButtonColor: '#3085d6',
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+                    console.error('Operating Expenses submission errors:', errors);
+                    setProcessing(false);
+                }
+            });
+
+        } catch (error) {
+            // Show error message with Swal for unexpected errors
+            Swal.fire({
+                icon: 'error',
+                title: 'Unexpected Error',
+                text: 'Something went wrong with your operating expense request. Please try again later.',
+                confirmButtonColor: '#3085d6',
+                customClass: {
+                    popup: 'animated fadeInDown'
+                }
+            });
+            console.error('Error submitting operating expense request:', error);
+            setProcessing(false);
+        }
+    };
+
+    // Petty Cash Submit Handler
+    const handlePettyCashSubmit = async (e) => {
+        e.preventDefault();
+        setProcessing(true);
+
+        try {
+            const formData = {
+                date: pettyCashData.date,
+                dateNeeded: pettyCashData.dateNeeded,
+                purpose: pettyCashData.purpose,
+                amount: pettyCashData.amount,
+                category: pettyCashData.category,
+                description: pettyCashData.description,
+                department: pettyCashData.department || auth.user.department
+            };
+
+            // Use Inertia post
+            router.post(route('petty-cash.store'), formData, {
+                onSuccess: () => {
+                    // Show success message with Swal
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Your petty cash request has been submitted successfully.',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+
+                    // Reset form
+                    setPettyCashData({
+                        date: new Date().toISOString().split('T')[0],
+                        dateNeeded: new Date().toISOString().split('T')[0],
+                        purpose: '',
+                        amount: '',
+                        category: '',
+                        description: '',
+                        department: auth?.user?.department || ''
+                    });
+                    setProcessing(false);
+                },
+                onError: (errors) => {
+                    // Show error message with Swal
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'There was an error submitting your request. Please check all fields and try again.',
+                        confirmButtonColor: '#3085d6',
+                        customClass: {
+                            popup: 'animated fadeInDown'
+                        }
+                    });
+                    console.error('Validation errors:', errors);
+                    setProcessing(false);
+                }
+            });
+
+        } catch (error) {
+            // Show error message with Swal for unexpected errors
+            Swal.fire({
+                icon: 'error',
+                title: 'Unexpected Error',
+                text: 'Something went wrong. Please try again later.',
+                confirmButtonColor: '#3085d6',
+                customClass: {
+                    popup: 'animated fadeInDown'
+                }
+            });
+            console.error('Error submitting petty cash request:', error);
+            setProcessing(false);
+        }
     };
 
     return (
-        <div className="max-w-7xl mx-auto py-4 px-2 sm:px-4 lg:px-8">
+        <div className="py-12">
+            {flashMessage && <FlashMessage message={flashMessage} />}
+            
+            <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             {/* Form Type Toggle - More responsive */}
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4">
@@ -798,7 +1125,7 @@ export default function RequestForm({ auth, errors = {} }) {
 
                                 <button 
                                     type="submit" 
-                                    disabled={reimbursementProcessing}
+                                    disabled={processing}
                                     className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                                 >
                                     Submit Reimbursement Request
@@ -1031,9 +1358,9 @@ export default function RequestForm({ auth, errors = {} }) {
                     {/* Petty Cash Form */}
                     {formType === 'pettycash' && auth.user.role === 'admin' && (
                         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
-                            <form onSubmit={handlePettyCashSubmit} className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="mb-4">
+                            <form onSubmit={handlePettyCashSubmit} className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                             {icons.date}
                                             Date Requested
@@ -1041,16 +1368,12 @@ export default function RequestForm({ auth, errors = {} }) {
                                         <input
                                             type="date"
                                             value={pettyCashData.date}
-                                            onChange={(e) => setPettyCashData({
-                                                ...pettyCashData,
-                                                date: e.target.value
-                                            })}
+                                            onChange={(e) => setPettyCashData(prev => ({ ...prev, date: e.target.value }))}
                                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             required
                                         />
                                     </div>
-
-                                    <div className="mb-4">
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                             {icons.date}
                                             Date Needed
@@ -1058,34 +1381,44 @@ export default function RequestForm({ auth, errors = {} }) {
                                         <input
                                             type="date"
                                             value={pettyCashData.dateNeeded}
-                                            onChange={(e) => setPettyCashData({
-                                                ...pettyCashData,
-                                                dateNeeded: e.target.value
-                                            })}
+                                            onChange={(e) => setPettyCashData(prev => ({ ...prev, dateNeeded: e.target.value }))}
                                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             required
                                         />
                                     </div>
                                 </div>
 
-                                <div className="mb-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.department}
+                                        Department
+                                    </label>
+                                    <select
+                                        value={pettyCashData.department}
+                                        onChange={(e) => setPettyCashData(prev => ({ ...prev, department: e.target.value }))}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Department</option>
+                                        <option value="Executive Assistant">Executive Assistant</option>
+                                    </select>
+                                </div>
+
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.purpose}
                                         Purpose
                                     </label>
                                     <textarea
                                         value={pettyCashData.purpose}
-                                        onChange={(e) => setPettyCashData({
-                                            ...pettyCashData,
-                                            purpose: e.target.value
-                                        })}
+                                        onChange={(e) => setPettyCashData(prev => ({ ...prev, purpose: e.target.value }))}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         rows="3"
                                         required
                                     />
                                 </div>
 
-                                <div className="mb-4">
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.amount}
                                         Amount
@@ -1095,94 +1428,42 @@ export default function RequestForm({ auth, errors = {} }) {
                                         step="0.01"
                                         min="0"
                                         value={pettyCashData.amount}
-                                        onChange={(e) => setPettyCashData({
-                                            ...pettyCashData,
-                                            amount: e.target.value
-                                        })}
+                                        onChange={(e) => setPettyCashData(prev => ({ ...prev, amount: e.target.value }))}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     />
                                 </div>
 
-                                {/* Items Section */}
-                                <div className="mb-4">
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        {icons.items}
-                                        Items
+                                        {icons.category}
+                                        Category
                                     </label>
-                                    {pettyCashData.items.map((item, index) => (
-                                        <div key={index} className="grid grid-cols-12 gap-4 mb-2">
-                                            <div className="col-span-3">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Category"
-                                                    value={item.category}
-                                                    onChange={(e) => handlePettyCashItemChange(index, 'category', e.target.value)}
-                                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="col-span-6">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Description"
-                                                    value={item.description}
-                                                    onChange={(e) => handlePettyCashItemChange(index, 'description', e.target.value)}
-                                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="col-span-2">
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    placeholder="Amount"
-                                                    value={item.amount}
-                                                    onChange={(e) => handlePettyCashItemChange(index, 'amount', e.target.value)}
-                                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="col-span-1 flex items-center">
-                                                {index > 0 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemovePettyCashItem(index)}
-                                                        className="text-red-600 hover:text-red-800"
-                                                    >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                        </svg>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={handleAddPettyCashItem}
-                                        className="mt-2 text-sm text-blue-600 hover:text-blue-700 flex items-center"
+                                    <select
+                                        value={pettyCashData.category}
+                                        onChange={(e) => setPettyCashData(prev => ({ ...prev, category: e.target.value }))}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                                        </svg>
-                                        Add Item
-                                    </button>
+                                        <option value="">Select Category</option>
+                                        <option value="Office Supplies">Office Supplies</option>
+                                        <option value="Transportation">Transportation</option>
+                                        <option value="Meals">Meals</option>
+                                        <option value="Miscellaneous">Miscellaneous</option>
+                                    </select>
                                 </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        {icons.amount}
-                                        Total Amount
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.description}
+                                        Description
                                     </label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={pettyCashData.amount}
-                                        className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm"
-                                        readOnly
+                                    <textarea
+                                        value={pettyCashData.description}
+                                        onChange={(e) => setPettyCashData(prev => ({ ...prev, description: e.target.value }))}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        required
                                     />
                                 </div>
 
@@ -1190,9 +1471,10 @@ export default function RequestForm({ auth, errors = {} }) {
                                     <button
                                         type="submit"
                                         disabled={processing}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center justify-center gap-2"
                                     >
-                                        {processing ? 'Processing...' : 'Submit Request'}
+                                        {icons.pettyCash}
+                                        {processing ? 'Submitting...' : 'Submit Petty Cash Request'}
                                     </button>
                                 </div>
                             </form>
@@ -1205,20 +1487,6 @@ export default function RequestForm({ auth, errors = {} }) {
                             <form onSubmit={handleHrExpensesSubmit} className="space-y-4">
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        {icons.hrExpenses}
-                                        Requestor Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={hrExpensesData.requestor_name}
-                                        onChange={(e) => setHrExpensesData('requestor_name', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.date}
                                         Date of Request
                                     </label>
@@ -1229,6 +1497,9 @@ export default function RequestForm({ auth, errors = {} }) {
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     />
+                                        {errors?.date_of_request && (
+                                            <div className="text-red-500 text-sm mt-1">{errors.date_of_request}</div>
+                                        )}
                                 </div>
 
                                 <div className="mb-4">
@@ -1277,6 +1548,7 @@ export default function RequestForm({ auth, errors = {} }) {
                                         onChange={(e) => setHrExpensesData('breakdown_of_expense', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         rows="3"
+                                        placeholder="Please provide a detailed breakdown of the expense (e.g., item costs, quantities, etc.)"
                                         required
                                     />
                                 </div>
@@ -1324,13 +1596,23 @@ export default function RequestForm({ auth, errors = {} }) {
                                     />
                                 </div>
 
-                                <button 
-                                    type="submit" 
-                                    disabled={hrExpensesProcessing}
-                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                                >
-                                    Submit HR Expenses Request
-                                </button>
+                                <div className="flex flex-col space-y-2">
+                                    <button 
+                                        type="submit" 
+                                        disabled={hrExpensesProcessing}
+                                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                    >
+                                        Submit HR Expenses Request
+                                    </button>
+                                    
+                                    <button 
+                                        type="button" 
+                                        onClick={() => console.log('Current form data:', hrExpensesData, 'Errors:', errors)}
+                                        className="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                                    >
+                                        Debug Form Data
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     )}
@@ -1339,39 +1621,6 @@ export default function RequestForm({ auth, errors = {} }) {
                     {formType === 'operatingExpenses' && (
                         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                             <form onSubmit={handleOperatingExpensesSubmit} className="space-y-4">
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        {icons.operatingExpenses}
-                                        Requestor Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={operatingExpensesData.requestor_name}
-                                        onChange={(e) => setOperatingExpensesData('requestor_name', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        {icons.department}
-                                        Department Category
-                                    </label>
-                                    <select
-                                        value={operatingExpensesData.department_category}
-                                        onChange={(e) => setOperatingExpensesData('department_category', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        required
-                                    >
-                                        <option value="">Select Department</option>
-                                        <option value="Apptech">Apptech</option>
-                                        <option value="Business Dev.">Business Dev.</option>
-                                        <option value="HR">HR</option>
-                                        <option value="Admin">Admin</option>
-                                    </select>
-                                </div>
-
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.date}
@@ -1384,16 +1633,19 @@ export default function RequestForm({ auth, errors = {} }) {
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     />
+                                        {errors?.date_of_request && (
+                                            <div className="text-red-500 text-sm mt-1">{errors.date_of_request}</div>
+                                        )}
                                 </div>
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.operatingExpenses}
-                                        Expenses Category
+                                        Expense Category
                                     </label>
                                     <select
-                                        value={operatingExpensesData.expenses_category}
-                                        onChange={(e) => setOperatingExpensesData('expenses_category', e.target.value)}
+                                        value={operatingExpensesData.expense_category}
+                                        onChange={(e) => setOperatingExpensesData('expense_category', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     >
@@ -1410,11 +1662,11 @@ export default function RequestForm({ auth, errors = {} }) {
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.operatingExpenses}
-                                        Breakdown
+                                        Description
                                     </label>
                                     <textarea
-                                        value={operatingExpensesData.breakdown}
-                                        onChange={(e) => setOperatingExpensesData('breakdown', e.target.value)}
+                                        value={operatingExpensesData.description}
+                                        onChange={(e) => setOperatingExpensesData('description', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         rows="3"
                                         required
@@ -1424,31 +1676,44 @@ export default function RequestForm({ auth, errors = {} }) {
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.operatingExpenses}
-                                        Payment Method
+                                        Breakdown of Expense
                                     </label>
-                                    <select
-                                        value={operatingExpensesData.payment_method}
-                                        onChange={(e) => setOperatingExpensesData('payment_method', e.target.value)}
+                                    <textarea
+                                        value={operatingExpensesData.breakdown_of_expense}
+                                        onChange={(e) => setOperatingExpensesData('breakdown_of_expense', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                        placeholder="Please provide a detailed breakdown of the expense (e.g., item costs, quantities, etc.)"
                                         required
-                                    >
-                                        <option value="">Select Payment Method</option>
-                                        <option value="Cash">Cash</option>
-                                        <option value="Gcash">Gcash</option>
-                                        <option value="Bank Transfer">Bank Transfer</option>
-                                        <option value="Reimbursement">Reimbursement</option>
-                                    </select>
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.amount}
+                                        Total Amount
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={operatingExpensesData.total_amount}
+                                        onChange={(e) => setOperatingExpensesData('total_amount', parseFloat(e.target.value) || '')}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        placeholder="Enter the total amount requested"
+                                        required
+                                    />
                                 </div>
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.date}
-                                        Expected Date of Payment
+                                        Expected Payment Date
                                     </label>
                                     <input
                                         type="date"
-                                        value={operatingExpensesData.expected_date_of_payment}
-                                        onChange={(e) => setOperatingExpensesData('expected_date_of_payment', e.target.value)}
+                                        value={operatingExpensesData.expected_payment_date}
+                                        onChange={(e) => setOperatingExpensesData('expected_payment_date', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     />
@@ -1456,25 +1721,34 @@ export default function RequestForm({ auth, errors = {} }) {
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        {icons.purpose}
-                                        Purpose of Expense
+                                        {icons.operatingExpenses}
+                                        Additional Comment (if any)
                                     </label>
                                     <textarea
-                                        value={operatingExpensesData.purpose_of_expense}
-                                        onChange={(e) => setOperatingExpensesData('purpose_of_expense', e.target.value)}
+                                        value={operatingExpensesData.additional_comment}
+                                        onChange={(e) => setOperatingExpensesData('additional_comment', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         rows="3"
-                                        required
                                     />
                                 </div>
 
-                                <button 
-                                    type="submit" 
-                                    disabled={operatingExpensesProcessing}
-                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                                >
-                                    Submit Operating Expenses Request
-                                </button>
+                                <div className="flex flex-col space-y-2">
+                                    <button 
+                                        type="submit" 
+                                        disabled={operatingExpensesProcessing}
+                                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                    >
+                                        Submit Operating Expenses Request
+                                    </button>
+                                    
+                                    <button 
+                                        type="button" 
+                                        onClick={() => console.log('Current form data:', operatingExpensesData, 'Errors:', errors)}
+                                        className="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                                    >
+                                        Debug Form Data
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     )}
@@ -1518,49 +1792,7 @@ export default function RequestForm({ auth, errors = {} }) {
                 onClose={() => setIsModalOpen(false)}
                 request={selectedRequest}
             />
+            </div>
         </div>
     );
 }
-
-// Update the handlers for the new structure
-const handlePettyCashItemChange = (index, field, value) => {
-    const newItems = [...pettyCashData.items];
-    newItems[index] = { ...newItems[index], [field]: value };
-    
-    // Calculate new total
-    const total = newItems.reduce((sum, item) => 
-        sum + (parseFloat(item.amount) || 0), 0
-    );
-
-    setPettyCashData(prev => ({
-        ...prev,
-        items: newItems,
-        amount: total.toFixed(2)
-    }));
-};
-
-const handleAddPettyCashItem = () => {
-    setPettyCashData(prev => ({
-        ...prev,
-        items: [...prev.items, { category: '', description: '', amount: '' }]
-    }));
-};
-
-const handleRemovePettyCashItem = (index) => {
-    setPettyCashData(prev => {
-        const newItems = prev.items.filter((_, i) => i !== index);
-        const total = newItems.reduce((sum, item) => 
-            sum + (parseFloat(item.amount) || 0), 0
-        );
-        return {
-            ...prev,
-            items: newItems,
-            amount: total.toFixed(2)
-        };
-    });
-};
-
-const handlePettyCashSubmit = (e) => {
-    e.preventDefault();
-    router.post(route('petty-cash.store'), pettyCashData);
-};

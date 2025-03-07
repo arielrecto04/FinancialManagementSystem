@@ -81,8 +81,14 @@ class LiquidationController extends Controller
             'remarks' => 'nullable|string',
         ]);
 
-        $liquidation->update($validated);
-
-        return redirect()->back()->with('success', 'Liquidation request updated successfully.');
+        try {
+            $liquidation->update($validated);
+            
+            return redirect()->back()->with('success', 'Liquidation request updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Failed to update liquidation request.'])
+                ->withInput();
+        }
     }
 } 

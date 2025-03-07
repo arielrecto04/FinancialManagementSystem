@@ -11,33 +11,39 @@ class ReimbursementRequestController extends Controller
 {
     public function store(Request $request)
     {
-        $request->validate([
-            'department' => 'required|string',
-            'expense_date' => 'required|date',
-            'expense_type' => 'required|string',
-            'amount' => 'required|numeric|min:0',
-            'description' => 'required|string',
-            'receipt' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'remarks' => 'nullable|string',
-        ]);
+        try {
+            $validated = $request->validate([
+                'department' => 'required|string',
+                'expense_date' => 'required|date',
+                'expense_type' => 'required|string',
+                'amount' => 'required|numeric',
+                'description' => 'required|string',
+                'receipt' => 'required|file|mimes:pdf,jpg,jpeg,png',
+                'remarks' => 'nullable|string',
+                'request_number' => 'required|string|unique:reimbursement_requests'
+            ]);
 
-        // Handle file upload
-        $receiptPath = $request->file('receipt')->store('receipts', 'public');
+            $reimbursement = new ReimbursementRequest($request->except('receipt'));
+            $reimbursement->user_id = auth()->id();
+            $reimbursement->status = 'pending';
+            
+            if ($request->hasFile('receipt')) {
+                $reimbursement->receipt_path = $request->file('receipt')->store('receipts', 'public');
+            }
+            
+            $reimbursement->save();
 
-        // Create reimbursement request
-        $reimbursementRequest = ReimbursementRequest::create([
-            'user_id' => auth()->id(),
-            'request_number' => 'RR-' . Str::random(8),
-            'department' => $request->department,
-            'status' => 'pending',
-            'expense_date' => $request->expense_date,
-            'expense_type' => $request->expense_type,
-            'amount' => $request->amount,
-            'description' => $request->description,
-            'receipt_path' => $receiptPath,
-            'remarks' => $request->remarks,
-        ]);
+            return redirect()->back()->with('success', 'Reimbursement request submitted successfully!');
 
-        return redirect()->route('dashboard')->with('success', 'Reimbursement request submitted successfully!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Reimbursement submission error: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Failed to submit reimbursement request')
+                ->withInput();
+        }
     }
 } 

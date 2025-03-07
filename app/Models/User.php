@@ -66,4 +66,12 @@ class User extends Authenticatable
     {
         return $this->role === 'superadmin';
     }
+
+    /**
+     * Get the HR expense requests for the user.
+     */
+    public function hrExpenses()
+    {
+        return $this->hasMany(HrExpense::class);
+    }
 }

@@ -7,6 +7,10 @@ use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SupplyRequestController;
 use App\Http\Controllers\ReimbursementRequestController;
 use App\Http\Controllers\LiquidationController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\HrExpenseController;
+use App\Http\Controllers\OperatingExpenseController;
+use App\Http\Controllers\PettyCashController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -59,6 +63,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/request/supply', [SupplyRequestController::class, 'store'])->name('request.supply.store');
     Route::post('/request/reimbursement', [ReimbursementRequestController::class, 'store'])->name('request.reimbursement.store');
     
+    // HR Expenses routes
+    Route::post('/request/hr-expenses', [HrExpenseController::class, 'store'])->name('request.hrExpenses.store');
+    Route::middleware(['can:viewAny,App\Models\HrExpense'])->group(function () {
+        Route::get('/hr-expenses', [HrExpenseController::class, 'index'])->name('hr-expenses.index');
+        Route::get('/hr-expenses/{hrExpense}', [HrExpenseController::class, 'show'])->name('hr-expenses.show');
+        Route::patch('/hr-expenses/{hrExpense}/status', [HrExpenseController::class, 'updateStatus'])->name('hr-expenses.update-status');
+        Route::delete('/hr-expenses/{hrExpense}', [HrExpenseController::class, 'destroy'])->name('hr-expenses.destroy');
+    });
+    
+    // Operating Expenses routes
+    Route::post('/request/operating-expenses', [OperatingExpenseController::class, 'store'])->name('request.operatingExpenses.store');
+    Route::middleware(['can:viewAny,App\Models\OperatingExpense'])->group(function () {
+        Route::get('/operating-expenses', [OperatingExpenseController::class, 'index'])->name('operating-expenses.index');
+        Route::get('/operating-expenses/{operatingExpense}', [OperatingExpenseController::class, 'show'])->name('operating-expenses.show');
+        Route::patch('/operating-expenses/{operatingExpense}/status', [OperatingExpenseController::class, 'updateStatus'])->name('operating-expenses.update-status');
+        Route::delete('/operating-expenses/{operatingExpense}', [OperatingExpenseController::class, 'destroy'])->name('operating-expenses.destroy');
+    });
+    
     // Liquidation routes
     Route::post('/request/liquidation', [LiquidationController::class, 'store'])->name('request.liquidation.store');
     Route::get('/liquidations', [LiquidationController::class, 'index'])->name('liquidations.index');
@@ -67,6 +89,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Admin budget routes
     Route::get('/admin/budget', [ReportsController::class, 'getBudget'])->name('admin.budget');
+
+    // User management routes (admin only)
+    Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(function () {
+        Route::resource('users', UserController::class);
+    });
+
+    // Petty Cash routes
+    Route::post('/petty-cash', [PettyCashController::class, 'store'])->name('petty-cash.store');
 });
 
 Route::get('/reports/export-excel', [ReportsController::class, 'exportExcel'])->name('reports.export-excel');
