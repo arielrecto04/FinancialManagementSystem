@@ -7,20 +7,22 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use App\Models\AdminBudget;
 
 class UserController extends Controller
 {
     public function index()
     {
         return Inertia::render('Users/Index', [
-            'users' => User::paginate(10)
+            'users' => User::paginate(10),
+            'budgets' => AdminBudget::with('user')->paginate(10)
         ]);
     }
 
     public function create()
     {
         return Inertia::render('Users/Create', [
-            'roles' => ['user', 'admin', 'hr']
+            'roles' => ['user', 'admin', 'hr', 'superadmin']
         ]);
     }
 
@@ -30,7 +32,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => 'required|string|in:user,admin,hr'
+            'role' => 'required|string|in:user,admin,hr,superadmin'
         ]);
 
         User::create([
@@ -47,7 +49,7 @@ class UserController extends Controller
     {
         return Inertia::render('Users/Edit', [
             'user' => $user,
-            'roles' => ['user', 'admin', 'hr']
+            'roles' => ['user', 'admin', 'hr', 'superadmin']
         ]);
     }
 
@@ -56,7 +58,7 @@ class UserController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'role' => 'required|string|in:user,admin,hr'
+            'role' => 'required|string|in:user,admin,hr,superadmin'
         ];
 
         // Only validate password if it's provided

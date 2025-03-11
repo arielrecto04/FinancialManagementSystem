@@ -208,12 +208,12 @@ export default function RequestForm({ auth, errors = {} }) {
         }
     };
 
-    // Update your tab rendering logic to include petty cash for admins
+    // Update your tab rendering logic to include all forms for superadmin
     const tabs = [
         { id: 'supply', label: 'Supply Request', icon: icons.supply },
         { id: 'reimbursement', label: 'Reimbursement', icon: icons.reimbursement },
         { id: 'liquidation', label: 'Liquidation', icon: icons.liquidation },
-        ...(auth.user.role === 'admin' ? [
+        ...(auth.user.role === 'admin' || auth.user.role === 'superadmin' ? [
             { id: 'pettycash', label: 'Petty Cash Request', icon: icons.pettyCash },
             { id: 'hrExpenses', label: 'HR Expenses Request', icon: icons.hrExpenses },
             { id: 'operatingExpenses', label: 'Operating Expenses Request', icon: icons.operatingExpenses }
@@ -1356,7 +1356,7 @@ export default function RequestForm({ auth, errors = {} }) {
                     )}
 
                     {/* Petty Cash Form */}
-                    {formType === 'pettycash' && auth.user.role === 'admin' && (
+                    {formType === 'pettycash' && (auth.user.role === 'admin' || auth.user.role === 'superadmin') && (
                         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                             <form onSubmit={handlePettyCashSubmit} className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

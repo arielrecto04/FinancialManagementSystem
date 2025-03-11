@@ -53,18 +53,38 @@ export default function AuthenticatedLayout({ header, children }) {
                                     </>
                                 )}
                                 {user.role === 'superadmin' && (
-                                    <NavLink
-                                        href={route('petty-cash-requests.approvals')}
-                                        active={route().current('petty-cash-requests.approvals')}
-                                    >
-                                        Petty Cash Approvals
-                                    </NavLink>
+                                    <>
+                                        <NavLink
+                                            href={route('petty-cash-requests.approvals')}
+                                            active={route().current('petty-cash-requests.approvals')}
+                                        >
+                                            Petty Cash Approvals
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('statistics')}
+                                            active={route().current('statistics')}
+                                        >
+                                            Statistics
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('reports.index')}
+                                            active={route().current('reports.index')}
+                                        >
+                                            Reports
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('users.index')}
+                                            active={route().current('users.index')}
+                                        >
+                                            User Management
+                                        </NavLink>
+                                    </>
                                 )}
                                 <NavLink
                                     href={route('request.form')}
                                     active={route().current('request.form')}
                                 >
-                                    Request Form
+                                    Request Forms
                                 </NavLink>
                             </div>
                         </div>
@@ -195,18 +215,38 @@ export default function AuthenticatedLayout({ header, children }) {
                             </>
                         )}
                         {user.role === 'superadmin' && (
-                            <ResponsiveNavLink
-                                href={route('petty-cash-requests.approvals')}
-                                active={route().current('petty-cash-requests.approvals')}
-                            >
-                                Petty Cash Approvals
-                            </ResponsiveNavLink>
+                            <>
+                                <ResponsiveNavLink
+                                    href={route('petty-cash-requests.approvals')}
+                                    active={route().current('petty-cash-requests.approvals')}
+                                >
+                                    Petty Cash Approvals
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('statistics')}
+                                    active={route().current('statistics')}
+                                >
+                                    Statistics
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('reports.index')}
+                                    active={route().current('reports.index')}
+                                >
+                                    Reports
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('users.index')}
+                                    active={route().current('users.index')}
+                                >
+                                    User Management
+                                </ResponsiveNavLink>
+                            </>
                         )}
                         <ResponsiveNavLink
                             href={route('request.form')}
                             active={route().current('request.form')}
                         >
-                            Request Form
+                            Request Forms
                         </ResponsiveNavLink>
                     </div>
 

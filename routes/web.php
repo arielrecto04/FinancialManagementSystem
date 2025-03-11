@@ -12,6 +12,7 @@ use App\Http\Controllers\HrExpenseController;
 use App\Http\Controllers\OperatingExpenseController;
 use App\Http\Controllers\PettyCashController;
 use App\Http\Controllers\PettyCashRequestController;
+use App\Http\Controllers\AdminBudgetController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -94,6 +95,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // User management routes (admin only)
     Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(function () {
         Route::resource('users', UserController::class);
+        
+        // Admin budget routes
+        Route::post('/admin-budgets', [AdminBudgetController::class, 'store'])->name('admin-budgets.store');
+        Route::patch('/admin-budgets/{adminBudget}', [AdminBudgetController::class, 'update'])->name('admin-budgets.update');
+        Route::delete('/admin-budgets/{adminBudget}', [AdminBudgetController::class, 'destroy'])->name('admin-budgets.destroy');
+        
+        // Add route to fetch budgets
+        Route::get('/admin-budgets', [AdminBudgetController::class, 'index'])->name('admin-budgets.index');
     });
 
     // Petty Cash routes
