@@ -117,7 +117,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-Route::get('/reports/export-excel', [ReportsController::class, 'exportExcel'])->name('reports.export-excel');
-Route::get('/reports/export-pdf', [ReportsController::class, 'exportPDF'])->name('reports.export-pdf');
+Route::middleware(['auth'])->group(function () {
+    // Statistics routes
+    Route::get('/statistics', [StatisticsController::class, 'index'])->name('statistics.index');
+    Route::get('/statistics/data', [StatisticsController::class, 'getData'])->name('statistics.data');
+
+    // Reports routes
+    Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export-excel', [ReportsController::class, 'exportExcel'])->name('reports.export-excel');
+    Route::get('/reports/export-pdf', [ReportsController::class, 'exportPDF'])->name('reports.export-pdf');
+});
 
 require __DIR__ . '/auth.php';

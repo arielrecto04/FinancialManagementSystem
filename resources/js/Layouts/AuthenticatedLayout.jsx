@@ -31,8 +31,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                 {user.role === 'admin' && (
                                     <>
                                         <NavLink    
-                                            href={route('statistics')}
-                                            active={route().current('statistics')}
+                                            href={route('statistics.index')}
+                                            active={route().current('statistics.index')}
                                         >
                                             Statistics
                                         </NavLink>
@@ -61,8 +61,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                             Petty Cash Approvals
                                         </NavLink>
                                         <NavLink
-                                            href={route('statistics')}
-                                            active={route().current('statistics')}
+                                            href={route('statistics.index')}
+                                            active={route().current('statistics.index')}
                                         >
                                             Statistics
                                         </NavLink>
@@ -193,8 +193,8 @@ export default function AuthenticatedLayout({ header, children }) {
                         {user.role === 'admin' && (
                             <>
                                 <ResponsiveNavLink
-                                    href={route('statistics')}
-                                    active={route().current('statistics')}
+                                    href={route('statistics.index')}
+                                    active={route().current('statistics.index')}
                                 >
                                     Statistics
                                 </ResponsiveNavLink>
@@ -223,8 +223,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                     Petty Cash Approvals
                                 </ResponsiveNavLink>
                                 <ResponsiveNavLink
-                                    href={route('statistics')}
-                                    active={route().current('statistics')}
+                                    href={route('statistics.index')}
+                                    active={route().current('statistics.index')}
                                 >
                                     Statistics
                                 </ResponsiveNavLink>

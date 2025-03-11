@@ -1,11 +1,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 import ReactApexChart from 'react-apexcharts';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 
-export default function Statistics() {
+export default function Statistics({ statistics, categoryData }) {
     const [viewOption, setViewOption] = useState('daily'); // 'daily', 'weekly', 'monthly', 'annual'
     const [chartType, setChartType] = useState('pie'); // 'pie' or 'stack'
     const [dateRange, setDateRange] = useState({
@@ -13,121 +13,49 @@ export default function Statistics() {
         endDate: new Date()
     });
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [statistics] = useState({
-        daily: {
-            totalExpenses: 1200,
-            averageExpense: 400,
-            highestDay: 'Monday'
-        },
-        weekly: {
-            totalExpenses: 8400,
-            averageExpense: 1200,
-            highestWeek: 'Week 1'
-        },
-        monthly: {
-            totalExpenses: 334100,
-            averageExpense: 47728,
-            highestMonth: 'July'
-        },
-        annual: {
-            totalExpenses: 4009200,
-            averageExpense: 334100,
-            highestYear: '2024'
-        }
-    });
 
-    // Add categories from Expenses component
-    const categories = [
-        'Printing',
-        'Electricity',
-        'Internet',
-        'Parking fee',
-        'Water',
-        'Drinking water',
-        'Customer Relations',
-        'Employee Incentives',
-        'Intern Allowance',
-        'Consultation',
-        'HR Engagement',
-        'Business Dev: Services',
-        'Reimbursement',
-        'Management/Personal',
-        'Others'
-    ];
+    // Categories are now dynamic based on the data
+    const categories = Object.keys(categoryData);
 
-    // Enhanced chart data to include categories
+    // Handle date range changes
+    const handleDateRangeChange = (type, date) => {
+        setDateRange(prev => ({
+            ...prev,
+            [type]: date
+        }));
+        
+        // Fetch new data based on date range
+        router.get(route('statistics.index'), {
+            startDate: type === 'startDate' ? date.toISOString().split('T')[0] : dateRange.startDate.toISOString().split('T')[0],
+            endDate: type === 'endDate' ? date.toISOString().split('T')[0] : dateRange.endDate.toISOString().split('T')[0]
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    // Format currency
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP'
+        }).format(amount);
+    };
+
     const getChartData = () => {
-        switch(viewOption) {
-            case 'daily':
-                return {
-                    labels: categories,
-                    series: chartType === 'pie' 
-                        ? [44, 55, 13, 43, 22, 35, 30, 25, 40, 15, 20, 45, 50, 33, 28] // Sample data for each category
-                        : [
-                            {
-                                name: 'Expenses',
-                                data: [44, 55, 13, 43, 22, 35, 30, 25, 40, 15, 20, 45, 50, 33, 28]
-                            },
-                            {
-                                name: 'Replenish',
-                                data: [13, 23, 20, 8, 13, 27, 15, 22, 18, 12, 25, 30, 35, 20, 15]
-                            }
-                        ]
-                };
-            case 'weekly':
-                return {
-                    labels: categories,
-                    series: chartType === 'pie'
-                        ? [120, 90, 100, 80, 110, 95, 85, 75, 130, 70, 88, 92, 105, 98, 82]
-                        : [
-                            {
-                                name: 'Expenses',
-                                data: [120, 90, 100, 80, 110, 95, 85, 75, 130, 70, 88, 92, 105, 98, 82]
-                            },
-                            {
-                                name: 'Replenish',
-                                data: [90, 85, 95, 75, 88, 82, 78, 70, 110, 65, 80, 85, 95, 88, 75]
-                            }
-                        ]
-                };
-            case 'monthly':
-                return {
-                    labels: categories,
-                    series: chartType === 'pie'
-                        ? [44, 55, 13, 43, 22, 35, 30, 25, 40, 15, 20, 45, 50, 33, 28]
-                        : [
-                            {
-                                name: 'Expenses',
-                                data: [44, 55, 13, 43, 22, 35, 30, 25, 40, 15, 20, 45, 50, 33, 28]
-                            },
-                            {
-                                name: 'Replenish',
-                                data: [13, 23, 20, 8, 13, 27, 15, 22, 18, 12, 25, 30, 35, 20, 15]
-                            }
-                        ]
-                };
-            case 'annual':
-                return {
-                    labels: categories,
-                    series: chartType === 'pie'
-                        ? [320000, 380000, 420000, 450000, 480000, 500000, 520000, 550000, 580000, 600000, 620000, 650000, 680000, 700000, 720000]
-                        : [
-                            {
-                                name: 'Expenses',
-                                data: [320000, 380000, 420000, 450000, 480000, 500000, 520000, 550000, 580000, 600000, 620000, 650000, 680000, 700000, 720000]
-                            },
-                            {
-                                name: 'Replenish',
-                                data: [280000, 350000, 390000, 420000, 450000, 480000, 500000, 520000, 550000, 580000, 600000, 620000, 650000, 680000, 700000]
-                            }
-                        ]
-                };
-            default:
-                return {
-                    labels: [],
-                    series: []
-                };
-        }
+        const values = Object.values(categoryData);
+        
+        return {
+            labels: categories,
+            series: chartType === 'pie'
+                ? values
+                : [
+                    {
+                        name: 'Expenses',
+                        data: values
+                    }
+                ]
+        };
     };
 
     const chartData = getChartData();
@@ -205,7 +133,25 @@ export default function Statistics() {
     };
 
     const getCurrentStats = () => {
-        return statistics[viewOption];
+        return statistics[viewOption] || {
+            totalExpenses: 0,
+            averageExpense: 0,
+            highestDay: 'N/A',
+            highestWeek: 'N/A',
+            highestMonth: 'N/A',
+            highestYear: 'N/A'
+        };
+    };
+
+    const getHighestPeriod = () => {
+        const stats = getCurrentStats();
+        switch(viewOption) {
+            case 'daily': return stats.highestDay;
+            case 'weekly': return stats.highestWeek;
+            case 'monthly': return stats.highestMonth;
+            case 'annual': return stats.highestYear;
+            default: return 'N/A';
+        }
     };
 
     return (
@@ -225,7 +171,7 @@ export default function Statistics() {
                                 <input
                                     type="date"
                                     value={dateRange.startDate.toISOString().split('T')[0]}
-                                    onChange={(e) => setDateRange(prev => ({ ...prev, startDate: new Date(e.target.value) }))}
+                                    onChange={(e) => handleDateRangeChange('startDate', new Date(e.target.value))}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
@@ -234,7 +180,7 @@ export default function Statistics() {
                                 <input
                                     type="date"
                                     value={dateRange.endDate.toISOString().split('T')[0]}
-                                    onChange={(e) => setDateRange(prev => ({ ...prev, endDate: new Date(e.target.value) }))}
+                                    onChange={(e) => handleDateRangeChange('endDate', new Date(e.target.value))}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
@@ -338,13 +284,13 @@ export default function Statistics() {
                         <div className="p-4 bg-white rounded-lg shadow">
                             <h3 className="text-lg font-semibold">Total Expenses</h3>
                             <p className="text-2xl font-bold">
-                                ₱{getCurrentStats().totalExpenses.toLocaleString()}
+                                {formatCurrency(getCurrentStats().totalExpenses)}
                             </p>
                         </div>
                         <div className="p-4 bg-white rounded-lg shadow">
                             <h3 className="text-lg font-semibold">Average Expense</h3>
                             <p className="text-2xl font-bold">
-                                ₱{getCurrentStats().averageExpense.toLocaleString()}
+                                {formatCurrency(getCurrentStats().averageExpense)}
                             </p>
                         </div>
                         <div className="p-4 bg-white rounded-lg shadow">
@@ -352,10 +298,7 @@ export default function Statistics() {
                                 Highest {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)}
                             </h3>
                             <p className="text-2xl font-bold">
-                                {getCurrentStats().highestDay || 
-                                 getCurrentStats().highestWeek || 
-                                 getCurrentStats().highestMonth ||
-                                 getCurrentStats().highestYear}
+                                {getHighestPeriod()}
                             </p>
                         </div>
                     </div>
