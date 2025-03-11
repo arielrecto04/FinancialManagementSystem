@@ -52,6 +52,14 @@ export default function AuthenticatedLayout({ header, children }) {
                                         </NavLink>
                                     </>
                                 )}
+                                {user.role === 'superadmin' && (
+                                    <NavLink
+                                        href={route('petty-cash-requests.approvals')}
+                                        active={route().current('petty-cash-requests.approvals')}
+                                    >
+                                        Petty Cash Approvals
+                                    </NavLink>
+                                )}
                                 <NavLink
                                     href={route('request.form')}
                                     active={route().current('request.form')}
@@ -185,6 +193,14 @@ export default function AuthenticatedLayout({ header, children }) {
                                     User Management
                                 </ResponsiveNavLink>
                             </>
+                        )}
+                        {user.role === 'superadmin' && (
+                            <ResponsiveNavLink
+                                href={route('petty-cash-requests.approvals')}
+                                active={route().current('petty-cash-requests.approvals')}
+                            >
+                                Petty Cash Approvals
+                            </ResponsiveNavLink>
                         )}
                         <ResponsiveNavLink
                             href={route('request.form')}

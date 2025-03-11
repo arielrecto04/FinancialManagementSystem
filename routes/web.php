@@ -11,6 +11,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\HrExpenseController;
 use App\Http\Controllers\OperatingExpenseController;
 use App\Http\Controllers\PettyCashController;
+use App\Http\Controllers\PettyCashRequestController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -97,6 +98,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Petty Cash routes
     Route::post('/petty-cash', [PettyCashController::class, 'store'])->name('petty-cash.store');
+    
+    // Petty Cash Approvals (superadmin only)
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/petty-cash-requests/approvals', [PettyCashRequestController::class, 'approvals'])
+            ->name('petty-cash-requests.approvals');
+        Route::post('/petty-cash-requests/{id}/update-status', [PettyCashRequestController::class, 'updateStatus'])
+            ->name('petty-cash-requests.update-status');
+    });
 });
 
 Route::get('/reports/export-excel', [ReportsController::class, 'exportExcel'])->name('reports.export-excel');

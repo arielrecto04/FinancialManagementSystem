@@ -96,4 +96,60 @@ class PettyCashRequestController extends Controller
 
         return redirect()->back()->with('success', 'Petty cash request deleted successfully.');
     }
+
+    public function updateStatus(Request $request, $id)
+    {
+        if (!auth()->user()->isSuperAdmin()) {
+            return response()->json(['message' => 'Unauthorized action.'], 403);
+        }
+
+        $pettyCashRequest = PettyCashRequest::findOrFail($id);
+        
+        $validated = $request->validate([
+            'status' => 'required|in:approved,rejected',
+            'remarks' => 'required|string'
+        ]);
+
+        $pettyCashRequest->update([
+            'status' => $validated['status'],
+            'remarks' => $validated['remarks']
+        ]);
+
+        return response()->json([
+            'message' => 'Status updated successfully',
+            'request' => $pettyCashRequest->load('user')
+        ]);
+    }
+
+    public function approvals(Request $request)
+    {
+        if (!auth()->user() || auth()->user()->role !== 'superadmin') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $status = $request->get('status', 'all');
+        $sortOrder = $request->get('sortOrder', 'newest');
+
+        $query = PettyCashRequest::with('user')
+            ->when($status !== 'all', function ($query) use ($status) {
+                return $query->where('status', $status);
+            });
+
+        if ($sortOrder === 'newest') {
+            $query->latest();
+        } else {
+            $query->oldest();
+        }
+
+        $requests = $query->paginate(10)
+            ->withQueryString();
+
+        return Inertia::render('PettyCashRequests/Approvals', [
+            'requests' => $requests,
+            'filters' => [
+                'status' => $status,
+                'sortOrder' => $sortOrder
+            ]
+        ]);
+    }
 } 
