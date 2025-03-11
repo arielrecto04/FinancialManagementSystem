@@ -43,7 +43,8 @@ class ReportsController extends Controller
         $statistics = [
             'totalRequests' => count($allRequests),
             'pendingRequests' => collect($allRequests)->where('status', 'pending')->count(),
-            'completedRequests' => collect($allRequests)->whereIn('status', ['approved', 'rejected'])->count(),
+            'approvedRequests' => collect($allRequests)->where('status', 'approved')->count(),
+            'rejectedRequests' => collect($allRequests)->where('status', 'rejected')->count()
         ];
 
         // Calculate statistics for the previous period
@@ -91,14 +92,19 @@ class ReportsController extends Controller
 
         // Calculate change percentages
         $previousTotal = $previousRequests->count();
-        $previousCompleted = $previousRequests->whereIn('status', ['approved', 'rejected'])->count();
+        $previousApproved = $previousRequests->where('status', 'approved')->count();
+        $previousRejected = $previousRequests->where('status', 'rejected')->count();
 
         $statistics['totalRequestsChange'] = $previousTotal > 0 
             ? round((($statistics['totalRequests'] - $previousTotal) / $previousTotal) * 100, 1)
             : 0;
 
-        $statistics['completedRequestsChange'] = $previousCompleted > 0
-            ? round((($statistics['completedRequests'] - $previousCompleted) / $previousCompleted) * 100, 1)
+        $statistics['approvedRequestsChange'] = $previousApproved > 0
+            ? round((($statistics['approvedRequests'] - $previousApproved) / $previousApproved) * 100, 1)
+            : 0;
+
+        $statistics['rejectedRequestsChange'] = $previousRejected > 0
+            ? round((($statistics['rejectedRequests'] - $previousRejected) / $previousRejected) * 100, 1)
             : 0;
 
         // Get admin budget

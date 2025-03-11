@@ -578,15 +578,16 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                     {auth.user.role === 'admin' && <BudgetSummary adminBudget={adminBudget} />}
 
                     {/* Summary Cards */}
-                    <div className="grid gap-4 mb-6 md:grid-cols-3">
+                    <div className="grid gap-4 mb-6 md:grid-cols-4">
                         {/* Total Requests Card */}
-                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Total Requests</p>
                                     <h3 className="text-2xl font-semibold">
-                                        {(localStatistics.totalRequests - (localStatistics.totalPettyCashRequests || 0)).toLocaleString()}
+                                        {localStatistics.totalRequests.toLocaleString()}
                                     </h3>
+                                    <p className="text-xs text-gray-500 mt-1">(Excluding Petty Cash)</p>
                                 </div>
                                 <div className="p-3 bg-blue-100 rounded-full">
                                     <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -604,18 +605,17 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                     </svg>
                                     {Math.abs(statistics.totalRequestsChange)}% from last period
-                                    <span className="ml-2 text-xs text-gray-500">(Excluding Petty Cash)</span>
                                 </span>
                             </div>
                         </div>
 
                         {/* Pending Requests Card */}
-                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Pending Requests</p>
                                     <h3 className="text-2xl font-semibold">
-                                        {(localStatistics.pendingRequests - (localStatistics.pendingPettyCashRequests || 0)).toLocaleString()}
+                                        {localStatistics.pendingRequests.toLocaleString()}
                                     </h3>
                                 </div>
                                 <div className="p-3 bg-yellow-100 rounded-full">
@@ -625,20 +625,19 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                 </div>
                             </div>
                             <div className="mt-4">
-                                <span className="text-sm text-yellow-600 flex items-center">
+                                <span className="text-sm text-yellow-600">
                                     Requires attention
-                                    <span className="ml-2 text-xs text-gray-500">(Excluding Petty Cash)</span>
                                 </span>
                             </div>
                         </div>
 
-                        {/* Completed Requests Card */}
-                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                        {/* Approved Requests Card */}
+                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-gray-600">Completed Requests</p>
+                                    <p className="text-sm text-gray-600">Approved Requests</p>
                                     <h3 className="text-2xl font-semibold">
-                                        {(localStatistics.completedRequests - (localStatistics.completedPettyCashRequests || 0)).toLocaleString()}
+                                        {(localStatistics.approvedRequests || 0).toLocaleString()}
                                     </h3>
                                 </div>
                                 <div className="p-3 bg-green-100 rounded-full">
@@ -648,16 +647,30 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                 </div>
                             </div>
                             <div className="mt-4">
-                                <span className={`text-sm flex items-center ${
-                                    statistics.completedRequestsChange >= 0 ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                    <svg className={`w-4 h-4 mr-1 transform ${
-                                        statistics.completedRequestsChange >= 0 ? 'rotate-0' : 'rotate-180'
-                                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                <span className="text-sm text-green-600">
+                                    Successfully processed
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Rejected Requests Card */}
+                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600">Rejected Requests</p>
+                                    <h3 className="text-2xl font-semibold">
+                                        {(localStatistics.rejectedRequests || 0).toLocaleString()}
+                                    </h3>
+                                </div>
+                                <div className="p-3 bg-red-100 rounded-full">
+                                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                     </svg>
-                                    {Math.abs(statistics.completedRequestsChange)}% from last period
-                                    <span className="ml-2 text-xs text-gray-500">(Excluding Petty Cash)</span>
+                                </div>
+                            </div>
+                            <div className="mt-4">
+                                <span className="text-sm text-red-600">
+                                    Not approved
                                 </span>
                             </div>
                         </div>

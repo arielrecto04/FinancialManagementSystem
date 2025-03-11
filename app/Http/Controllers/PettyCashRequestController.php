@@ -152,4 +152,17 @@ class PettyCashRequestController extends Controller
             ]
         ]);
     }
+
+    public function getPettyCashStatistics()
+    {
+        $total = PettyCashRequest::count();
+        $pending = PettyCashRequest::where('status', 'pending')->count();
+        $completed = PettyCashRequest::whereIn('status', ['approved', 'rejected'])->count();
+
+        return [
+            'pettyCashRequests' => $total,
+            'pendingPettyCashRequests' => $pending,
+            'completedPettyCashRequests' => $completed
+        ];
+    }
 } 
