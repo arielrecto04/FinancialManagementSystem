@@ -636,7 +636,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                 <div>
                                     <p className="text-sm text-gray-600">Completed Requests</p>
                                     <h3 className="text-2xl font-semibold">
-                                        {localStatistics.completedRequests.toLocaleString()}
+                                        {(localStatistics.completedRequests - (localStatistics.completedPettyCashRequests || 0)).toLocaleString()}
                                     </h3>
                                 </div>
                                 <div className="p-3 bg-green-100 rounded-full">
@@ -655,6 +655,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                     </svg>
                                     {Math.abs(statistics.completedRequestsChange)}% from last period
+                                    <span className="ml-2 text-xs text-gray-500">(Excluding Petty Cash)</span>
                                 </span>
                             </div>
                         </div>
