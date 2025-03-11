@@ -580,12 +580,12 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                     {/* Summary Cards */}
                     <div className="grid gap-4 mb-6 md:grid-cols-3">
                         {/* Total Requests Card */}
-                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
+                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Total Requests</p>
                                     <h3 className="text-2xl font-semibold">
-                                        {localStatistics.totalRequests.toLocaleString()}
+                                        {(localStatistics.totalRequests - (localStatistics.totalPettyCashRequests || 0)).toLocaleString()}
                                     </h3>
                                 </div>
                                 <div className="p-3 bg-blue-100 rounded-full">
@@ -604,17 +604,18 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                     </svg>
                                     {Math.abs(statistics.totalRequestsChange)}% from last period
+                                    <span className="ml-2 text-xs text-gray-500">(Excluding Petty Cash)</span>
                                 </span>
                             </div>
                         </div>
 
                         {/* Pending Requests Card */}
-                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
+                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Pending Requests</p>
                                     <h3 className="text-2xl font-semibold">
-                                        {localStatistics.pendingRequests.toLocaleString()}
+                                        {(localStatistics.pendingRequests - (localStatistics.pendingPettyCashRequests || 0)).toLocaleString()}
                                     </h3>
                                 </div>
                                 <div className="p-3 bg-yellow-100 rounded-full">
@@ -624,14 +625,15 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                 </div>
                             </div>
                             <div className="mt-4">
-                                <span className="text-sm text-yellow-600">
+                                <span className="text-sm text-yellow-600 flex items-center">
                                     Requires attention
+                                    <span className="ml-2 text-xs text-gray-500">(Excluding Petty Cash)</span>
                                 </span>
                             </div>
                         </div>
 
                         {/* Completed Requests Card */}
-                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
+                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600">Completed Requests</p>
