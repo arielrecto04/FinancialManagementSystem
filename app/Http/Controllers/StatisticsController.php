@@ -16,8 +16,23 @@ class StatisticsController extends Controller
 {
     public function index(Request $request)
     {
-        $startDate = $request->input('startDate') ? Carbon::parse($request->input('startDate')) : Carbon::now()->startOfMonth();
-        $endDate = $request->input('endDate') ? Carbon::parse($request->input('endDate')) : Carbon::now();
+        // Add isAllTime check
+        $isAllTime = $request->boolean('isAllTime', false);
+        
+        if ($isAllTime) {
+            // For all time, get the earliest date from any request type
+            $startDate = min(
+                SupplyRequest::min('created_at') ?? now(),
+                ReimbursementRequest::min('created_at') ?? now(),
+                Liquidation::min('created_at') ?? now(),
+                HrExpense::min('created_at') ?? now(),
+                OperatingExpense::min('created_at') ?? now()
+            );
+            $endDate = now();
+        } else {
+            $startDate = $request->input('startDate') ? Carbon::parse($request->input('startDate')) : Carbon::now()->startOfMonth();
+            $endDate = $request->input('endDate') ? Carbon::parse($request->input('endDate')) : Carbon::now();
+        }
         
         // Get all expenses within date range
         $expenses = collect([])
@@ -50,6 +65,7 @@ class StatisticsController extends Controller
     private function getSupplyRequests($startDate, $endDate)
     {
         return SupplyRequest::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', 'approved')
             ->get()
             ->map(function ($request) {
                 return [
@@ -64,6 +80,7 @@ class StatisticsController extends Controller
     private function getReimbursements($startDate, $endDate)
     {
         return ReimbursementRequest::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', 'approved')
             ->get()
             ->map(function ($request) {
                 return [
@@ -78,6 +95,7 @@ class StatisticsController extends Controller
     private function getLiquidations($startDate, $endDate)
     {
         return Liquidation::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', 'approved')
             ->get()
             ->map(function ($request) {
                 return [
@@ -92,12 +110,13 @@ class StatisticsController extends Controller
     private function getHrExpenses($startDate, $endDate)
     {
         return HrExpense::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', 'approved')
             ->get()
             ->map(function ($request) {
                 return [
                     'amount' => $request->total_amount_requested,
                     'date' => $request->created_at,
-                    'category' => $request->expenses_category,
+                    'category' => 'HR Expenses Request',
                     'type' => 'Expense'
                 ];
             });
@@ -106,12 +125,13 @@ class StatisticsController extends Controller
     private function getOperatingExpenses($startDate, $endDate)
     {
         return OperatingExpense::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', 'approved')
             ->get()
             ->map(function ($request) {
                 return [
                     'amount' => $request->total_amount,
                     'date' => $request->created_at,
-                    'category' => $request->expense_category,
+                    'category' => 'Operating Expenses Request',
                     'type' => 'Expense'
                 ];
             });
@@ -119,86 +139,152 @@ class StatisticsController extends Controller
 
     private function calculateDailyStats($expenses)
     {
+        // Group expenses by date (YYYY-MM-DD)
         $dailyExpenses = $expenses->groupBy(function ($expense) {
             return $expense['date']->format('Y-m-d');
         });
 
+        // Calculate total expenses for the period
         $totalExpenses = $expenses->sum('amount');
-        $averageExpense = $dailyExpenses->count() > 0 ? $totalExpenses / $dailyExpenses->count() : 0;
-        $highestDay = $dailyExpenses->map(function ($dayExpenses) {
-            return collect($dayExpenses)->sum('amount');
-        })->sortDesc()->keys()->first();
+
+        // Calculate average daily expense
+        $numberOfDays = $dailyExpenses->count() ?: 1; // Avoid division by zero
+        $averageExpense = $totalExpenses / $numberOfDays;
+
+        // Find the day with highest expenses
+        $highestDayData = $dailyExpenses
+            ->map(function ($dayExpenses) {
+                return [
+                    'date' => $dayExpenses->first()['date']->format('Y-m-d'),
+                    'total' => collect($dayExpenses)->sum('amount')
+                ];
+            })
+            ->sortByDesc('total')
+            ->first();
 
         return [
             'totalExpenses' => $totalExpenses,
             'averageExpense' => $averageExpense,
-            'highestDay' => $highestDay ?? 'N/A'
+            'highestDay' => $highestDayData ? $highestDayData['date'] : 'N/A',
+            'highestAmount' => $highestDayData ? $highestDayData['total'] : 0
         ];
     }
 
     private function calculateWeeklyStats($expenses)
     {
+        // Group expenses by week number (YYYY-WW)
         $weeklyExpenses = $expenses->groupBy(function ($expense) {
             return $expense['date']->format('Y-W');
         });
 
         $totalExpenses = $expenses->sum('amount');
-        $averageExpense = $weeklyExpenses->count() > 0 ? $totalExpenses / $weeklyExpenses->count() : 0;
-        $highestWeek = $weeklyExpenses->map(function ($weekExpenses) {
-            return collect($weekExpenses)->sum('amount');
-        })->sortDesc()->keys()->first();
+        $numberOfWeeks = $weeklyExpenses->count() ?: 1;
+        $averageExpense = $totalExpenses / $numberOfWeeks;
+
+        // Find week with highest expenses
+        $highestWeekData = $weeklyExpenses
+            ->map(function ($weekExpenses) {
+                return [
+                    'week' => $weekExpenses->first()['date']->format('Y-W'),
+                    'total' => collect($weekExpenses)->sum('amount')
+                ];
+            })
+            ->sortByDesc('total')
+            ->first();
 
         return [
             'totalExpenses' => $totalExpenses,
             'averageExpense' => $averageExpense,
-            'highestWeek' => $highestWeek ? 'Week ' . substr($highestWeek, -2) : 'N/A'
+            'highestWeek' => $highestWeekData ? 'Week ' . substr($highestWeekData['week'], -2) : 'N/A',
+            'highestAmount' => $highestWeekData ? $highestWeekData['total'] : 0
         ];
     }
 
     private function calculateMonthlyStats($expenses)
     {
+        // Group expenses by month (YYYY-MM)
         $monthlyExpenses = $expenses->groupBy(function ($expense) {
             return $expense['date']->format('Y-m');
         });
 
         $totalExpenses = $expenses->sum('amount');
-        $averageExpense = $monthlyExpenses->count() > 0 ? $totalExpenses / $monthlyExpenses->count() : 0;
-        $highestMonth = $monthlyExpenses->map(function ($monthExpenses) {
-            return collect($monthExpenses)->sum('amount');
-        })->sortDesc()->keys()->first();
+        $numberOfMonths = $monthlyExpenses->count() ?: 1;
+        $averageExpense = $totalExpenses / $numberOfMonths;
+
+        // Find month with highest expenses
+        $highestMonthData = $monthlyExpenses
+            ->map(function ($monthExpenses) {
+                return [
+                    'month' => $monthExpenses->first()['date']->format('F Y'),
+                    'total' => collect($monthExpenses)->sum('amount')
+                ];
+            })
+            ->sortByDesc('total')
+            ->first();
 
         return [
             'totalExpenses' => $totalExpenses,
             'averageExpense' => $averageExpense,
-            'highestMonth' => $highestMonth ? Carbon::createFromFormat('Y-m', $highestMonth)->format('F Y') : 'N/A'
+            'highestMonth' => $highestMonthData ? $highestMonthData['month'] : 'N/A',
+            'highestAmount' => $highestMonthData ? $highestMonthData['total'] : 0
         ];
     }
 
     private function calculateAnnualStats($expenses)
     {
+        // Group expenses by year (YYYY)
         $annualExpenses = $expenses->groupBy(function ($expense) {
             return $expense['date']->format('Y');
         });
 
         $totalExpenses = $expenses->sum('amount');
-        $averageExpense = $annualExpenses->count() > 0 ? $totalExpenses / $annualExpenses->count() : 0;
-        $highestYear = $annualExpenses->map(function ($yearExpenses) {
-            return collect($yearExpenses)->sum('amount');
-        })->sortDesc()->keys()->first();
+        $numberOfYears = $annualExpenses->count() ?: 1;
+        $averageExpense = $totalExpenses / $numberOfYears;
+
+        // Find year with highest expenses
+        $highestYearData = $annualExpenses
+            ->map(function ($yearExpenses) {
+                return [
+                    'year' => $yearExpenses->first()['date']->format('Y'),
+                    'total' => collect($yearExpenses)->sum('amount')
+                ];
+            })
+            ->sortByDesc('total')
+            ->first();
 
         return [
             'totalExpenses' => $totalExpenses,
             'averageExpense' => $averageExpense,
-            'highestYear' => $highestYear ?? 'N/A'
+            'highestYear' => $highestYearData ? $highestYearData['year'] : 'N/A',
+            'highestAmount' => $highestYearData ? $highestYearData['total'] : 0
         ];
     }
 
     private function calculateCategoryDistribution($expenses)
     {
-        return $expenses->groupBy('category')
+        $categories = [
+            'Supply Request',
+            'Reimbursement',
+            'Liquidation',
+            'Petty Cash Request',
+            'HR Expenses Request',
+            'Operating Expenses Request'
+        ];
+
+        $distribution = $expenses->groupBy('category')
             ->map(function ($categoryExpenses) {
                 return collect($categoryExpenses)->sum('amount');
             })
             ->toArray();
+
+        // Ensure all categories exist in the distribution, with 0 if no expenses
+        foreach ($categories as $category) {
+            if (!isset($distribution[$category])) {
+                $distribution[$category] = 0;
+            }
+        }
+
+        // Keep only the specified categories
+        return array_intersect_key($distribution, array_flip($categories));
     }
 }

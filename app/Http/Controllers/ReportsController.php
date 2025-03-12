@@ -482,24 +482,30 @@ class ReportsController extends Controller
 
             DB::beginTransaction();
             try {
-                // Update request status first
+                // Update request status
                 $requestModel->update([
                     'status' => $request->status,
                     'remarks' => $request->remarks ?? ''
                 ]);
 
-                // Calculate new budget values
+                // Update admin budget
                 $newRemainingBudget = floatval($adminBudget->remaining_budget) - $requestAmount;
                 $newUsedBudget = floatval($adminBudget->used_budget) + $requestAmount;
-
-                // Update admin budget
+                
                 $adminBudget->update([
                     'remaining_budget' => $newRemainingBudget,
                     'used_budget' => $newUsedBudget
                 ]);
 
                 DB::commit();
-                return back()->with('success', 'Request approved and budget updated successfully');
+
+                // Get updated statistics
+                $updatedStats = $this->getUpdatedStatistics();
+
+                return back()->with([
+                    'success' => 'Request approved and budget updated successfully',
+                    'statistics' => $updatedStats
+                ]);
             } catch (\Exception $e) {
                 DB::rollback();
                 \Log::error('Transaction failed: ' . $e->getMessage());
@@ -509,13 +515,32 @@ class ReportsController extends Controller
                 ], 500);
             }
         } else {
-            // For rejections, just update the status
+            // For rejections
             $requestModel->update([
                 'status' => $request->status,
                 'remarks' => $request->remarks ?? ''
             ]);
-            return back()->with('success', 'Request rejected successfully');
+
+            // Get updated statistics
+            $updatedStats = $this->getUpdatedStatistics();
+
+            return back()->with([
+                'success' => 'Request rejected successfully',
+                'statistics' => $updatedStats
+            ]);
         }
+    }
+
+    private function getUpdatedStatistics()
+    {
+        $allRequests = $this->getFilteredRequests(request());
+        
+        return [
+            'totalRequests' => count($allRequests),
+            'pendingRequests' => collect($allRequests)->where('status', 'pending')->count(),
+            'approvedRequests' => collect($allRequests)->where('status', 'approved')->count(),
+            'rejectedRequests' => collect($allRequests)->where('status', 'rejected')->count()
+        ];
     }
 
     public function getBudget()

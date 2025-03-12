@@ -7,15 +7,19 @@ import "react-datepicker/dist/react-datepicker.css";
 import RequestDetailsModal from '@/Components/RequestDetailsModal';
 import axios from 'axios';
 import React from 'react';
+import Modal from '@/Components/Modal';
+import Swal from 'sweetalert2';
 
 const BudgetSummary = ({ adminBudget }) => {
     if (!adminBudget) return null;
 
     const formatCurrency = (amount) => {
-        return parseFloat(amount).toLocaleString('en-PH', {
+        return new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP',
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-        });
+        }).format(amount || 0).replace('PHP', '₱');
     };
 
     return (
@@ -24,8 +28,8 @@ const BudgetSummary = ({ adminBudget }) => {
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm text-gray-600">Total Budget</p>
-                        <h3 className="text-2xl font-semibold">
-                            ₱{formatCurrency(adminBudget?.total_budget ?? 0)}
+                        <h3 className="text-2xl font-semibold mt-2">
+                            {formatCurrency(adminBudget?.total_budget)}
                         </h3>
                     </div>
                     <div className="p-3 bg-blue-100 rounded-full">
@@ -40,8 +44,8 @@ const BudgetSummary = ({ adminBudget }) => {
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm text-gray-600">Remaining Budget</p>
-                        <h3 className="text-2xl font-semibold">
-                            ₱{formatCurrency(adminBudget?.remaining_budget ?? 0)}
+                        <h3 className="text-2xl font-semibold mt-2">
+                            {formatCurrency(adminBudget?.remaining_budget)}
                         </h3>
                     </div>
                     <div className="p-3 bg-green-100 rounded-full">
@@ -56,8 +60,8 @@ const BudgetSummary = ({ adminBudget }) => {
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm text-gray-600">Used Budget</p>
-                        <h3 className="text-2xl font-semibold">
-                            ₱{formatCurrency(adminBudget?.used_budget ?? 0)}
+                        <h3 className="text-2xl font-semibold mt-2">
+                            {formatCurrency(adminBudget?.used_budget)}
                         </h3>
                     </div>
                     <div className="p-3 bg-red-100 rounded-full">
@@ -65,6 +69,59 @@ const BudgetSummary = ({ adminBudget }) => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                         </svg>
                     </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const Icons = {
+    Document: ({ className }) => (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+    ),
+    Clock: ({ className }) => (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+    CheckCircle: ({ className }) => (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+    XCircle: ({ className }) => (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    )
+};
+
+const StatCard = ({ title, value, change, icon, status }) => {
+    return (
+        <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-sm text-gray-600">{title}</p>
+                    <div className="flex items-center mt-2">
+                        <h3 className="text-2xl font-semibold">{value}</h3>
+                        {change && (
+                            <span className={`ml-2 text-sm flex items-center ${
+                                parseFloat(change) >= 0 ? 'text-green-500' : 'text-red-500'
+                            }`}>
+                                {parseFloat(change) >= 0 ? '↑' : '↓'} {Math.abs(change)}% from last period
+                            </span>
+                        )}
+                    </div>
+                </div>
+                <div className={`p-3 rounded-full ${
+                    status === 'pending' ? 'bg-blue-100' :
+                    status === 'approved' ? 'bg-green-100' :
+                    status === 'rejected' ? 'bg-red-100' :
+                    'bg-gray-100'
+                }`}>
+                    {icon}
                 </div>
             </div>
         </div>
@@ -210,60 +267,110 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
 
     const submitAction = () => {
         if (!selectedRequest?.extracted_id) {
-            console.error('Request ID not found in selectedRequest:', selectedRequest);
-            alert('Error: Request ID not found. Please try again.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Request ID not found. Please try again.',
+            });
             setIsActionModalOpen(false);
             return;
         }
-        
-        console.log('Submitting action:', {
-            id: selectedRequest.extracted_id,
-            type: selectedRequest.extracted_type,
-            status: actionType,
-            remarks: remarks
-        });
-        
-        // Use Inertia router instead of axios for form submission
-        router.post(route('reports.update-status', selectedRequest.extracted_id), {
-            status: actionType,
-            type: selectedRequest.extracted_type,
-            remarks: remarks
-        }, {
-            onSuccess: (page) => {
-                // Check for error message in the flash data
-                if (page.props.flash.error) {
-                    alert(page.props.flash.error);
-                } else {
-                    // Update local statistics
-                    setLocalStatistics(prev => ({
-                        ...prev,
-                        pendingRequests: prev.pendingRequests - 1,
-                        completedRequests: prev.completedRequests + 1,
-                    }));
 
-                    // Update adminBudget if action is 'approved'
-                    if (actionType === 'approved' && adminBudget) {
-                        const requestAmount = selectedRequest.type === 'Reimbursement' 
-                            ? parseFloat(selectedRequest.amount || 0) 
-                            : parseFloat(selectedRequest.total_amount || 0);
+        // Close the action modal first
+        setIsActionModalOpen(false);
 
-                        setAdminBudget(prev => ({
-                            ...prev,
-                            remaining_budget: parseFloat(prev.remaining_budget) - requestAmount,
-                            used_budget: parseFloat(prev.used_budget) + requestAmount
-                        }));
+        // Show confirmation dialog
+        Swal.fire({
+            title: actionType === 'approved' ? 'Approve Request?' : 'Reject Request?',
+            text: actionType === 'approved' 
+                ? 'Are you sure you want to approve this request?' 
+                : 'Are you sure you want to reject this request?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: actionType === 'approved' ? '#10B981' : '#EF4444',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: actionType === 'approved' ? 'Yes, approve it!' : 'Yes, reject it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show loading state
+                Swal.fire({
+                    title: 'Processing...',
+                    html: 'Please wait...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
                     }
-                }
+                });
 
-                // Close modal
-                setIsActionModalOpen(false);
-                
-                // Refresh the page to get updated data
-                router.reload();
-            },
-            onError: (errors) => {
-                console.error('Error updating status:', errors);
-                alert('Error updating status. Please try again.');
+                // Submit the action
+                router.post(route('reports.update-status', selectedRequest.extracted_id), {
+                    status: actionType,
+                    type: selectedRequest.extracted_type,
+                }, {
+                    onSuccess: (page) => {
+                        if (page.props.flash.error) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: page.props.flash.error,
+                            });
+                        } else {
+                            // Update local statistics
+                            setLocalStatistics(prev => {
+                                const newStats = { ...prev };
+                                if (selectedRequest.status === 'pending') {
+                                    newStats.pendingRequests--;
+                                }
+                                if (actionType === 'approved') {
+                                    newStats.approvedRequests++;
+                                    if (selectedRequest.status === 'rejected') {
+                                        newStats.rejectedRequests--;
+                                    }
+                                } else if (actionType === 'rejected') {
+                                    newStats.rejectedRequests++;
+                                    if (selectedRequest.status === 'approved') {
+                                        newStats.approvedRequests--;
+                                    }
+                                }
+                                return newStats;
+                            });
+
+                            // Update budget if action is 'approved'
+                            if (actionType === 'approved' && adminBudget) {
+                                const requestAmount = selectedRequest.type === 'Reimbursement' 
+                                    ? parseFloat(selectedRequest.amount || 0) 
+                                    : parseFloat(selectedRequest.total_amount || 0);
+
+                                setAdminBudget(prev => ({
+                                    ...prev,
+                                    remaining_budget: parseFloat(prev.remaining_budget) - requestAmount,
+                                    used_budget: parseFloat(prev.used_budget) + requestAmount
+                                }));
+                            }
+
+                            // Show success message
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: actionType === 'approved' 
+                                    ? 'Request has been approved.' 
+                                    : 'Request has been rejected.',
+                                confirmButtonColor: '#10B981'
+                            });
+
+                            router.reload({ only: ['requests'] });
+                        }
+                    },
+                    onError: (errors) => {
+                        console.error('Error updating status:', errors);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to update request status. Please try again.',
+                        });
+                    }
+                });
             }
         });
     };
@@ -294,181 +401,92 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
         return () => clearTimeout(timeoutId);
     }, [dateRange, selectedRequestType, selectedStatus, isDateRangeActive, sortOrder]);
 
-    const ActionModalContent = ({ selectedRequest, actionType, onCancel, onConfirm }) => {
-        // Debug logging removed for remarks
-        
-        const requestAmount = selectedRequest.type === 'Reimbursement' 
-            ? parseFloat(selectedRequest.amount) 
-            : parseFloat(selectedRequest.total_amount);
-
-        // Add proper number comparison
-        const isInsufficientBudget = actionType === 'approved' && 
-            adminBudget && 
-            parseFloat(adminBudget.remaining_budget) < requestAmount;
-
-        // Debug logging
-        console.log('Budget Check:', {
-            remainingBudget: adminBudget?.remaining_budget,
-            requestAmount,
-            isInsufficientBudget
-        });
-
-        return (
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-                {/* Header */}
-                <div className="mb-5">
-                    <h3 className={`text-xl font-semibold ${
-                        actionType === 'approved' ? 'text-green-700' : 'text-red-700'
-                    }`}>
-                        {actionType === 'approved' ? 'Approve Request' : 'Reject Request'}
-                    </h3>
-                    <p className="mt-2 text-sm text-gray-600">
-                        Request Number: <span className="font-medium">{selectedRequest.request_number || 'N/A'}</span>
-                    </p>
-                </div>
-
-                {/* Request Details */}
-                <div className="mb-5 p-4 bg-gray-50 rounded-lg">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="col-span-2">
-                            <p className="text-gray-600">Requested By</p>
-                            <p className="font-medium">{selectedRequest.user_name || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p className="text-gray-600">Type</p>
-                            <p className="font-medium">{selectedRequest.type || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p className="text-gray-600">Department</p>
-                            <p className="font-medium">{selectedRequest.department || 'N/A'}</p>
-                        </div>
-                        <div className="col-span-2">
-                            <p className="text-gray-600">
-                                {selectedRequest.type === 'Liquidation' ? 'Date' : 'Department'}
-                            </p>
-                            <p className="font-medium">
-                                {selectedRequest.type === 'Liquidation' 
-                                    ? selectedRequest.date 
-                                    : selectedRequest.department || 'N/A'}
-                            </p>
-                        </div>
-                        <div className="col-span-2">
-                            <p className="text-gray-600">
-                                {selectedRequest.type === 'Liquidation' ? 'Total Amount (Cash Advance)' : 'Total Amount'}
-                            </p>
-                            <p className="font-medium">
-                                {requestAmount.toLocaleString()}
-                                {selectedRequest.type === 'Liquidation' && 
-                                    ` (₱${parseFloat(selectedRequest.cash_advance_amount).toLocaleString(undefined, {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2
-                                    })})`
-                                }
-                            </p>
-                        </div>
-                        {selectedRequest.type === 'Liquidation' && (
-                            <>
-                                <div>
-                                    <p className="text-gray-600">Amount to Refund</p>
-                                    <p className="font-medium">
-                                        ₱{parseFloat(selectedRequest.amount_to_refund).toLocaleString(undefined, {
-                                            minimumFractionDigits: 2,
-                                            maximumFractionDigits: 2
-                                        })}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-gray-600">Amount to Reimburse</p>
-                                    <p className="font-medium">
-                                        ₱{parseFloat(selectedRequest.amount_to_reimburse).toLocaleString(undefined, {
-                                            minimumFractionDigits: 2,
-                                            maximumFractionDigits: 2
-                                        })}
-                                    </p>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                {/* Remarks Input removed */}
-
-                {/* Add budget information */}
-                {actionType === 'approved' && adminBudget && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-sm text-gray-600">Available Budget</p>
-                                <p className="font-medium text-lg">
-                                    ₱{parseFloat(adminBudget.remaining_budget).toLocaleString()}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600">Request Amount</p>
-                                <p className="font-medium text-lg">
-                                    ₱{requestAmount.toLocaleString()}
-                                </p>
-                            </div>
-                        </div>
-                        {isInsufficientBudget && (
-                            <div className="mt-2 p-2 bg-red-50 text-red-700 rounded">
-                                Insufficient budget to approve this request
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex justify-end space-x-3 mt-4">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onConfirm}
-                        disabled={isInsufficientBudget}
-                        className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-                            actionType === 'approved' 
-                                ? isInsufficientBudget 
-                                    ? 'bg-gray-400 cursor-not-allowed'
-                                    : 'bg-green-600 hover:bg-green-700' 
-                                : 'bg-red-600 hover:bg-red-700'
-                        }`}
-                    >
-                        {actionType === 'approved' ? 'Approve' : 'Reject'}
-                    </button>
-                </div>
-            </div>
-        );
-    };
-
     const ActionModal = () => {
-        if (!isActionModalOpen || !selectedRequest) return null;
-
         return (
-            <div className="fixed inset-0 z-50 overflow-y-auto">
-                <div className="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
-                    <div 
-                        className="fixed inset-0 bg-gray-500/75 backdrop-blur-sm transition-opacity" 
-                        onClick={() => setIsActionModalOpen(false)}
-                    />
-                    
-                    <ActionModalContent 
-                        selectedRequest={selectedRequest}
-                        actionType={actionType}
-                        onCancel={() => {
-                            setIsActionModalOpen(false);
-                        }}
-                        onConfirm={() => {
-                            submitAction();
-                        }}
-                    />
+            <Modal show={isActionModalOpen} onClose={() => setIsActionModalOpen(false)}>
+                <div className="p-6">
+                    <h2 className="text-xl font-semibold text-center text-green-600 mb-6">
+                        {actionType === 'approved' ? 'Approve Request' : 'Reject Request'}
+                    </h2>
+
+                    <div className="space-y-4">
+                        {/* Request Details */}
+                        <div className="space-y-3">
+                            <div className="text-center text-gray-600 mb-4">
+                                Request Number: {selectedRequest?.request_number || 'N/A'}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm text-gray-600">Requested By</p>
+                                    <p className="font-medium">{selectedRequest?.user?.name || 'N/A'}</p>
+                                </div>
+                                
+                                <div>
+                                    <p className="text-sm text-gray-600">Department</p>
+                                    <p className="font-medium">{selectedRequest?.department || 'N/A'}</p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-gray-600">Type</p>
+                                    <p className="font-medium">{selectedRequest?.type || 'N/A'}</p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-gray-600">Department</p>
+                                    <p className="font-medium">{selectedRequest?.department || 'N/A'}</p>
+                                </div>
+                            </div>
+
+                            <div className="border-t pt-4 mt-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-sm text-gray-600">Total Amount</p>
+                                        <p className="font-medium">
+                                            {formatCurrency(selectedRequest?.total_amount || selectedRequest?.amount || 0)}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 border-t pt-4 mt-4">
+                                <div>
+                                    <p className="text-sm text-gray-600">Available Budget</p>
+                                    <p className="font-medium">
+                                        {formatCurrency(adminBudget?.remaining_budget || 0)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600">Request Amount</p>
+                                    <p className="font-medium">
+                                        {formatCurrency(selectedRequest?.total_amount || selectedRequest?.amount || 0)}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-end gap-3 mt-6">
+                        <button
+                            onClick={() => setIsActionModalOpen(false)}
+                            className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={submitAction}
+                            className={`px-4 py-2 text-white rounded-md ${
+                                actionType === 'approved' 
+                                    ? 'bg-green-600 hover:bg-green-700' 
+                                    : 'bg-red-600 hover:bg-red-700'
+                            }`}
+                        >
+                            {actionType === 'approved' ? 'Approve' : 'Reject'}
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </Modal>
         );
     };
 
@@ -569,6 +587,16 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
         window.location.href = `${route('reports.export-pdf')}?${queryParams}`;
     };
 
+    // Add this helper function at the component level
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount || 0).replace('PHP', '₱');
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title="Reports" />
@@ -578,102 +606,30 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                     {auth.user.role === 'admin' && <BudgetSummary adminBudget={adminBudget} />}
 
                     {/* Summary Cards */}
-                    <div className="grid gap-4 mb-6 md:grid-cols-4">
-                        {/* Total Requests Card */}
-                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">Total Requests</p>
-                                    <h3 className="text-2xl font-semibold">
-                                        {localStatistics.totalRequests.toLocaleString()}
-                                    </h3>
-                                    <p className="text-xs text-gray-500 mt-1">(Excluding Petty Cash)</p>
-                                </div>
-                                <div className="p-3 bg-blue-100 rounded-full">
-                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div className="mt-4">
-                                <span className={`text-sm flex items-center ${
-                                    statistics.totalRequestsChange >= 0 ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                    <svg className={`w-4 h-4 mr-1 transform ${
-                                        statistics.totalRequestsChange >= 0 ? 'rotate-0' : 'rotate-180'
-                                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                    </svg>
-                                    {Math.abs(statistics.totalRequestsChange)}% from last period
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Pending Requests Card */}
-                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">Pending Requests</p>
-                                    <h3 className="text-2xl font-semibold">
-                                        {localStatistics.pendingRequests.toLocaleString()}
-                                    </h3>
-                                </div>
-                                <div className="p-3 bg-yellow-100 rounded-full">
-                                    <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div className="mt-4">
-                                <span className="text-sm text-yellow-600">
-                                    Requires attention
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Approved Requests Card */}
-                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">Approved Requests</p>
-                                    <h3 className="text-2xl font-semibold">
-                                        {(localStatistics.approvedRequests || 0).toLocaleString()}
-                                    </h3>
-                                </div>
-                                <div className="p-3 bg-green-100 rounded-full">
-                                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div className="mt-4">
-                                <span className="text-sm text-green-600">
-                                    Successfully processed
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Rejected Requests Card */}
-                        <div className="p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-all">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">Rejected Requests</p>
-                                    <h3 className="text-2xl font-semibold">
-                                        {(localStatistics.rejectedRequests || 0).toLocaleString()}
-                                    </h3>
-                                </div>
-                                <div className="p-3 bg-red-100 rounded-full">
-                                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div className="mt-4">
-                                <span className="text-sm text-red-600">
-                                    Not approved
-                                </span>
-                            </div>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <StatCard
+                            title="Total Requests"
+                            value={localStatistics.totalRequests}
+                            icon={<Icons.Document className={`w-6 h-6 text-gray-600`} />}
+                        />
+                        <StatCard
+                            title="Pending Requests"
+                            value={localStatistics.pendingRequests}
+                            icon={<Icons.Clock className={`w-6 h-6 text-blue-600`} />}
+                            status="pending"
+                        />
+                        <StatCard
+                            title="Approved Requests"
+                            value={localStatistics.approvedRequests}
+                            icon={<Icons.CheckCircle className={`w-6 h-6 text-green-600`} />}
+                            status="approved"
+                        />
+                        <StatCard
+                            title="Rejected Requests"
+                            value={localStatistics.rejectedRequests}
+                            icon={<Icons.XCircle className={`w-6 h-6 text-red-600`} />}
+                            status="rejected"
+                        />
                     </div>
 
                     <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">

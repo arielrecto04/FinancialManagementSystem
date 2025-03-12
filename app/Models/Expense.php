@@ -27,4 +27,35 @@ class Expense extends Model
         'amount' => 'decimal:2',
         'quantity' => 'decimal:2',
     ];
+
+    // Add relationships
+    public function supplyRequest()
+    {
+        return $this->hasOne(SupplyRequest::class);
+    }
+
+    public function reimbursement()
+    {
+        return $this->hasOne(ReimbursementRequest::class);
+    }
+
+    public function liquidation()
+    {
+        return $this->hasOne(Liquidation::class);
+    }
+
+    public function pettyCash()
+    {
+        return $this->hasOne(PettyCashRequest::class);
+    }
+
+    public function hrExpense()
+    {
+        return $this->hasOne(HrExpense::class);
+    }
+
+    public function operatingExpense()
+    {
+        return $this->hasOne(OperatingExpense::class);
+    }
 }

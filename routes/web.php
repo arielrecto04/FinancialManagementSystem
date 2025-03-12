@@ -13,6 +13,7 @@ use App\Http\Controllers\OperatingExpenseController;
 use App\Http\Controllers\PettyCashController;
 use App\Http\Controllers\PettyCashRequestController;
 use App\Http\Controllers\AdminBudgetController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -34,9 +35,9 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware(['auth'])
+        ->name('dashboard');
 
     // Statistics
     Route::get('/statistics', function () {
