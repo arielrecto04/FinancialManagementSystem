@@ -299,26 +299,26 @@ export default function Index({ auth, users, budgets, flash }) {
                                     />
                                     {activeTab === 'admins' && <ViewToggle />}
                                 </div>
-                                <Link
-                                    href={route('users.create')}
+                                    <Link
+                                        href={route('users.create')}
                                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                                >
-                                    <FiPlus className="mr-2" />
-                                    Add User
-                                </Link>
+                                    >
+                                        <FiPlus className="mr-2" />
+                                        Add User
+                                    </Link>
                             </div>
 
                             {activeTab === 'admins' && viewMode === 'card' ? (
                                 <CardView />
                             ) : (
                                 <>
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                                                     {activeTab === 'admins' && (
                                                         <>
                                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Budget</th>
@@ -327,9 +327,9 @@ export default function Index({ auth, users, budgets, flash }) {
                                                         </>
                                                     )}
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
                                                 {paginatedUsers.map((user) => {
                                                     const budget = getUserBudget(user.id);
                                                     const canSetBudget = user.role === 'admin' || user.role === 'superadmin';
@@ -349,7 +349,7 @@ export default function Index({ auth, users, budgets, flash }) {
                                                             </td>
                                                             {activeTab === 'admins' && (
                                                                 <>
-                                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                    <td className="px-6 py-4 whitespace-nowrap">
                                                                         {canSetBudget ? (
                                                                             <div className="flex items-center space-x-2">
                                                                                 <span className={`px-2 py-1 text-sm rounded-md bg-blue-50 text-blue-700`}>
@@ -367,8 +367,8 @@ export default function Index({ auth, users, budgets, flash }) {
                                                                         ) : (
                                                                             <span className="text-gray-400 text-sm">Not applicable</span>
                                                                         )}
-                                                                    </td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
                                                                         {canSetBudget && (
                                                                             <span className={`px-2 py-1 text-sm rounded-md ${
                                                                                 budget ? 'bg-orange-50 text-orange-700' : 'bg-gray-50 text-gray-500'
@@ -376,28 +376,28 @@ export default function Index({ auth, users, budgets, flash }) {
                                                                                 {budget ? `₱${parseFloat(budget.used_budget).toLocaleString()}` : '₱0'}
                                                                             </span>
                                                                         )}
-                                                                    </td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
                                                                         {canSetBudget && (
                                                                             <span className={`px-2 py-1 text-sm rounded-md ${
                                                                                 budget ? (parseFloat(budget.remaining_budget) > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700') : 'bg-gray-50 text-gray-500'
                                                                             }`}>
                                                                                 {budget ? `₱${parseFloat(budget.remaining_budget).toLocaleString()}` : '₱0'}
-                                                                            </span>
+                                                        </span>
                                                                         )}
-                                                                    </td>
+                                                    </td>
                                                                 </>
                                                             )}
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                                                    <Link
-                                                                        href={route('users.edit', user.id)}
+                                                            <Link
+                                                                href={route('users.edit', user.id)}
                                                                     className="inline-flex items-center text-blue-600 hover:text-blue-900"
-                                                                    >
+                                                            >
                                                                     <FiEdit2 className="w-4 h-4 mr-1" />
                                                                     Edit
-                                                                    </Link>
-                                                                        <button
-                                                                            onClick={() => handleDelete(user.id)}
+                                                            </Link>
+                                                                <button
+                                                                    onClick={() => handleDelete(user.id)}
                                                                     className="inline-flex items-center text-red-600 hover:text-red-900"
                                                                 >
                                                                     <FiTrash2 className="w-4 h-4 mr-1" />
@@ -411,17 +411,17 @@ export default function Index({ auth, users, budgets, flash }) {
                                                                     >
                                                                         <FiRefreshCw className="w-4 h-4 mr-1" />
                                                                         Reset Budget
-                                                                        </button>
-                                                                    )}
-                                                            </td>
-                                                        </tr>
+                                                                </button>
+                                                            )}
+                                                    </td>
+                                                </tr>
                                                     );
                                                 })}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    </tbody>
+                                </table>
+                            </div>
                                     {totalPages > 1 && (
-                                        <div className="mt-6">
+                                <div className="mt-6">
                                             <div className="flex justify-center">
                                                 {[...Array(totalPages)].map((_, i) => (
                                                     <button
@@ -437,7 +437,7 @@ export default function Index({ auth, users, budgets, flash }) {
                                                     </button>
                                                 ))}
                                             </div>
-                                        </div>
+                                </div>
                                     )}
                                 </>
                             )}

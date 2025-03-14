@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
@@ -51,9 +51,251 @@ const HighExpenseItem = ({ category, amount, date, icon }) => {
     );
 };
 
-export default function Dashboard({ auth }) {
+const UserStatsCard = ({ totalUsers, adminUsers, regularUsers }) => {
+    return (
+        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <h3 className="ml-3 text-sm font-medium text-gray-600">User Statistics</h3>
+                </div>
+                <Link href={route('users.index')} className="text-sm text-purple-500 hover:text-purple-700">
+                    View All
+                </Link>
+            </div>
+            <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Total Users</span>
+                    <span className="text-sm font-semibold">{totalUsers}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Admin Users</span>
+                    <span className="text-sm font-semibold">{adminUsers}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Regular Users</span>
+                    <span className="text-sm font-semibold">{regularUsers}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Add these new card components
+const RequestStatsCard = ({ statistics }) => {
+    console.log('RequestStatsCard statistics:', statistics);
+    
+    const statusColors = {
+        pending: 'text-yellow-600',
+        approved: 'text-green-600',
+        rejected: 'text-red-600'
+    };
+
+    // Ensure we have default values
+    const stats = statistics || {
+        totalRequests: 0,
+        pendingRequests: 0,
+        approvedRequests: 0,
+        rejectedRequests: 0
+    };
+
+    return (
+        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                    <h3 className="ml-3 text-sm font-medium text-gray-600">Request Statistics</h3>
+                </div>
+                <Link href={route('reports.index')} className="text-sm text-blue-500 hover:text-blue-700">
+                    View All
+                </Link>
+            </div>
+            <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Total Requests</span>
+                    <div className="flex items-center">
+                        <span className="text-sm font-semibold">{stats.totalRequests}</span>
+                    </div>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Pending</span>
+                    <span className={`text-sm font-semibold ${statusColors.pending}`}>
+                        {stats.pendingRequests}
+                    </span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Approved</span>
+                    <span className={`text-sm font-semibold ${statusColors.approved}`}>
+                        {stats.approvedRequests}
+                    </span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Rejected</span>
+                    <span className={`text-sm font-semibold ${statusColors.rejected}`}>
+                        {stats.rejectedRequests}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const BudgetOverviewCard = ({ budget }) => {
+    const usagePercentage = budget?.total_budget > 0 
+        ? ((budget?.used_budget / budget?.total_budget) * 100).toFixed(1) 
+        : 0;
+
+    return (
+        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 className="ml-3 text-sm font-medium text-gray-600">Budget Overview</h3>
+                </div>
+                <Link href="#" className="text-sm text-blue-500 hover:text-blue-700">
+                    View All
+                </Link>
+            </div>
+            <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Total Budget</span>
+                    <span className="text-sm font-semibold">₱{budget?.total_budget?.toLocaleString() ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Used Budget</span>
+                    <span className="text-sm font-semibold">₱{budget?.used_budget?.toLocaleString() ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Remaining</span>
+                    <span className="text-sm font-semibold">₱{budget?.remaining_budget?.toLocaleString() ?? 0}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ExpenseBreakdownCard = ({ expenses }) => {
+    return (
+        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between">
+                <div className="p-3 bg-yellow-100 rounded-lg">
+                    <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                    </svg>
+                </div>
+            </div>
+            <h3 className="mt-4 mb-2 text-sm font-medium text-gray-600">Expense Breakdown</h3>
+            <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">HR Expenses</span>
+                    <span className="text-lg font-semibold">₱{expenses?.hr?.toLocaleString() ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Operating Expenses</span>
+                    <span className="text-lg font-semibold">₱{expenses?.operating?.toLocaleString() ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Supply Requests</span>
+                    <span className="text-lg font-semibold">₱{expenses?.supply?.toLocaleString() ?? 0}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Add this new component
+const ExpenseOverviewCard = ({ summaryData }) => {
+    return (
+        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <h3 className="ml-3 text-sm font-medium text-gray-600">Expense Overview</h3>
+                </div>
+                <Link href="#" className="text-sm text-blue-500 hover:text-blue-700">
+                    View Details
+                </Link>
+            </div>
+
+            <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Daily Expenses</span>
+                    <div className="flex items-center">
+                        <span className="text-sm font-semibold mr-2">₱{summaryData?.daily?.total ?? "0.00"}</span>
+                        <span className="text-xs text-green-500">+2.5%</span>
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Weekly Expenses</span>
+                    <div className="flex items-center">
+                        <span className="text-sm font-semibold mr-2">₱{summaryData?.weekly?.total ?? "0.00"}</span>
+                        <span className="text-xs text-green-500">+3.2%</span>
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Monthly Expenses</span>
+                    <div className="flex items-center">
+                        <span className="text-sm font-semibold mr-2">₱{summaryData?.monthly?.total ?? "0.00"}</span>
+                        <span className="text-xs text-green-500">+4.8%</span>
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Annual Expenses</span>
+                    <div className="flex items-center">
+                        <span className="text-sm font-semibold mr-2">₱{summaryData?.annual?.total ?? "0.00"}</span>
+                        <span className="text-xs text-green-500">+10.5%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default function Dashboard({ 
+    auth, 
+    userStats = {}, // Add default value
+    summaryData = {},
+    requestStats = {},
+    budgetOverview = {},
+    monthlyData = {},
+    highestExpenses = [],
+    recentLogs = [],
+    statistics
+}) {
     const { user } = auth;
     
+    // Debug props
+    console.log('Dashboard Props:', {
+        auth,
+        userStats,
+        summaryData,
+        requestStats,
+        budgetOverview
+    });
+
+    // Debug the statistics
+    console.log('Dashboard Statistics:', statistics);
+
     // Sample data for the bar chart
     const barChartOptions = {
         chart: {
@@ -126,6 +368,16 @@ export default function Dashboard({ auth }) {
         // Add more category icons as needed
     };
 
+    // Add default value for statistics
+    const stats = statistics || {
+        totalRequests: 0,
+        pendingRequests: 0,
+        approvedRequests: 0,
+        rejectedRequests: 0
+    };
+
+    console.log('Dashboard props:', { auth, statistics: stats });
+
     return (
         <AuthenticatedLayout
             user={user}
@@ -142,15 +394,34 @@ export default function Dashboard({ auth }) {
                     {(user.role === 'admin' || user.role === 'superadmin') ? (
                         // Admin view
                         <>
-                            {/* Expense Summary Cards */}
-                            <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
-                                <ExpenseSummaryCard title="Daily Expenses" amount="0.00" icon={summaryCardIcons.daily} />
-                                <ExpenseSummaryCard title="Weekly Expenses" amount="0.00" icon={summaryCardIcons.weekly} />
-                                <ExpenseSummaryCard title="Monthly Expenses" amount="0.00" icon={summaryCardIcons.monthly} />
-                                <ExpenseSummaryCard title="Annual Expenses" amount="0.00" icon={summaryCardIcons.annual} />
+                            {/* Statistics Cards */}
+                            <div className="grid grid-cols-1 gap-4 mb-6 lg:grid-cols-4">
+                                {/* Expense Overview Card */}
+                                <div className="lg:col-span-1">
+                                    <ExpenseOverviewCard summaryData={summaryData} />
+                                </div>
+                                
+                                {/* User Stats Card */}
+                                <div className="lg:col-span-1">
+                                    <UserStatsCard
+                                        totalUsers={userStats?.total_users ?? 0}
+                                        adminUsers={userStats?.admin_users ?? 0}
+                                        regularUsers={userStats?.regular_users ?? 0}
+                                    />
+                                </div>
+                                
+                                {/* Budget Overview Card */}
+                                <div className="lg:col-span-1">
+                                    <BudgetOverviewCard budget={budgetOverview} />
+                                </div>
+                                
+                                {/* Request Stats Card */}
+                                <div className="lg:col-span-1">
+                                    <RequestStatsCard statistics={stats} />
+                                </div>
                             </div>
 
-                            {/* Charts Section */}
+                            {/* Charts and Logs Section */}
                             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                                 {/* Bar Chart */}
                                 <div className="col-span-2 p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">

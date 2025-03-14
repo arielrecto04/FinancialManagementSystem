@@ -56,12 +56,12 @@ export default function Statistics({ statistics, categoryData }) {
     const getChartData = () => {
         const values = Object.values(categoryData);
         
-        return {
+                return {
             labels: categories, // Use the constant categories array for both chart types
-            series: chartType === 'pie' 
+                    series: chartType === 'pie' 
                 ? values
                 : [{
-                    name: 'Expenses',
+                                name: 'Expenses',
                     data: values
                 }]
         };
@@ -111,8 +111,8 @@ export default function Statistics({ statistics, categoryData }) {
                 borderRadius: 6,
             },
         },
-        dataLabels: {
-            enabled: true,
+                dataLabels: {
+                        enabled: true,
             formatter: function (val) {
                 return formatCurrency(val);
             },
@@ -212,7 +212,7 @@ export default function Statistics({ statistics, categoryData }) {
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    {/* Date Range Section */}
+                        {/* Date Range Section */}
                     <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
                         <h3 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
                             <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,8 +256,8 @@ export default function Statistics({ statistics, categoryData }) {
                                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                                 />
                             </div>
+                            </div>
                         </div>
-                    </div>
 
                     {/* View Options */}
                     <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
@@ -333,30 +333,30 @@ export default function Statistics({ statistics, categoryData }) {
                     <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <h3 className="text-xl font-semibold mb-6 flex items-center text-gray-800">
                             <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expense Distribution
-                        </h3>
-                        {chartType === 'pie' ? (
-                            <ReactApexChart
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expense Distribution
+                            </h3>
+                            {chartType === 'pie' ? (
+                                <ReactApexChart
                                 key={key}
-                                options={pieChartOptions}
+                                    options={pieChartOptions}
                                 series={Object.values(categoryData)}
-                                type="pie"
+                                    type="pie"
                                 height={400}
-                            />
-                        ) : (
-                            <ReactApexChart
+                                />
+                            ) : (
+                                <ReactApexChart
                                 key={key}
-                                options={stackedChartOptions}
+                                    options={stackedChartOptions}
                                 series={[{
                                     name: 'Expenses',
                                     data: Object.values(categoryData)
                                 }]}
-                                type="bar"
+                                    type="bar"
                                 height={400}
-                            />
-                        )}
+                                />
+                            )}
                     </div>
                 </div>
             </div>

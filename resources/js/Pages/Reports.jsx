@@ -275,7 +275,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
             setIsActionModalOpen(false);
             return;
         }
-
+        
         // Close the action modal first
         setIsActionModalOpen(false);
 
@@ -304,19 +304,19 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                 });
 
                 // Submit the action
-                router.post(route('reports.update-status', selectedRequest.extracted_id), {
-                    status: actionType,
-                    type: selectedRequest.extracted_type,
-                }, {
-                    onSuccess: (page) => {
-                        if (page.props.flash.error) {
+        router.post(route('reports.update-status', selectedRequest.extracted_id), {
+            status: actionType,
+            type: selectedRequest.extracted_type,
+        }, {
+            onSuccess: (page) => {
+                if (page.props.flash.error) {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error',
                                 text: page.props.flash.error,
                             });
-                        } else {
-                            // Update local statistics
+                } else {
+                    // Update local statistics
                             setLocalStatistics(prev => {
                                 const newStats = { ...prev };
                                 if (selectedRequest.status === 'pending') {
@@ -337,16 +337,16 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                             });
 
                             // Update budget if action is 'approved'
-                            if (actionType === 'approved' && adminBudget) {
-                                const requestAmount = selectedRequest.type === 'Reimbursement' 
-                                    ? parseFloat(selectedRequest.amount || 0) 
-                                    : parseFloat(selectedRequest.total_amount || 0);
+                    if (actionType === 'approved' && adminBudget) {
+                        const requestAmount = selectedRequest.type === 'Reimbursement' 
+                            ? parseFloat(selectedRequest.amount || 0) 
+                            : parseFloat(selectedRequest.total_amount || 0);
 
-                                setAdminBudget(prev => ({
-                                    ...prev,
-                                    remaining_budget: parseFloat(prev.remaining_budget) - requestAmount,
-                                    used_budget: parseFloat(prev.used_budget) + requestAmount
-                                }));
+                        setAdminBudget(prev => ({
+                            ...prev,
+                            remaining_budget: parseFloat(prev.remaining_budget) - requestAmount,
+                            used_budget: parseFloat(prev.used_budget) + requestAmount
+                        }));
                             }
 
                             // Show success message
@@ -361,9 +361,9 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
 
                             router.reload({ only: ['requests'] });
                         }
-                    },
-                    onError: (errors) => {
-                        console.error('Error updating status:', errors);
+            },
+            onError: (errors) => {
+                console.error('Error updating status:', errors);
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
@@ -410,27 +410,27 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                     </h2>
 
                     <div className="space-y-4">
-                        {/* Request Details */}
+                {/* Request Details */}
                         <div className="space-y-3">
                             <div className="text-center text-gray-600 mb-4">
                                 Request Number: {selectedRequest?.request_number || 'N/A'}
-                            </div>
+                        </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
+                        <div>
                                     <p className="text-sm text-gray-600">Requested By</p>
                                     <p className="font-medium">{selectedRequest?.user?.name || 'N/A'}</p>
-                                </div>
+                        </div>
                                 
-                                <div>
+                        <div>
                                     <p className="text-sm text-gray-600">Department</p>
                                     <p className="font-medium">{selectedRequest?.department || 'N/A'}</p>
-                                </div>
+                        </div>
 
                                 <div>
                                     <p className="text-sm text-gray-600">Type</p>
                                     <p className="font-medium">{selectedRequest?.type || 'N/A'}</p>
-                                </div>
+                        </div>
 
                                 <div>
                                     <p className="text-sm text-gray-600">Department</p>
@@ -440,52 +440,52 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
 
                             <div className="border-t pt-4 mt-4">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
+                                <div>
                                         <p className="text-sm text-gray-600">Total Amount</p>
-                                        <p className="font-medium">
+                                    <p className="font-medium">
                                             {formatCurrency(selectedRequest?.total_amount || selectedRequest?.amount || 0)}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 border-t pt-4 mt-4">
-                                <div>
-                                    <p className="text-sm text-gray-600">Available Budget</p>
-                                    <p className="font-medium">
-                                        {formatCurrency(adminBudget?.remaining_budget || 0)}
                                     </p>
                                 </div>
-                                <div>
-                                    <p className="text-sm text-gray-600">Request Amount</p>
-                                    <p className="font-medium">
-                                        {formatCurrency(selectedRequest?.total_amount || selectedRequest?.amount || 0)}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-end gap-3 mt-6">
-                        <button
-                            onClick={() => setIsActionModalOpen(false)}
-                            className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={submitAction}
-                            className={`px-4 py-2 text-white rounded-md ${
-                                actionType === 'approved' 
-                                    ? 'bg-green-600 hover:bg-green-700' 
-                                    : 'bg-red-600 hover:bg-red-700'
-                            }`}
-                        >
-                            {actionType === 'approved' ? 'Approve' : 'Reject'}
-                        </button>
                     </div>
                 </div>
+
+                            <div className="grid grid-cols-2 gap-4 border-t pt-4 mt-4">
+                            <div>
+                                <p className="text-sm text-gray-600">Available Budget</p>
+                                    <p className="font-medium">
+                                        {formatCurrency(adminBudget?.remaining_budget || 0)}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600">Request Amount</p>
+                                    <p className="font-medium">
+                                        {formatCurrency(selectedRequest?.total_amount || selectedRequest?.amount || 0)}
+                                </p>
+                            </div>
+                        </div>
+                            </div>
+                    </div>
+
+                {/* Action Buttons */}
+                    <div className="flex justify-end gap-3 mt-6">
+                    <button
+                            onClick={() => setIsActionModalOpen(false)}
+                            className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                            onClick={submitAction}
+                            className={`px-4 py-2 text-white rounded-md ${
+                            actionType === 'approved' 
+                                    ? 'bg-green-600 hover:bg-green-700' 
+                                : 'bg-red-600 hover:bg-red-700'
+                        }`}
+                    >
+                        {actionType === 'approved' ? 'Approve' : 'Reject'}
+                    </button>
+                </div>
+            </div>
             </Modal>
         );
     };

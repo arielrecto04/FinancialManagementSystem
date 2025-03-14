@@ -17,7 +17,7 @@ export default function Approvals({ auth, requests, filters }) {
         sort: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>,
         calendar: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>,
     };
-
+    
     const handleFilterChange = (newStatus) => {
         setCurrentFilter(newStatus);
         router.get(
@@ -237,7 +237,7 @@ export default function Approvals({ auth, requests, filters }) {
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         <div className="flex items-center gap-1">
                                                             {icons.calendar}
-                                                            {new Date(request.date_needed).toLocaleDateString()}
+                                                        {new Date(request.date_needed).toLocaleDateString()}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

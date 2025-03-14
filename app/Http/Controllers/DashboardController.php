@@ -11,59 +11,80 @@ use App\Models\HrExpense;
 use App\Models\OperatingExpense;
 use App\Models\AdminBudget;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $now = Carbon::now();
-        
-        // Get budget information
-        $adminBudget = AdminBudget::first();
-        
-        // Get all approved requests for different time periods
-        $summaryData = [
-            'daily' => $this->getDailySummary(),
-            'weekly' => $this->getWeeklySummary(),
-            'monthly' => $this->getMonthlySummary(),
-            'annual' => $this->getAnnualSummary(),
-        ];
+        try {
+            Log::info('Fetching dashboard statistics...');
 
-        // Get monthly data for chart
-        $monthlyData = $this->getMonthlyChartData();
+            // Get all types of requests
+            $supplyRequests = SupplyRequest::all();
+            Log::info('Supply Requests:', ['count' => $supplyRequests->count()]);
 
-        // Get highest expenses
-        $highestExpenses = $this->getHighestExpenses();
+            $reimbursementRequests = ReimbursementRequest::all();
+            Log::info('Reimbursement Requests:', ['count' => $reimbursementRequests->count()]);
 
-        // Get recent logs
-        $recentLogs = $this->getRecentLogs();
+            $liquidationRequests = Liquidation::all();
+            Log::info('Liquidation Requests:', ['count' => $liquidationRequests->count()]);
 
-        // Get budget overview
-        $budgetOverview = [
-            'total_budget' => $adminBudget->total_budget ?? 0,
-            'remaining_budget' => $adminBudget->remaining_budget ?? 0,
-            'used_budget' => $adminBudget->used_budget ?? 0,
-            'budget_percentage' => $adminBudget->total_budget > 0 
-                ? ($adminBudget->used_budget / $adminBudget->total_budget) * 100 
-                : 0
-        ];
+            $hrExpenseRequests = HrExpense::all();
+            Log::info('HR Expense Requests:', ['count' => $hrExpenseRequests->count()]);
 
-        // Get request statistics
-        $requestStats = [
-            'total_requests' => $this->getTotalRequests(),
-            'pending_requests' => $this->getPendingRequests(),
-            'approved_requests' => $this->getApprovedRequests(),
-            'rejected_requests' => $this->getRejectedRequests()
-        ];
+            $operatingExpenseRequests = OperatingExpense::all();
+            Log::info('Operating Expense Requests:', ['count' => $operatingExpenseRequests->count()]);
 
-        return Inertia::render('Dashboard', [
-            'summaryData' => $summaryData,
-            'monthlyData' => $monthlyData,
-            'highestExpenses' => $highestExpenses,
-            'recentLogs' => $recentLogs,
-            'budgetOverview' => $budgetOverview,
-            'requestStats' => $requestStats
-        ]);
+            // Combine all requests
+            $allRequests = collect([])
+                ->concat($supplyRequests)
+                ->concat($reimbursementRequests)
+                ->concat($liquidationRequests)
+                ->concat($hrExpenseRequests)
+                ->concat($operatingExpenseRequests);
+
+            // Calculate statistics
+            $statistics = [
+                'totalRequests' => $allRequests->count(),
+                'pendingRequests' => $allRequests->where('status', 'pending')->count(),
+                'approvedRequests' => $allRequests->where('status', 'approved')->count(),
+                'rejectedRequests' => $allRequests->where('status', 'rejected')->count()
+            ];
+
+            Log::info('Dashboard Statistics:', $statistics);
+
+            // Debug the data being sent
+            Log::info('Rendering dashboard with data:', [
+                'user' => auth()->user()->id,
+                'statistics' => $statistics
+            ]);
+
+            return Inertia::render('Dashboard', [
+                'auth' => [
+                    'user' => auth()->user(),
+                ],
+                'statistics' => $statistics
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in Dashboard Controller:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return Inertia::render('Dashboard', [
+                'auth' => [
+                    'user' => auth()->user(),
+                ],
+                'statistics' => [
+                    'totalRequests' => 0,
+                    'pendingRequests' => 0,
+                    'approvedRequests' => 0,
+                    'rejectedRequests' => 0
+                ]
+            ]);
+        }
     }
 
     private function getDailySummary()
@@ -71,71 +92,12 @@ class DashboardController extends Controller
         $today = Carbon::today();
         
         return [
-            'supply' => SupplyRequest::whereDate('created_at', $today)
-                ->where('status', 'approved')
-                ->sum('total_amount'),
-            'reimbursement' => ReimbursementRequest::whereDate('created_at', $today)
-                ->where('status', 'approved')
-                ->sum('amount'),
-            'liquidation' => Liquidation::whereDate('created_at', $today)
-                ->where('status', 'approved')
-                ->sum('total_amount'),
-            'hr' => HrExpense::whereDate('created_at', $today)
-                ->where('status', 'approved')
-                ->sum('total_amount_requested'),
-            'operating' => OperatingExpense::whereDate('created_at', $today)
-                ->where('status', 'approved')
-                ->sum('total_amount')
+            'supply' => SupplyRequest::whereDate('created_at', $today)->sum('amount'),
+            'reimbursement' => ReimbursementRequest::whereDate('created_at', $today)->sum('amount'),
+            'liquidation' => Liquidation::whereDate('created_at', $today)->sum('amount'),
+            'hr_expense' => HrExpense::whereDate('created_at', $today)->sum('amount'),
+            'operating_expense' => OperatingExpense::whereDate('created_at', $today)->sum('amount'),
+            'total' => SupplyRequest::whereDate('created_at', $today)->sum('amount') + ReimbursementRequest::whereDate('created_at', $today)->sum('amount') + Liquidation::whereDate('created_at', $today)->sum('amount') + HrExpense::whereDate('created_at', $today)->sum('amount') + OperatingExpense::whereDate('created_at', $today)->sum('amount')
         ];
     }
-
-    // Similar methods for weekly, monthly, and annual summaries...
-
-    private function getHighestExpenses()
-    {
-        $expenses = collect([]);
-        
-        // Get top expenses from each type
-        $expenses = $expenses->merge(
-            SupplyRequest::where('status', 'approved')
-                ->orderBy('total_amount', 'desc')
-                ->take(5)
-                ->get()
-                ->map(fn($req) => [
-                    'type' => 'Supply Request',
-                    'amount' => $req->total_amount,
-                    'date' => $req->created_at,
-                    'description' => $req->description
-                ])
-        );
-
-        // Add other request types similarly...
-
-        return $expenses->sortByDesc('amount')->take(5);
-    }
-
-    private function getRecentLogs()
-    {
-        $logs = collect([]);
-        
-        // Merge all request types and get recent ones
-        $logs = $logs->merge(
-            SupplyRequest::with('user')
-                ->latest()
-                ->take(10)
-                ->get()
-                ->map(fn($req) => [
-                    'type' => 'Supply Request',
-                    'amount' => $req->total_amount,
-                    'date' => $req->created_at,
-                    'status' => $req->status,
-                    'user' => $req->user->name,
-                    'description' => $req->description
-                ])
-        );
-
-        // Add other request types similarly...
-
-        return $logs->sortByDesc('date')->take(10);
-    }
-} 
+}
