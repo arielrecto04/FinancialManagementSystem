@@ -51,7 +51,7 @@ const HighExpenseItem = ({ category, amount, date, icon }) => {
     );
 };
 
-const UserStatsCard = ({ totalUsers, adminUsers, regularUsers }) => {
+const UserStatsCard = ({ totalUsers, adminUsers, regularUsers, superadminUsers }) => {
     return (
         <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
@@ -70,15 +70,19 @@ const UserStatsCard = ({ totalUsers, adminUsers, regularUsers }) => {
             <div className="space-y-3">
                 <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Total Users</span>
-                    <span className="text-sm font-semibold">{totalUsers}</span>
+                    <span className="text-sm font-semibold">{totalUsers ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Admin Users</span>
-                    <span className="text-sm font-semibold">{adminUsers}</span>
+                    <span className="text-sm font-semibold">{adminUsers ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Regular Users</span>
-                    <span className="text-sm font-semibold">{regularUsers}</span>
+                    <span className="text-sm font-semibold">{regularUsers ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Super Admin Users</span>
+                    <span className="text-sm font-semibold">{superadminUsers ?? 0}</span>
                 </div>
             </div>
         </div>
@@ -273,7 +277,7 @@ const ExpenseOverviewCard = ({ summaryData }) => {
 
 export default function Dashboard({ 
     auth, 
-    userStats = {}, // Add default value
+    userStats = {}, 
     summaryData = {},
     requestStats = {},
     budgetOverview = {},
@@ -404,9 +408,10 @@ export default function Dashboard({
                                 {/* User Stats Card */}
                                 <div className="lg:col-span-1">
                                     <UserStatsCard
-                                        totalUsers={userStats?.total_users ?? 0}
-                                        adminUsers={userStats?.admin_users ?? 0}
-                                        regularUsers={userStats?.regular_users ?? 0}
+                                        totalUsers={userStats.total_users}
+                                        adminUsers={userStats.admin_users}
+                                        regularUsers={userStats.regular_users}
+                                        superadminUsers={userStats.superadmin_users}
                                     />
                                 </div>
                                 

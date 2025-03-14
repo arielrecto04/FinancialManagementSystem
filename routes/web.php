@@ -34,8 +34,21 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Dashboard
+    // Dashboard route should be at the top
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // User management routes (admin only)
+    Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->group(function () {
+        Route::resource('users', UserController::class);
+        
+        // Admin budget routes
+        Route::post('/admin-budgets', [AdminBudgetController::class, 'store'])->name('admin-budgets.store');
+        Route::patch('/admin-budgets/{adminBudget}', [AdminBudgetController::class, 'update'])->name('admin-budgets.update');
+        Route::delete('/admin-budgets/{adminBudget}', [AdminBudgetController::class, 'destroy'])->name('admin-budgets.destroy');
+        
+        // Add route to fetch budgets
+        Route::get('/admin-budgets', [AdminBudgetController::class, 'index'])->name('admin-budgets.index');
+    });
 
     // Statistics
     Route::get('/statistics', function () {
@@ -90,19 +103,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Admin budget routes
     Route::get('/admin/budget', [ReportsController::class, 'getBudget'])->name('admin.budget');
-
-    // User management routes (admin only)
-    Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(function () {
-        Route::resource('users', UserController::class);
-        
-        // Admin budget routes
-        Route::post('/admin-budgets', [AdminBudgetController::class, 'store'])->name('admin-budgets.store');
-        Route::patch('/admin-budgets/{adminBudget}', [AdminBudgetController::class, 'update'])->name('admin-budgets.update');
-        Route::delete('/admin-budgets/{adminBudget}', [AdminBudgetController::class, 'destroy'])->name('admin-budgets.destroy');
-        
-        // Add route to fetch budgets
-        Route::get('/admin-budgets', [AdminBudgetController::class, 'index'])->name('admin-budgets.index');
-    });
 
     // Petty Cash routes
     Route::post('/petty-cash', [PettyCashController::class, 'store'])->name('petty-cash.store');

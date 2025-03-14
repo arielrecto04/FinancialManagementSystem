@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\User;
 use App\Models\SupplyRequest;
 use App\Models\ReimbursementRequest;
 use App\Models\Liquidation;
@@ -18,33 +19,24 @@ class DashboardController extends Controller
     public function index()
     {
         try {
-            Log::info('Fetching dashboard statistics...');
+            // Get user statistics
+            $userStats = [
+                'total_users' => User::count(),
+                'admin_users' => User::where('role', 'admin')->count(),
+                'regular_users' => User::where('role', 'user')->count(),
+                'superadmin_users' => User::where('role', 'superadmin')->count(),
+            ];
 
-            // Get all types of requests
-            $supplyRequests = SupplyRequest::all();
-            Log::info('Supply Requests:', ['count' => $supplyRequests->count()]);
+            Log::info('User Statistics:', $userStats);
 
-            $reimbursementRequests = ReimbursementRequest::all();
-            Log::info('Reimbursement Requests:', ['count' => $reimbursementRequests->count()]);
-
-            $liquidationRequests = Liquidation::all();
-            Log::info('Liquidation Requests:', ['count' => $liquidationRequests->count()]);
-
-            $hrExpenseRequests = HrExpense::all();
-            Log::info('HR Expense Requests:', ['count' => $hrExpenseRequests->count()]);
-
-            $operatingExpenseRequests = OperatingExpense::all();
-            Log::info('Operating Expense Requests:', ['count' => $operatingExpenseRequests->count()]);
-
-            // Combine all requests
+            // Get request statistics
             $allRequests = collect([])
-                ->concat($supplyRequests)
-                ->concat($reimbursementRequests)
-                ->concat($liquidationRequests)
-                ->concat($hrExpenseRequests)
-                ->concat($operatingExpenseRequests);
+                ->concat(SupplyRequest::all())
+                ->concat(ReimbursementRequest::all())
+                ->concat(Liquidation::all())
+                ->concat(HrExpense::all())
+                ->concat(OperatingExpense::all());
 
-            // Calculate statistics
             $statistics = [
                 'totalRequests' => $allRequests->count(),
                 'pendingRequests' => $allRequests->where('status', 'pending')->count(),
@@ -52,18 +44,11 @@ class DashboardController extends Controller
                 'rejectedRequests' => $allRequests->where('status', 'rejected')->count()
             ];
 
-            Log::info('Dashboard Statistics:', $statistics);
-
-            // Debug the data being sent
-            Log::info('Rendering dashboard with data:', [
-                'user' => auth()->user()->id,
-                'statistics' => $statistics
-            ]);
-
             return Inertia::render('Dashboard', [
                 'auth' => [
                     'user' => auth()->user(),
                 ],
+                'userStats' => $userStats,
                 'statistics' => $statistics
             ]);
 
@@ -76,6 +61,12 @@ class DashboardController extends Controller
             return Inertia::render('Dashboard', [
                 'auth' => [
                     'user' => auth()->user(),
+                ],
+                'userStats' => [
+                    'total_users' => 0,
+                    'admin_users' => 0,
+                    'regular_users' => 0,
+                    'superadmin_users' => 0
                 ],
                 'statistics' => [
                     'totalRequests' => 0,
