@@ -32,159 +32,184 @@ const ExpenseSummaryCard = ({ title, amount, icon }) => {
     );
 };
 
-const HighExpenseItem = ({ category, amount, date, icon }) => {
+const HighExpenseItem = ({ type, category, amount, date }) => {
+    const categoryIcons = {
+        'HR Expense': (
+            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        ),
+        'Operating Expense': (
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+        ),
+        'Supply Request': (
+            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+        ),
+        'Reimbursement': (
+            <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        ),
+        'Liquidation': (
+            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+        ),
+    };
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP'
+        }).format(amount);
+    };
+
     return (
-        <div className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                    <div className="p-2 mr-3 bg-gray-100 rounded-lg">
-                        {icon}
-                    </div>
-                    <div>
-                        <h4 className="font-medium">{category}</h4>
-                        <p className="text-sm text-gray-500">{date}</p>
-                    </div>
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
+            <div className="flex items-center space-x-3">
+                <div className="p-2 bg-gray-100 rounded-lg">
+                    {categoryIcons[type]}
                 </div>
-                <span className="text-lg font-semibold">₱{amount}</span>
+                <div>
+                    <p className="text-sm font-medium text-gray-900">{type}</p>
+                    <p className="text-xs text-gray-500">{category}</p>
+                </div>
+            </div>
+            <div className="text-right">
+                <p className="text-sm font-semibold text-gray-900">{formatCurrency(amount)}</p>
+                <p className="text-xs text-gray-500">{new Date(date).toLocaleDateString()}</p>
             </div>
         </div>
     );
 };
 
 const UserStatsCard = ({ totalUsers, adminUsers, regularUsers, superadminUsers }) => {
+    const stats = [
+        { label: 'Total Users', value: totalUsers, color: 'blue', icon: (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+        )},
+        { label: 'Admins', value: adminUsers, color: 'purple', icon: (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+        )},
+        { label: 'Regular Users', value: regularUsers, color: 'indigo', icon: (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+        )},
+        { label: 'Super Admins', value: superadminUsers, color: 'violet', icon: (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+        )}
+    ];
+
     return (
-        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                        <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                     </div>
-                    <h3 className="ml-3 text-sm font-medium text-gray-600">User Statistics</h3>
+                    <h3 className="text-lg font-semibold text-gray-800">User Statistics</h3>
                 </div>
-                <Link href={route('users.index')} className="text-sm text-purple-500 hover:text-purple-700">
-                    View All
+                <Link
+                    href={route('users.index')}
+                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                >
+                    View More
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                 </Link>
             </div>
-            <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Total Users</span>
-                    <span className="text-sm font-semibold">{totalUsers ?? 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Admin Users</span>
-                    <span className="text-sm font-semibold">{adminUsers ?? 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Regular Users</span>
-                    <span className="text-sm font-semibold">{regularUsers ?? 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Super Admin Users</span>
-                    <span className="text-sm font-semibold">{superadminUsers ?? 0}</span>
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+                {stats.map((stat, index) => (
+                    <div key={index} className="bg-gray-50 p-4 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <div className={`p-2 bg-${stat.color}-100 rounded-lg`}>
+                                {stat.icon}
+                            </div>
+                            <span className="text-sm font-medium text-gray-600">{stat.label}</span>
+                        </div>
+                        <span className={`text-lg font-semibold text-${stat.color}-600`}>
+                            {stat.value}
+                        </span>
+                    </div>
+                ))}
             </div>
         </div>
     );
 };
 
-// Add these new card components
 const RequestStatsCard = ({ statistics }) => {
-    console.log('RequestStatsCard statistics:', statistics);
-    
-    const statusColors = {
-        pending: 'text-yellow-600',
-        approved: 'text-green-600',
-        rejected: 'text-red-600'
-    };
-
-    // Ensure we have default values
-    const stats = statistics || {
-        totalRequests: 0,
-        pendingRequests: 0,
-        approvedRequests: 0,
-        rejectedRequests: 0
-    };
+    const stats = [
+        { label: 'Total Requests', value: statistics?.totalRequests || 0, color: 'blue', icon: (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+        )},
+        { label: 'Pending', value: statistics?.pendingRequests || 0, color: 'yellow', icon: (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        )},
+        { label: 'Approved', value: statistics?.approvedRequests || 0, color: 'green', icon: (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        )},
+        { label: 'Rejected', value: statistics?.rejectedRequests || 0, color: 'red', icon: (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        )}
+    ];
 
     return (
-        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                        <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
                     </div>
-                    <h3 className="ml-3 text-sm font-medium text-gray-600">Request Statistics</h3>
+                    <h3 className="text-lg font-semibold text-gray-800">Request Statistics</h3>
                 </div>
-                <Link href={route('reports.index')} className="text-sm text-blue-500 hover:text-blue-700">
-                    View All
+                <Link
+                    href={route('reports.index')}
+                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                >
+                    View More
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                 </Link>
             </div>
-            <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Total Requests</span>
-                    <div className="flex items-center">
-                        <span className="text-sm font-semibold">{stats.totalRequests}</span>
+            <div className="grid grid-cols-2 gap-4">
+                {stats.map((stat, index) => (
+                    <div key={index} className="bg-gray-50 p-4 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <div className={`p-2 bg-${stat.color}-100 rounded-lg`}>
+                                {stat.icon}
+                            </div>
+                            <span className="text-sm font-medium text-gray-600">{stat.label}</span>
+                        </div>
+                        <span className={`text-lg font-semibold text-${stat.color}-600`}>
+                            {stat.value}
+                        </span>
                     </div>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Pending</span>
-                    <span className={`text-sm font-semibold ${statusColors.pending}`}>
-                        {stats.pendingRequests}
-                    </span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Approved</span>
-                    <span className={`text-sm font-semibold ${statusColors.approved}`}>
-                        {stats.approvedRequests}
-                    </span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Rejected</span>
-                    <span className={`text-sm font-semibold ${statusColors.rejected}`}>
-                        {stats.rejectedRequests}
-                    </span>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const BudgetOverviewCard = ({ budget }) => {
-    const usagePercentage = budget?.total_budget > 0 
-        ? ((budget?.used_budget / budget?.total_budget) * 100).toFixed(1) 
-        : 0;
-
-    return (
-        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <h3 className="ml-3 text-sm font-medium text-gray-600">Budget Overview</h3>
-                </div>
-                <Link href="#" className="text-sm text-blue-500 hover:text-blue-700">
-                    View All
-                </Link>
-            </div>
-            <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Total Budget</span>
-                    <span className="text-sm font-semibold">₱{budget?.total_budget?.toLocaleString() ?? 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Used Budget</span>
-                    <span className="text-sm font-semibold">₱{budget?.used_budget?.toLocaleString() ?? 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Remaining</span>
-                    <span className="text-sm font-semibold">₱{budget?.remaining_budget?.toLocaleString() ?? 0}</span>
-                </div>
+                ))}
             </div>
         </div>
     );
@@ -220,70 +245,12 @@ const ExpenseBreakdownCard = ({ expenses }) => {
     );
 };
 
-// Add this new component
-const ExpenseOverviewCard = ({ summaryData }) => {
-    return (
-        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                    </div>
-                    <h3 className="ml-3 text-sm font-medium text-gray-600">Expense Overview</h3>
-                </div>
-                <Link href="#" className="text-sm text-blue-500 hover:text-blue-700">
-                    View Details
-                </Link>
-            </div>
-
-            <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Daily Expenses</span>
-                    <div className="flex items-center">
-                        <span className="text-sm font-semibold mr-2">₱{summaryData?.daily?.total ?? "0.00"}</span>
-                        <span className="text-xs text-green-500">+2.5%</span>
-                    </div>
-                </div>
-
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Weekly Expenses</span>
-                    <div className="flex items-center">
-                        <span className="text-sm font-semibold mr-2">₱{summaryData?.weekly?.total ?? "0.00"}</span>
-                        <span className="text-xs text-green-500">+3.2%</span>
-                    </div>
-                </div>
-
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Monthly Expenses</span>
-                    <div className="flex items-center">
-                        <span className="text-sm font-semibold mr-2">₱{summaryData?.monthly?.total ?? "0.00"}</span>
-                        <span className="text-xs text-green-500">+4.8%</span>
-                    </div>
-                </div>
-
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Annual Expenses</span>
-                    <div className="flex items-center">
-                        <span className="text-sm font-semibold mr-2">₱{summaryData?.annual?.total ?? "0.00"}</span>
-                        <span className="text-xs text-green-500">+10.5%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 export default function Dashboard({ 
     auth, 
     userStats = {}, 
-    summaryData = {},
     requestStats = {},
-    budgetOverview = {},
-    monthlyData = {},
+    monthlyExpenses = [],
     highestExpenses = [],
-    recentLogs = [],
     statistics
 }) {
     const { user } = auth;
@@ -292,15 +259,13 @@ export default function Dashboard({
     console.log('Dashboard Props:', {
         auth,
         userStats,
-        summaryData,
         requestStats,
-        budgetOverview
     });
 
     // Debug the statistics
     console.log('Dashboard Statistics:', statistics);
 
-    // Sample data for the bar chart
+    // Configure the bar chart
     const barChartOptions = {
         chart: {
             type: 'bar',
@@ -312,31 +277,46 @@ export default function Dashboard({
         plotOptions: {
             bar: {
                 horizontal: false,
+                borderRadius: 4,
+                columnWidth: '70%',
             },
         },
         xaxis: {
-            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         },
         legend: {
-            position: 'top'
+            position: 'top',
+            horizontalAlign: 'left'
         },
         fill: {
             opacity: 1
+        },
+        colors: ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
+        theme: {
+            mode: 'light'
         }
     };
 
     const barChartSeries = [
         {
-            name: 'Utilities',
-            data: [44, 55, 41, 67, 22, 43, 21]
+            name: 'HR Expenses',
+            data: monthlyExpenses.map(month => month.hr)
         },
         {
-            name: 'Services',
-            data: [13, 23, 20, 8, 13, 27, 33]
+            name: 'Operating Expenses',
+            data: monthlyExpenses.map(month => month.operating)
         },
         {
-            name: 'Others',
-            data: [11, 17, 15, 15, 21, 14, 15]
+            name: 'Supply Requests',
+            data: monthlyExpenses.map(month => month.supply)
+        },
+        {
+            name: 'Reimbursements',
+            data: monthlyExpenses.map(month => month.reimbursement)
+        },
+        {
+            name: 'Liquidations',
+            data: monthlyExpenses.map(month => month.liquidation)
         }
     ];
 
@@ -399,12 +379,7 @@ export default function Dashboard({
                         // Admin view
                         <>
                             {/* Statistics Cards */}
-                            <div className="grid grid-cols-1 gap-4 mb-6 lg:grid-cols-4">
-                                {/* Expense Overview Card */}
-                                <div className="lg:col-span-1">
-                                    <ExpenseOverviewCard summaryData={summaryData} />
-                                </div>
-                                
+                            <div className="grid grid-cols-1 gap-4 mb-6 lg:grid-cols-2">
                                 {/* User Stats Card */}
                                 <div className="lg:col-span-1">
                                     <UserStatsCard
@@ -413,11 +388,6 @@ export default function Dashboard({
                                         regularUsers={userStats.regular_users}
                                         superadminUsers={userStats.superadmin_users}
                                     />
-                                </div>
-                                
-                                {/* Budget Overview Card */}
-                                <div className="lg:col-span-1">
-                                    <BudgetOverviewCard budget={budgetOverview} />
                                 </div>
                                 
                                 {/* Request Stats Card */}
@@ -445,68 +415,32 @@ export default function Dashboard({
                                             </button>
                                         </div>
                                     </div>
-                                    <ReactApexChart
-                                        options={barChartOptions}
-                                        series={barChartSeries}
-                                        type="bar"
-                                        height={350}
-                                    />
+                                    <div className="h-[400px]">
+                                        <ReactApexChart
+                                            options={barChartOptions}
+                                            series={barChartSeries}
+                                            type="bar"
+                                            height="100%"
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* Highest Expense Log */}
                                 <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-lg font-semibold">Highest Expense Log</h3>
-                                        <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                            </svg>
-                                        </button>
                                     </div>
-                                    <div className="space-y-4">
-                                        <HighExpenseItem
-                                            category="Utilities"
-                                            amount="15,000.00"
-                                            date="2024-03-15"
-                                            icon={categoryIcons.Utilities}
-                                        />
-                                        {/* Add more high expense items */}
+                                    <div className="overflow-y-auto max-h-[400px] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                                        {highestExpenses.map((expense, index) => (
+                                            <HighExpenseItem
+                                                key={`${expense.type}-${expense.id}`}
+                                                type={expense.type}
+                                                category={expense.category}
+                                                amount={expense.amount}
+                                                date={expense.date}
+                                            />
+                                        ))}
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Recent Logs */}
-                            <div className="mt-4 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
-                                <div className="p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-lg font-semibold">Recent Logs</h3>
-                                        <div className="flex space-x-2">
-                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                                                </svg>
-                                            </button>
-                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="text-left bg-gray-50">
-                                                <th className="p-3">Date</th>
-                                                <th className="p-3">Description</th>
-                                                <th className="p-3">Category</th>
-                                                <th className="p-3">Amount</th>
-                                                <th className="p-3">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {/* Add your recent log items here */}
-                                        </tbody>
-                                    </table>
                                 </div>
                             </div>
                         </>
