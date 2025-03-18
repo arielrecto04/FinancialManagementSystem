@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\AuditLogTrait;
 
 class PettyCashRequest extends Model
 {
-    use HasFactory;
+    use HasFactory, AuditLogTrait;
 
     protected $fillable = [
         'request_number',

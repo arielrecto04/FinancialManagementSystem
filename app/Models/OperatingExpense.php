@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\AuditLogTrait;
 
 class OperatingExpense extends Model
 {
-    use HasFactory;
+    use HasFactory, AuditLogTrait;
 
     /**
      * The attributes that are mass assignable.

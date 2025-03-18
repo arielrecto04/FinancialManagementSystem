@@ -14,6 +14,7 @@ use App\Http\Controllers\PettyCashController;
 use App\Http\Controllers\PettyCashRequestController;
 use App\Http\Controllers\AdminBudgetController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AuditLogController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -114,6 +115,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/petty-cash-requests/{id}/update-status', [PettyCashRequestController::class, 'updateStatus'])
             ->name('petty-cash-requests.update-status');
     });
+
+    // Audit Logs routes (admin and superadmin only)
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])
+        ->name('audit-logs.index');
 });
 
 Route::middleware(['auth'])->group(function () {

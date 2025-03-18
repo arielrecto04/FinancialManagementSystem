@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\AuditLogTrait;
 
 class ReimbursementRequest extends Model
 {
+    use AuditLogTrait;
+
     protected $fillable = [
         'user_id',
         'request_number',

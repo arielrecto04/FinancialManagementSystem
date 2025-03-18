@@ -50,6 +50,13 @@ export default function AuthenticatedLayout({ header, children }) {
                                         >
                                             User Management
                                         </NavLink>
+
+                                        <NavLink
+                                            href={route('audit-logs.index')}
+                                            active={route().current('audit-logs.index')}
+                                        >
+                                            Audit Logs
+                                        </NavLink>
                                     </>
                                 )}
                                 {user.role === 'superadmin' && (
@@ -77,6 +84,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                             active={route().current('users.index')}
                                         >
                                             User Management
+                                        </NavLink>
+                                        <NavLink
+                                            href={route('audit-logs.index')}
+                                            active={route().current('audit-logs.index')}
+                                        >
+                                            Audit Logs
                                         </NavLink>
                                     </>
                                 )}
@@ -212,6 +225,13 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     User Management
                                 </ResponsiveNavLink>
+
+                                <ResponsiveNavLink
+                                    href={route('audit-logs.index')}
+                                    active={route().current('audit-logs.index')}
+                                >
+                                    Audit Logs
+                                </ResponsiveNavLink>
                             </>
                         )}
                         {user.role === 'superadmin' && (
@@ -239,6 +259,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                     active={route().current('users.index')}
                                 >
                                     User Management
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    href={route('audit-logs.index')}
+                                    active={route().current('audit-logs.index')}
+                                >
+                                    Audit Logs
                                 </ResponsiveNavLink>
                             </>
                         )}
