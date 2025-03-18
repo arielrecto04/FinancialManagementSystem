@@ -1,5 +1,4 @@
 import { Head, useForm } from '@inertiajs/react';
-import ApplicationLogo from '@/Components/ApplicationLogo';
 
 export default function Login({ status }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -19,7 +18,11 @@ export default function Login({ status }) {
             <div className="w-full max-w-md">
                 <div className="bg-white p-8 rounded-3xl shadow-md">
                     <div className="flex justify-center mb-6">
-                        <ApplicationLogo className="w-20 h-20" />
+                        <img 
+                            src="/images/innovatologo.png" 
+                            alt="Innovato Logo" 
+                            className="h-24 w-auto" 
+                        />
                     </div>
 
                     <div className="text-center mb-8">
@@ -68,9 +71,13 @@ export default function Login({ status }) {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition duration-200"
+                            className={`w-full py-3 rounded-lg transition duration-200 ${
+                                processing 
+                                    ? 'bg-blue-400 cursor-not-allowed' 
+                                    : 'bg-blue-500 hover:bg-blue-600'
+                            } text-white`}
                         >
-                            LOGIN
+                            {processing ? 'LOGGING IN...' : 'LOGIN'}
                         </button>
                     </form>
                 </div>

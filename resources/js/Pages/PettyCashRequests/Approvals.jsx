@@ -104,14 +104,7 @@ export default function Approvals({ auth, requests, filters }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={
-                <div className="flex justify-between items-center">
-                    <h2 className="font-semibold text-xl text-gray-800 leading-tight">Petty Cash Approvals</h2>
-                    <span className="text-sm text-gray-500">
-                        Total Requests: {requests.total}
-                    </span>
-                </div>
-            }
+          
         >
             <Head title="Petty Cash Approvals" />
 

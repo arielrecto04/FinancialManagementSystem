@@ -245,6 +245,48 @@ const ExpenseBreakdownCard = ({ expenses }) => {
     );
 };
 
+// New Background Component
+const WavyBackground = () => (
+    <div className="absolute inset-0 overflow-hidden -z-10">
+        {/* Orange Wave */}
+        <div className="absolute top-0 -left-4 w-[120%] h-[500px] opacity-10">
+            <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+                <path 
+                    d="M 0 200 C 300 100 400 400 1000 300 L 1000 0 L 0 0 Z" 
+                    fill="#fb923c"
+                >
+                    <animate 
+                        attributeName="d" 
+                        dur="10s" 
+                        repeatCount="indefinite"
+                        values="M 0 200 C 300 100 400 400 1000 300 L 1000 0 L 0 0 Z;
+                                M 0 300 C 400 200 500 400 1000 200 L 1000 0 L 0 0 Z;
+                                M 0 200 C 300 100 400 400 1000 300 L 1000 0 L 0 0 Z"
+                    />
+                </path>
+            </svg>
+        </div>
+        {/* Grey Wave */}
+        <div className="absolute top-40 -left-4 w-[120%] h-[500px] opacity-5">
+            <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+                <path 
+                    d="M 0 250 C 400 150 500 450 1000 350 L 1000 0 L 0 0 Z" 
+                    fill="#4b5563"
+                >
+                    <animate 
+                        attributeName="d" 
+                        dur="15s" 
+                        repeatCount="indefinite"
+                        values="M 0 250 C 400 150 500 450 1000 350 L 1000 0 L 0 0 Z;
+                                M 0 350 C 500 250 600 450 1000 250 L 1000 0 L 0 0 Z;
+                                M 0 250 C 400 150 500 450 1000 350 L 1000 0 L 0 0 Z"
+                    />
+                </path>
+            </svg>
+        </div>
+    </div>
+);
+
 export default function Dashboard({ 
     auth, 
     userStats = {}, 
@@ -365,13 +407,12 @@ export default function Dashboard({
     return (
         <AuthenticatedLayout
             user={user}
-            header={
-                <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                    Dashboard
-                </h2>
-            }
+           
         >
             <Head title="Dashboard" />
+
+            {/* Add the WavyBackground component */}
+            <WavyBackground />
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
