@@ -213,17 +213,19 @@ export default function Statistics({ statistics, categoryData }) {
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                         {/* Date Range Section */}
-                    <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+                    <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
                         <h3 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-                            <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
+                            <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50 mr-3">
+                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
                             Date Range
                         </h3>
 
                         {/* All Time Toggle */}
                         <div className="mb-6">
-                            <label className="inline-flex items-center bg-gray-50 px-4 py-2 rounded-md border hover:bg-gray-100 transition-colors cursor-pointer">
+                            <label className="inline-flex items-center bg-gray-50 px-4 py-2 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={isAllTime}
@@ -243,7 +245,7 @@ export default function Statistics({ statistics, categoryData }) {
                                     value={dateRange.startDate.toISOString().split('T')[0]}
                                     onChange={(e) => handleDateRangeChange('startDate', new Date(e.target.value))}
                                     disabled={isAllTime}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white hover:border-gray-400 transition-colors"
                                 />
                             </div>
                             <div>
@@ -253,14 +255,14 @@ export default function Statistics({ statistics, categoryData }) {
                                     value={dateRange.endDate.toISOString().split('T')[0]}
                                     onChange={(e) => handleDateRangeChange('endDate', new Date(e.target.value))}
                                     disabled={isAllTime}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white hover:border-gray-400 transition-colors"
                                 />
                             </div>
                             </div>
                         </div>
 
                     {/* View Options */}
-                    <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+                    <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200 mb-6">
                         <div className="flex flex-col sm:flex-row justify-between gap-4">
                             {/* Time Period Options */}
                             <div className="flex flex-wrap gap-2">
@@ -268,10 +270,10 @@ export default function Statistics({ statistics, categoryData }) {
                                     <button
                                         key={period}
                                         onClick={() => setViewOption(period.toLowerCase())}
-                                        className={`px-4 py-2 rounded-md transition-colors ${
+                                        className={`px-4 py-2 rounded-lg transition-all duration-200 ${
                                             viewOption === period.toLowerCase()
-                                                ? 'bg-blue-500 text-white shadow-md'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
+                                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 hover:border-gray-300'
                                         }`}
                                     >
                                         {period}
@@ -288,10 +290,10 @@ export default function Statistics({ statistics, categoryData }) {
                                     <button
                                         key={chart.type}
                                         onClick={() => handleChartTypeChange(chart.type)}
-                                        className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
+                                        className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
                                             chartType === chart.type
-                                                ? 'bg-blue-500 text-white shadow-md'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
+                                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 hover:border-gray-300'
                                         }`}
                                     >
                                         <span>{chart.icon}</span>
@@ -299,64 +301,93 @@ export default function Statistics({ statistics, categoryData }) {
                                     </button>
                                 ))}
                             </div>
+                            </div>
                         </div>
-                    </div>
 
                     {/* Statistics Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                            <h3 className="text-sm font-medium text-gray-500 mb-1">Total Expenses</h3>
+                        <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
+                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    </div>
+                                <h3 className="text-sm font-medium text-gray-500">Total Expenses</h3>
+                            </div>
                             <p className="text-2xl font-bold text-gray-900">
                                 {formatCurrency(getCurrentStats().totalExpenses)}
                             </p>
                         </div>
-                        <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                            <h3 className="text-sm font-medium text-gray-500 mb-1">Average Expense</h3>
+                        <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <div className="p-3 bg-green-100 rounded-lg ring-1 ring-green-100/50">
+                                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-sm font-medium text-gray-500">Average Expense</h3>
+                            </div>
                             <p className="text-2xl font-bold text-gray-900">
                                 {formatCurrency(getCurrentStats().averageExpense)}
                             </p>
                         </div>
-                        <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                            <h3 className="text-sm font-medium text-gray-500 mb-1">
+                        <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <div className="p-3 bg-indigo-100 rounded-lg ring-1 ring-indigo-100/50">
+                                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-medium text-gray-500">
                                 Highest {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)}
                             </h3>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        {getHighestPeriod()}
+                                    </p>
+                                </div>
+                            </div>
                             <p className="text-2xl font-bold text-gray-900">
-                                {getHighestPeriod()}
-                            </p>
-                            <p className="text-sm text-gray-600 mt-1">
                                 {formatCurrency(getCurrentStats().highestAmount)}
                             </p>
                         </div>
                     </div>
 
                     {/* Chart Section */}
-                    <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                        <h3 className="text-xl font-semibold mb-6 flex items-center text-gray-800">
-                            <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
+                        <div className="flex items-center space-x-3 mb-6">
+                            <div className="p-3 bg-purple-100 rounded-lg ring-1 ring-purple-100/50">
+                                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                 </svg>
+                            </div>
+                            <h3 className="text-xl font-semibold text-gray-800">
                                 {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expense Distribution
                             </h3>
+                        </div>
+                        <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100">
                             {chartType === 'pie' ? (
                                 <ReactApexChart
-                                key={key}
+                                    key={key}
                                     options={pieChartOptions}
-                                series={Object.values(categoryData)}
+                                    series={Object.values(categoryData)}
                                     type="pie"
-                                height={400}
+                                    height={400}
                                 />
                             ) : (
                                 <ReactApexChart
-                                key={key}
+                                    key={key}
                                     options={stackedChartOptions}
-                                series={[{
-                                    name: 'Expenses',
-                                    data: Object.values(categoryData)
-                                }]}
+                                    series={[{
+                                        name: 'Expenses',
+                                        data: Object.values(categoryData)
+                                    }]}
                                     type="bar"
-                                height={400}
+                                    height={400}
                                 />
                             )}
+                        </div>
                     </div>
                 </div>
             </div>

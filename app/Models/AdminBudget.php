@@ -33,9 +33,14 @@ class AdminBudget extends Model
         static::saving(function ($budget) {
             Log::info('Before saving budget:', $budget->toArray());
             
-            // When total_budget changes, set remaining_budget equal to it
-            if ($budget->isDirty('total_budget')) {
-                $budget->remaining_budget = $budget->total_budget;
+            // When total_budget is being set to 0, also reset used_budget
+            if ($budget->isDirty('total_budget') && $budget->total_budget == 0) {
+                $budget->used_budget = 0;
+                $budget->remaining_budget = 0;
+            }
+            // When only total_budget changes, update remaining_budget
+            else if ($budget->isDirty('total_budget')) {
+                $budget->remaining_budget = $budget->total_budget - $budget->used_budget;
             }
             
             Log::info('After saving budget:', $budget->toArray());

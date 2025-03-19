@@ -56,9 +56,14 @@ class AdminBudgetController extends Controller
             Log::info('Received update data:', $validated);
 
             $updateData = [
-                'total_budget' => $validated['total_budget'],
-                'remaining_budget' => $validated['total_budget']
+                'total_budget' => $validated['total_budget']
             ];
+
+            // If total_budget is being reset to 0, also reset used_budget
+            if ($validated['total_budget'] == 0) {
+                $updateData['used_budget'] = 0;
+                $updateData['remaining_budget'] = 0;
+            }
 
             Log::info('Updating budget:', [
                 'budget_id' => $id,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { FiEdit2, FiTrash2, FiPlus, FiDollarSign, FiUsers, FiSave, FiRefreshCw, FiGrid, FiList } from 'react-icons/fi';
 import Pagination from '@/Components/Pagination';
@@ -17,7 +17,9 @@ export default function Index({ auth, users, budgets, flash }) {
     const [activeTab, setActiveTab] = useState('all');
     const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
     const [showBudgetModal, setShowBudgetModal] = useState(false);
+    const [showResetModal, setShowResetModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [selectedBudget, setSelectedBudget] = useState(null);
     const [processing, setProcessing] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -25,6 +27,8 @@ export default function Index({ auth, users, budgets, flash }) {
     const budgetForm = useForm({
         total_budget: '',
     });
+
+    const resetForm = useForm();
 
     const filteredUsers = users.data.filter(user => {
         const matchesSearch = !searchTerm || 
@@ -77,9 +81,15 @@ export default function Index({ auth, users, budgets, flash }) {
         if (budget) {
             budgetForm.patch(route('admin-budgets.update', budget.id), {
                 preserveScroll: true,
+                preserveState: true,
                 onSuccess: () => {
                     closeBudgetModal();
-                    window.location.reload();
+                    router.visit(route('users.index'), {
+                        preserveScroll: true,
+                        preserveState: true,
+                        only: ['budgets']
+                    });
+                    setProcessing(false);
                 },
                 onError: () => setProcessing(false),
                 onFinish: () => setProcessing(false),
@@ -87,13 +97,19 @@ export default function Index({ auth, users, budgets, flash }) {
         } else {
             budgetForm.post(route('admin-budgets.store'), {
                 preserveScroll: true,
+                preserveState: true,
                 data: {
                     ...budgetForm.data,
                     user_id: selectedUser.id,
                 },
                 onSuccess: () => {
                     closeBudgetModal();
-                    window.location.reload();
+                    router.visit(route('users.index'), {
+                        preserveScroll: true,
+                        preserveState: true,
+                        only: ['budgets']
+                    });
+                    setProcessing(false);
                 },
                 onError: () => setProcessing(false),
                 onFinish: () => setProcessing(false),
@@ -103,19 +119,48 @@ export default function Index({ auth, users, budgets, flash }) {
 
     const handleResetBudget = (userId, budget) => {
         if (!budget) return;
+        setSelectedBudget(budget);
+        setShowResetModal(true);
+    };
 
-        if (confirm('Are you sure you want to reset this budget to 0? This action cannot be undone.')) {
-            const form = useForm({
-                total_budget: 0,
-            });
+    const closeResetModal = () => {
+        setShowResetModal(false);
+        setSelectedBudget(null);
+        resetForm.reset();
+    };
 
-            form.patch(route('admin-budgets.update', budget.id), {
+    const confirmReset = () => {
+        if (!selectedBudget) return;
+        
+        setProcessing(true);
+        
+        // Initialize form data
+        resetForm.setData({ total_budget: '0' });
+        
+        // Make the PATCH request
+        router.patch(route('admin-budgets.update', selectedBudget.id), 
+            { total_budget: '0' },
+            {
                 preserveScroll: true,
+                preserveState: true,
                 onSuccess: () => {
-                    window.location.reload();
+                    setProcessing(false);
+                    closeResetModal();
+                    router.visit(route('users.index'), {
+                        preserveScroll: true,
+                        preserveState: true,
+                        only: ['budgets']
+                    });
                 },
-            });
-        }
+                onError: (errors) => {
+                    setProcessing(false);
+                    console.error('Reset error:', errors);
+                },
+                onFinish: () => {
+                    setProcessing(false);
+                }
+            }
+        );
     };
 
     const getUserBudget = (userId) => {
@@ -469,6 +514,39 @@ export default function Index({ auth, users, budgets, flash }) {
                         </PrimaryButton>
                     </div>
                 </form>
+            </Modal>
+
+            {/* Reset Budget Modal */}
+            <Modal show={showResetModal} onClose={closeResetModal}>
+                <div className="p-6">
+                    <h2 className="text-lg font-medium text-gray-900">
+                        Reset Budget Confirmation
+                    </h2>
+
+                    <p className="mt-3 text-sm text-gray-600">
+                        Are you sure you want to reset this budget? This will:
+                    </p>
+                    <ul className="mt-2 list-disc list-inside text-sm text-gray-600">
+                        <li>Set the total budget to ₱0</li>
+                        <li>Reset the used budget to ₱0</li>
+                        <li>Set the remaining budget to ₱0</li>
+                    </ul>
+                    <p className="mt-2 text-sm text-red-600 font-medium">
+                        This action cannot be undone.
+                    </p>
+
+                    <div className="mt-6 flex justify-end gap-4">
+                        <SecondaryButton onClick={closeResetModal} disabled={processing}>
+                            Cancel
+                        </SecondaryButton>
+                        <DangerButton
+                            onClick={confirmReset}
+                            disabled={processing}
+                        >
+                            {processing ? 'Resetting...' : 'Reset Budget'}
+                        </DangerButton>
+                    </div>
+                </div>
             </Modal>
         </AuthenticatedLayout>
     );

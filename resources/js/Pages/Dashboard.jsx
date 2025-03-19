@@ -6,9 +6,9 @@ import ReactApexChart from 'react-apexcharts';
 // Add these component definitions before your Dashboard component
 const ExpenseSummaryCard = ({ title, amount, icon }) => {
     return (
-        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
+        <div className="p-6 bg-white border border-gray-200/70 rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
             <div className="flex items-start justify-between">
-                <div className="p-3 bg-blue-100 rounded-lg">
+                <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
                     {icon}
                 </div>
                 <button className="text-sm text-blue-500 hover:text-blue-700 flex items-center">
@@ -73,8 +73,8 @@ const HighExpenseItem = ({ type, category, amount, date }) => {
             <div className="flex items-center space-x-3">
                 <div className="p-2 bg-gray-100 rounded-lg">
                     {categoryIcons[type]}
-                </div>
-                <div>
+                    </div>
+                    <div>
                     <p className="text-sm font-medium text-gray-900">{type}</p>
                     <p className="text-xs text-gray-500">{category}</p>
                 </div>
@@ -112,10 +112,10 @@ const UserStatsCard = ({ totalUsers, adminUsers, regularUsers, superadminUsers }
     ];
 
     return (
-        <div className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+        <div className="p-6 bg-white border border-gray-200/70 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-3">
-                    <div className="p-3 bg-blue-100 rounded-lg">
+                    <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
                         <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
@@ -134,17 +134,17 @@ const UserStatsCard = ({ totalUsers, adminUsers, regularUsers, superadminUsers }
             </div>
             <div className="grid grid-cols-2 gap-4">
                 {stats.map((stat, index) => (
-                    <div key={index} className="bg-gray-50 p-4 rounded-lg flex items-center justify-between">
+                    <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center justify-between hover:border-gray-200 transition-colors">
                         <div className="flex items-center space-x-3">
-                            <div className={`p-2 bg-${stat.color}-100 rounded-lg`}>
+                            <div className={`p-2 bg-${stat.color}-100 rounded-lg ring-1 ring-${stat.color}-100/50`}>
                                 {stat.icon}
-                            </div>
+                </div>
                             <span className="text-sm font-medium text-gray-600">{stat.label}</span>
-                        </div>
+                </div>
                         <span className={`text-lg font-semibold text-${stat.color}-600`}>
                             {stat.value}
                         </span>
-                    </div>
+                </div>
                 ))}
             </div>
         </div>
@@ -176,10 +176,10 @@ const RequestStatsCard = ({ statistics }) => {
     ];
 
     return (
-        <div className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+        <div className="p-6 bg-white border border-gray-200/70 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-3">
-                    <div className="p-3 bg-blue-100 rounded-lg">
+                    <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
                         <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
@@ -198,13 +198,13 @@ const RequestStatsCard = ({ statistics }) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
                 {stats.map((stat, index) => (
-                    <div key={index} className="bg-gray-50 p-4 rounded-lg flex items-center justify-between">
+                    <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center justify-between hover:border-gray-200 transition-colors">
                         <div className="flex items-center space-x-3">
-                            <div className={`p-2 bg-${stat.color}-100 rounded-lg`}>
+                            <div className={`p-2 bg-${stat.color}-100 rounded-lg ring-1 ring-${stat.color}-100/50`}>
                                 {stat.icon}
-                            </div>
+                    </div>
                             <span className="text-sm font-medium text-gray-600">{stat.label}</span>
-                        </div>
+                </div>
                         <span className={`text-lg font-semibold text-${stat.color}-600`}>
                             {stat.value}
                         </span>
@@ -217,26 +217,26 @@ const RequestStatsCard = ({ statistics }) => {
 
 const ExpenseBreakdownCard = ({ expenses }) => {
     return (
-        <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
+        <div className="p-6 bg-white border border-gray-200/70 rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
             <div className="flex items-start justify-between">
-                <div className="p-3 bg-yellow-100 rounded-lg">
+                <div className="p-3 bg-yellow-100 rounded-lg ring-1 ring-yellow-100/50">
                     <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
                     </svg>
                 </div>
             </div>
-            <h3 className="mt-4 mb-2 text-sm font-medium text-gray-600">Expense Breakdown</h3>
-            <div className="space-y-3">
-                <div className="flex justify-between items-center">
+            <h3 className="mt-4 mb-4 text-sm font-medium text-gray-600">Expense Breakdown</h3>
+            <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
                     <span className="text-sm text-gray-500">HR Expenses</span>
                     <span className="text-lg font-semibold">₱{expenses?.hr?.toLocaleString() ?? 0}</span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
                     <span className="text-sm text-gray-500">Operating Expenses</span>
                     <span className="text-lg font-semibold">₱{expenses?.operating?.toLocaleString() ?? 0}</span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
                     <span className="text-sm text-gray-500">Supply Requests</span>
                     <span className="text-lg font-semibold">₱{expenses?.supply?.toLocaleString() ?? 0}</span>
                 </div>
@@ -264,8 +264,8 @@ const WavyBackground = () => (
                                 M 0 200 C 300 100 400 400 1000 300 L 1000 0 L 0 0 Z"
                     />
                 </path>
-            </svg>
-        </div>
+                        </svg>
+                    </div>
         {/* Grey Wave */}
         <div className="absolute top-40 -left-4 w-[120%] h-[500px] opacity-5">
             <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
@@ -284,8 +284,8 @@ const WavyBackground = () => (
                 </path>
             </svg>
         </div>
-    </div>
-);
+        </div>
+    );
 
 export default function Dashboard({ 
     auth, 
@@ -440,47 +440,85 @@ export default function Dashboard({
                             {/* Charts and Logs Section */}
                             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                                 {/* Bar Chart */}
-                                <div className="col-span-2 p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-lg font-semibold">Monthly Expenses</h3>
+                                <div className="col-span-2 p-6 bg-white border border-gray-200/70 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="p-3 bg-indigo-100 rounded-lg ring-1 ring-indigo-100/50">
+                                                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                                </svg>
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-gray-800">Monthly Expenses</h3>
+                                        </div>
                                         <div className="flex space-x-2">
-                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                                                 </svg>
                                             </button>
-                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                                 </svg>
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="h-[400px]">
-                                        <ReactApexChart
-                                            options={barChartOptions}
-                                            series={barChartSeries}
-                                            type="bar"
+                                    <div className="h-[400px] bg-gray-50/50 rounded-lg p-4 border border-gray-100">
+                                    <ReactApexChart
+                                        options={barChartOptions}
+                                        series={barChartSeries}
+                                        type="bar"
                                             height="100%"
-                                        />
+                                    />
                                     </div>
                                 </div>
 
                                 {/* Highest Expense Log */}
-                                <div className="p-6 bg-white shadow-sm sm:rounded-lg hover:shadow-md transition-shadow">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-lg font-semibold">Highest Expense Log</h3>
+                                <div className="p-6 bg-white border border-gray-200/70 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="p-3 bg-rose-100 rounded-lg ring-1 ring-rose-100/50">
+                                                <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                            </svg>
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-gray-800">Highest Expenses</h3>
+                                        </div>
                                     </div>
-                                    <div className="overflow-y-auto max-h-[400px] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                                        {highestExpenses.map((expense, index) => (
-                                            <HighExpenseItem
-                                                key={`${expense.type}-${expense.id}`}
-                                                type={expense.type}
-                                                category={expense.category}
-                                                amount={expense.amount}
-                                                date={expense.date}
-                                            />
-                                        ))}
+                                    <div className="overflow-y-auto max-h-[400px] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 pr-2">
+                                        <div className="space-y-3">
+                                            {highestExpenses.map((expense, index) => (
+                                                <div
+                                                    key={`${expense.type}-${expense.id}`}
+                                                    className="p-4 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
+                                                >
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="flex items-center space-x-3">
+                                                            <div className={`p-2 ${
+                                                                expense.type === 'HR Expense' ? 'bg-purple-100 ring-purple-100/50' :
+                                                                expense.type === 'Operating Expense' ? 'bg-blue-100 ring-blue-100/50' :
+                                                                expense.type === 'Supply Request' ? 'bg-green-100 ring-green-100/50' :
+                                                                'bg-yellow-100 ring-yellow-100/50'
+                                                            } rounded-lg ring-1`}>
+                                                                {categoryIcons[expense.category] || (
+                                                                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                                    </svg>
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-medium text-gray-800">{expense.type}</p>
+                                                                <p className="text-sm text-gray-500">{expense.category}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="font-semibold text-gray-800">₱{expense.amount.toLocaleString()}</p>
+                                                            <p className="text-sm text-gray-500">{new Date(expense.date).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

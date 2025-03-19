@@ -24,7 +24,7 @@ const BudgetSummary = ({ adminBudget }) => {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200 p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm text-gray-600">Total Budget</p>
@@ -32,7 +32,7 @@ const BudgetSummary = ({ adminBudget }) => {
                             {formatCurrency(adminBudget?.total_budget)}
                         </h3>
                     </div>
-                    <div className="p-3 bg-blue-100 rounded-full">
+                    <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
                         <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -40,7 +40,7 @@ const BudgetSummary = ({ adminBudget }) => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200 p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm text-gray-600">Remaining Budget</p>
@@ -48,7 +48,7 @@ const BudgetSummary = ({ adminBudget }) => {
                             {formatCurrency(adminBudget?.remaining_budget)}
                         </h3>
                     </div>
-                    <div className="p-3 bg-green-100 rounded-full">
+                    <div className="p-3 bg-green-100 rounded-lg ring-1 ring-green-100/50">
                         <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
@@ -56,7 +56,7 @@ const BudgetSummary = ({ adminBudget }) => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200 p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm text-gray-600">Used Budget</p>
@@ -64,7 +64,7 @@ const BudgetSummary = ({ adminBudget }) => {
                             {formatCurrency(adminBudget?.used_budget)}
                         </h3>
                     </div>
-                    <div className="p-3 bg-red-100 rounded-full">
+                    <div className="p-3 bg-red-100 rounded-lg ring-1 ring-red-100/50">
                         <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                         </svg>
@@ -100,7 +100,7 @@ const Icons = {
 
 const StatCard = ({ title, value, change, icon, status }) => {
     return (
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200 p-6">
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-sm text-gray-600">{title}</p>
@@ -115,11 +115,11 @@ const StatCard = ({ title, value, change, icon, status }) => {
                         )}
                     </div>
                 </div>
-                <div className={`p-3 rounded-full ${
-                    status === 'pending' ? 'bg-blue-100' :
-                    status === 'approved' ? 'bg-green-100' :
-                    status === 'rejected' ? 'bg-red-100' :
-                    'bg-gray-100'
+                <div className={`p-3 rounded-lg ring-1 ${
+                    status === 'pending' ? 'bg-blue-100 ring-blue-100/50' :
+                    status === 'approved' ? 'bg-green-100 ring-green-100/50' :
+                    status === 'rejected' ? 'bg-red-100 ring-red-100/50' :
+                    'bg-gray-100 ring-gray-100/50'
                 }`}>
                     {icon}
                 </div>
@@ -630,22 +630,24 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                             icon={<Icons.XCircle className={`w-6 h-6 text-red-600`} />}
                             status="rejected"
                         />
-                    </div>
+                        </div>
 
-                    <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
+                    <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
+                        <div className="p-6">
                             {/* Header Actions */}
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-xl font-semibold flex items-center">
-                                    <svg className="w-6 h-6 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="p-3 bg-indigo-100 rounded-lg ring-1 ring-indigo-100/50 mr-3">
+                                        <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                     </svg>
+                                    </div>
                                     Reports & Analytics
                                 </h2>
                                 <div className="flex space-x-2">
                                     <button 
-                                        onClick={() =>  setIsFiltersVisible(!isFiltersVisible)}
-                                        className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                        onClick={() => setIsFiltersVisible(!isFiltersVisible)}
+                                        className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all duration-200"
                                     >
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -654,7 +656,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                     </button>
                                     <button 
                                         onClick={handleExcelExport}
-                                        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all duration-200"
                                     >
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -663,7 +665,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                     </button>
                                     <button 
                                         onClick={handleExportPDF}
-                                        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-all duration-200"
                                     >
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -674,19 +676,8 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                             </div>
 
                             {/* Filters Section */}
-                            <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                                <div className="p-6 bg-white border-b border-gray-200">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
-                                        <button
-                                            onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-                                            className="text-blue-600 hover:text-blue-800"
-                                        >
-                                            {isFiltersVisible ? 'Hide Filters' : 'Show Filters'}
-                                        </button>
-                                    </div>
-                                    
                                     {isFiltersVisible && (
+                                <div className="bg-gray-50/50 rounded-lg border border-gray-100 p-6 mb-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                                             <div>
                                                 <div className="flex items-center justify-between mb-2">
@@ -717,7 +708,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                                             endDate: update[1]
                                                         });
                                                     }}
-                                                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
+                                                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 ${
                                                         !isDateRangeActive ? 'opacity-50 cursor-not-allowed' : ''
                                                     }`}
                                                     placeholderText="Select date range"
@@ -732,7 +723,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                                 <select
                                                     value={selectedRequestType}
                                                     onChange={(e) => setSelectedRequestType(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
                                                 >
                                                     {requestTypeOptions.map((option) => (
                                                         <option key={option.value} value={option.value}>
@@ -741,6 +732,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                                     ))}
                                                 </select>
                                             </div>
+
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                                     Status
@@ -748,7 +740,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                                 <select
                                                     value={selectedStatus}
                                                     onChange={(e) => setSelectedStatus(e.target.value)}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
                                                 >
                                                     {statusOptions.map((option) => (
                                                         <option key={option.value} value={option.value}>
@@ -766,19 +758,18 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                                     id="sortOrder"
                                                     value={sortOrder}
                                                     onChange={(e) => handleSortOrderChange(e.target.value)}
-                                                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
                                                 >
                                                     <option value="newest">Newest First</option>
                                                     <option value="oldest">Oldest First</option>
                                                 </select>
                                             </div>
                                         </div>
-                                    )}
                                 </div>
-                            </div>
+                            )}
 
                             {/* Request Table */}
-                            <div className="mt-4 overflow-hidden border border-gray-200 rounded-lg">
+                            <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
                                 <RequestTable 
                                     requests={requests}
                                     onRowClick={handleRowClick}
@@ -788,7 +779,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
 
                             {/* Pagination */}
                             {pagination && pagination.total > 0 && (
-                            <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-100 mt-4 rounded-lg">
                                 <div className="flex justify-between flex-1 sm:hidden">
                                         <button 
                                             onClick={() => pagination.current_page > 1 && handlePageChange(pagination.current_page - 1)}
@@ -897,10 +888,10 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                 </div>
             </div>
 
-            {/* Add Action Modal */}
+            {/* Action Modal */}
             <ActionModal />
 
-            {/* Existing Modal */}
+            {/* Request Details Modal */}
             <RequestDetailsModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
