@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('department');
             $table->date('date');
+            $table->string('expense_type');
             $table->text('particulars');
             $table->decimal('total_amount', 10, 2);
             $table->decimal('cash_advance_amount', 10, 2);

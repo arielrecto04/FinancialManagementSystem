@@ -15,6 +15,7 @@ class Liquidation extends Model
         'user_id',
         'department',
         'date',
+        'expense_type',
         'particulars',
         'total_amount',
         'cash_advance_amount',

@@ -153,6 +153,10 @@ export default function RequestDetailsModal({ isOpen, onClose, request }) {
                                 {request.type === 'Liquidation' && (
                                     <div className="space-y-4">
                                         <div>
+                                            <p className="text-sm text-gray-500">Expense Type</p>
+                                            <p className="font-medium">{request.expense_type}</p>
+                                        </div>
+                                        <div>
                                             <p className="text-sm text-gray-500">Particulars</p>
                                             <p className="font-medium">{request.particulars}</p>
                                         </div>

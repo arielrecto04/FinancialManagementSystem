@@ -14,6 +14,7 @@ class LiquidationController extends Controller
         $validated = $request->validate([
             'department' => 'required|string',
             'date' => 'required|date',
+            'expense_type' => 'required|string',
             'particulars' => 'required|string',
             'items' => 'required|array|min:1',
             'items.*.category' => 'required|string|max:50',
@@ -32,6 +33,7 @@ class LiquidationController extends Controller
                 'user_id' => auth()->id(),
                 'department' => $validated['department'],
                 'date' => $validated['date'],
+                'expense_type' => $validated['expense_type'],
                 'particulars' => $validated['particulars'],
                 'total_amount' => $validated['total_amount'],
                 'cash_advance_amount' => $validated['cash_advance_amount'],

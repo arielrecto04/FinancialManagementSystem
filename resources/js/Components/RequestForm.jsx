@@ -73,6 +73,11 @@ const icons = {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
     ),
+    expenseType: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
 };
 
 export default function RequestForm({ auth, errors = {} }) {
@@ -128,14 +133,16 @@ export default function RequestForm({ auth, errors = {} }) {
     const [liquidationProcessing, setLiquidationProcessing] = useState(false);
 
     // Update the liquidation form state
-    const { data: liquidationData, setData: setLiquidationData, post: postLiquidation, reset: resetLiquidation } = useForm({
+    const [liquidationData, setLiquidationData] = useState({
+        department: auth?.user?.department || '',
         date: new Date().toISOString().split('T')[0],
+        expense_type: '',
         particulars: '',
         items: [{ category: '', description: '', amount: '' }],
-        total_amount: 0,
         cash_advance_amount: '',
-        amount_to_refund: 0,
-        amount_to_reimburse: 0,
+        total_amount: '0.00',
+        amount_to_refund: '0.00',
+        amount_to_reimburse: '0.00'
     });
 
     // Add this near the top with other state declarations
@@ -368,7 +375,17 @@ export default function RequestForm({ auth, errors = {} }) {
                     });
 
                     // Reset form
-                    resetLiquidation();
+                    setLiquidationData({
+                        department: auth?.user?.department || '',
+                        date: new Date().toISOString().split('T')[0],
+                        expense_type: '',
+                        particulars: '',
+                        items: [{ category: '', description: '', amount: '' }],
+                        cash_advance_amount: '',
+                        total_amount: '0.00',
+                        amount_to_refund: '0.00',
+                        amount_to_reimburse: '0.00'
+                    });
                     setLiquidationProcessing(false);
                 },
                 onError: (errors) => {
@@ -1130,13 +1147,13 @@ export default function RequestForm({ auth, errors = {} }) {
                         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                             <form onSubmit={handleLiquidationSubmit} className="space-y-4">
                                 {/* Department Selection */}
-                                <div className="mb-4">
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.department}
                                         Department
                                     </label>
                                     <select
-                                        value={liquidationData.department || ''}
+                                        value={liquidationData.department}
                                         onChange={(e) => setLiquidationData(prevData => ({
                                             ...prevData,
                                             department: e.target.value
@@ -1145,15 +1162,40 @@ export default function RequestForm({ auth, errors = {} }) {
                                         required
                                     >
                                         <option value="">Select Department</option>
-                                        {departmentOptions.map((option) => (
+                                        {departmentOptions.map(option => (
                                             <option key={option.value} value={option.value}>
                                                 {option.label}
                                             </option>
                                         ))}
                                     </select>
-                                    {errors.department && (
+                                </div>
+
+                                {/* Add Expense Type Dropdown */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        {icons.expenseType}
+                                        Expense Type
+                                    </label>
+                                    <select
+                                        value={liquidationData.expense_type}
+                                        onChange={(e) => setLiquidationData(prevData => ({
+                                            ...prevData,
+                                            expense_type: e.target.value
+                                        }))}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Expense Type</option>
+                                        <option value="Transportation">Transportation</option>
+                                        <option value="Meals">Meals</option>
+                                        <option value="Office Supplies">Office Supplies</option>
+                                        <option value="Travel">Travel</option>
+                                        <option value="Training">Training</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    {errors.expense_type && (
                                         <p className="mt-1 text-sm text-red-600" role="alert">
-                                            {errors.department}
+                                            {errors.expense_type}
                                         </p>
                                     )}
                                 </div>

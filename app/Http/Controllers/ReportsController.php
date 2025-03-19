@@ -311,6 +311,7 @@ class ReportsController extends Controller
                 'total_amount' => $request->total_amount,
                 'created_at' => $request->created_at->format('Y-m-d'),
                 'remarks' => $request->remarks,
+                'expense_type' => $request->expense_type,
                 'cash_advance_amount' => $request->cash_advance_amount,
                 'amount_to_refund' => $request->amount_to_refund,
                 'amount_to_reimburse' => $request->amount_to_reimburse,
