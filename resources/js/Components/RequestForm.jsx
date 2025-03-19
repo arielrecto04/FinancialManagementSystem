@@ -77,7 +77,7 @@ const icons = {
 
 export default function RequestForm({ auth, errors = {} }) {
     const [formType, setFormType] = useState('supply');
-    const [items, setItems] = useState([{ name: '', quantity: '', unit: '', price: '' }]);
+    const [items, setItems] = useState([{ name: '', quantity: '', price: '' }]);
     const [processing, setProcessing] = useState(false);
     
     // Supply Request Form State
@@ -225,7 +225,7 @@ export default function RequestForm({ auth, errors = {} }) {
 
     // Add new item row
     const addItem = () => {
-        const newItems = [...items, { name: '', quantity: '', unit: '', price: '' }];
+        const newItems = [...items, { name: '', quantity: '', price: '' }];
         setItems(newItems);
         updateFormData(newItems);
     };
@@ -272,12 +272,12 @@ export default function RequestForm({ auth, errors = {} }) {
         e.preventDefault();
         setProcessing(true);
         
-        // Validate items before submission
-        if (items.some(item => !item.name || !item.quantity || !item.unit || !item.price)) {
+        // Validate items before submission - removed unit from validation
+        if (items.some(item => !item.name || !item.quantity || !item.price)) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Incomplete Form',
-                text: 'Please fill in all item fields',
+                text: 'Please fill in all required item fields',
                 confirmButtonColor: '#3085d6'
             });
             setProcessing(false);
@@ -308,7 +308,7 @@ export default function RequestForm({ auth, errors = {} }) {
                     });
 
                     // Reset form
-                    setItems([{ name: '', quantity: '', unit: '', price: '' }]);
+                    setItems([{ name: '', quantity: '', price: '' }]);
                     setData({
                         department: '',
                         purpose: '',
@@ -937,16 +937,7 @@ export default function RequestForm({ auth, errors = {} }) {
                                                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                                                 />
                                             </div>
-                                            <div className="col-span-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Unit"
-                                                    value={item.unit}
-                                                    onChange={e => updateItem(index, 'unit', e.target.value)}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                                />
-                                            </div>
-                                            <div className="col-span-2">
+                                            <div className="col-span-4">
                                                 <input
                                                     type="number"
                                                     placeholder="Price"

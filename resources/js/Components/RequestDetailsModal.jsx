@@ -80,7 +80,6 @@ export default function RequestDetailsModal({ isOpen, onClose, request }) {
                                                         <tr>
                                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
                                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
                                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                                                         </tr>
@@ -91,14 +90,13 @@ export default function RequestDetailsModal({ isOpen, onClose, request }) {
                                                                 <tr key={index}>
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.name}</td>
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.quantity}</td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.unit}</td>
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₱{parseFloat(item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₱{(parseFloat(item.price) * parseFloat(item.quantity)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                                                 </tr>
                                                             ))
                                                         ) : (
                                                             <tr>
-                                                                <td colSpan="5" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No items available</td>
+                                                                <td colSpan="4" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No items available</td>
                                                             </tr>
                                                         )}
                                                     </tbody>
