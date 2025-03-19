@@ -5,7 +5,7 @@ import ReactApexChart from 'react-apexcharts';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 
-export default function Statistics({ statistics, categoryData }) {
+export default function Statistics({ statistics, categoryData, detailedStats }) {
     const [viewOption, setViewOption] = useState('daily'); // 'daily', 'weekly', 'monthly', 'annual'
     const [chartType, setChartType] = useState('pie'); // 'pie' or 'stack'
     const [dateRange, setDateRange] = useState({
@@ -206,6 +206,53 @@ export default function Statistics({ statistics, categoryData }) {
         });
     };
 
+    // Add these new chart options after your existing chart options
+    const monthlyTrendOptions = {
+        chart: {
+            type: 'line',
+            stacked: false,
+        },
+        stroke: {
+            width: 3,
+            curve: 'smooth'
+        },
+        markers: {
+            size: 4
+        },
+        xaxis: {
+            categories: Object.keys(detailedStats.monthly_trends).map(date => {
+                return new Date(date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            })
+        },
+        yaxis: {
+            title: {
+                text: 'Amount (PHP)'
+            },
+            labels: {
+                formatter: (val) => formatCurrency(val)
+            }
+        }
+    };
+
+    // Helper function to process category data
+    const processCategoryData = (categoryGroup) => {
+        if (!categoryGroup || !categoryGroup.categories) return [];
+        
+        // Convert the collection to an array and calculate totals for the current period
+        return Object.entries(categoryGroup.categories).map(([category, periodData]) => {
+            const total = periodData.reduce((sum, period) => sum + parseFloat(period.total), 0);
+            const count = periodData.reduce((sum, period) => sum + parseInt(period.count), 0);
+            const average = total / periodData.length;
+
+            return {
+                category_name: category,
+                total: total,
+                count: count,
+                average: average
+            };
+        });
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title="Statistics" />
@@ -387,6 +434,88 @@ export default function Statistics({ statistics, categoryData }) {
                                     height={400}
                                 />
                             )}
+                        </div>
+                    </div>
+
+                    {/* Category Breakdown Cards */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                        {['hr_expenses', 'operating_expenses', 'liquidations', 'reimbursements'].map((type) => (
+                            <div key={type} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
+                                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-gray-800 capitalize">
+                                        {type.replace(/_/g, ' ')} Breakdown
+                                    </h3>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {processCategoryData(detailedStats[type]).map((categoryData) => (
+                                        <div 
+                                            key={categoryData.category_name}
+                                            className="p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
+                                        >
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-700 font-medium">
+                                                    {categoryData.category_name}
+                                                </span>
+                                                <div className="text-right">
+                                                    <div className="text-lg font-semibold text-blue-600">
+                                                        {formatCurrency(categoryData.total)}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {categoryData.count} requests
+                                                    </div>
+                                                    <div className="text-xs text-gray-400">
+                                                        Avg: {formatCurrency(categoryData.average)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {/* Total for this type */}
+                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-600 font-medium">Total Amount</span>
+                                            <span className="text-lg font-bold text-gray-800">
+                                                {formatCurrency(detailedStats[type].total_amount || 0)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Monthly Trends Chart */}
+                        <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
+                            <h3 className="text-lg font-semibold mb-4">Monthly Expense Trends</h3>
+                            <ReactApexChart
+                                options={monthlyTrendOptions}
+                                series={[
+                                    {
+                                        name: 'HR Expenses',
+                                        data: Object.values(detailedStats.monthly_trends).map(m => m.hr)
+                                    },
+                                    {
+                                        name: 'Operating Expenses',
+                                        data: Object.values(detailedStats.monthly_trends).map(m => m.operating)
+                                    },
+                                    {
+                                        name: 'Liquidations',
+                                        data: Object.values(detailedStats.monthly_trends).map(m => m.liquidations)
+                                    },
+                                    {
+                                        name: 'Reimbursements',
+                                        data: Object.values(detailedStats.monthly_trends).map(m => m.reimbursements)
+                                    }
+                                ]}
+                                type="line"
+                                height={400}
+                            />
                         </div>
                     </div>
                 </div>

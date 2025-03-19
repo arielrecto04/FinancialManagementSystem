@@ -34,6 +34,9 @@ class StatisticsController extends Controller
             $endDate = $request->input('endDate') ? Carbon::parse($request->input('endDate')) : Carbon::now();
         }
         
+        // Add view option
+        $viewOption = $request->input('viewOption', 'daily');
+
         // Get all expenses within date range
         $expenses = collect([])
             ->merge($this->getSupplyRequests($startDate, $endDate))
@@ -51,6 +54,128 @@ class StatisticsController extends Controller
         // Calculate category distribution
         $categoryDistribution = $this->calculateCategoryDistribution($expenses);
 
+        // Add new detailed statistics with date range and view period
+        $detailedStats = [
+            'hr_expenses' => [
+                'categories' => HrExpense::where('status', 'approved')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->select(
+                        'expenses_category',
+                        DB::raw('COUNT(*) as count'),
+                        DB::raw('SUM(total_amount_requested) as total'),
+                        DB::raw('AVG(total_amount_requested) as average')
+                    )
+                    ->when($viewOption === 'daily', function ($query) {
+                        return $query->addSelect(DB::raw('DATE(created_at) as period'));
+                    })
+                    ->when($viewOption === 'weekly', function ($query) {
+                        return $query->addSelect(DB::raw('YEARWEEK(created_at) as period'));
+                    })
+                    ->when($viewOption === 'monthly', function ($query) {
+                        return $query->addSelect(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as period'));
+                    })
+                    ->when($viewOption === 'annual', function ($query) {
+                        return $query->addSelect(DB::raw('YEAR(created_at) as period'));
+                    })
+                    ->groupBy('expenses_category', 'period')
+                    ->get()
+                    ->groupBy('expenses_category'),
+                'total_amount' => HrExpense::where('status', 'approved')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->sum('total_amount_requested'),
+            ],
+            'operating_expenses' => [
+                'categories' => OperatingExpense::where('status', 'approved')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->select(
+                        'expense_category',
+                        DB::raw('COUNT(*) as count'),
+                        DB::raw('SUM(total_amount) as total'),
+                        DB::raw('AVG(total_amount) as average')
+                    )
+                    ->when($viewOption === 'daily', function ($query) {
+                        return $query->addSelect(DB::raw('DATE(created_at) as period'));
+                    })
+                    ->when($viewOption === 'weekly', function ($query) {
+                        return $query->addSelect(DB::raw('YEARWEEK(created_at) as period'));
+                    })
+                    ->when($viewOption === 'monthly', function ($query) {
+                        return $query->addSelect(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as period'));
+                    })
+                    ->when($viewOption === 'annual', function ($query) {
+                        return $query->addSelect(DB::raw('YEAR(created_at) as period'));
+                    })
+                    ->groupBy('expense_category', 'period')
+                    ->get()
+                    ->groupBy('expense_category'),
+                'total_amount' => OperatingExpense::where('status', 'approved')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->sum('total_amount'),
+            ],
+            'liquidations' => [
+                'categories' => Liquidation::where('status', 'approved')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->select(
+                        'expense_type',
+                        DB::raw('COUNT(*) as count'),
+                        DB::raw('SUM(total_amount) as total'),
+                        DB::raw('AVG(total_amount) as average')
+                    )
+                    ->when($viewOption === 'daily', function ($query) {
+                        return $query->addSelect(DB::raw('DATE(created_at) as period'));
+                    })
+                    ->when($viewOption === 'weekly', function ($query) {
+                        return $query->addSelect(DB::raw('YEARWEEK(created_at) as period'));
+                    })
+                    ->when($viewOption === 'monthly', function ($query) {
+                        return $query->addSelect(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as period'));
+                    })
+                    ->when($viewOption === 'annual', function ($query) {
+                        return $query->addSelect(DB::raw('YEAR(created_at) as period'));
+                    })
+                    ->groupBy('expense_type', 'period')
+                    ->get()
+                    ->groupBy('expense_type'),
+                'total_amount' => Liquidation::where('status', 'approved')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->sum('total_amount'),
+            ],
+            'reimbursements' => [
+                'categories' => ReimbursementRequest::where('status', 'approved')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->select(
+                        'expense_type',
+                        DB::raw('COUNT(*) as count'),
+                        DB::raw('SUM(amount) as total'),
+                        DB::raw('AVG(amount) as average')
+                    )
+                    ->when($viewOption === 'daily', function ($query) {
+                        return $query->addSelect(DB::raw('DATE(created_at) as period'));
+                    })
+                    ->when($viewOption === 'weekly', function ($query) {
+                        return $query->addSelect(DB::raw('YEARWEEK(created_at) as period'));
+                    })
+                    ->when($viewOption === 'monthly', function ($query) {
+                        return $query->addSelect(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as period'));
+                    })
+                    ->when($viewOption === 'annual', function ($query) {
+                        return $query->addSelect(DB::raw('YEAR(created_at) as period'));
+                    })
+                    ->groupBy('expense_type', 'period')
+                    ->get()
+                    ->groupBy('expense_type'),
+                'total_amount' => ReimbursementRequest::where('status', 'approved')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->sum('amount'),
+            ],
+            'monthly_trends' => $this->getMonthlyTrends($startDate, $endDate),
+            'view_period' => [
+                'type' => $viewOption,
+                'start_date' => $startDate->format('Y-m-d'),
+                'end_date' => $endDate->format('Y-m-d'),
+            ],
+        ];
+
         return Inertia::render('Statistics', [
             'statistics' => [
                 'daily' => $dailyStats,
@@ -58,7 +183,8 @@ class StatisticsController extends Controller
                 'monthly' => $monthlyStats,
                 'annual' => $annualStats
             ],
-            'categoryData' => $categoryDistribution
+            'categoryData' => $categoryDistribution,
+            'detailedStats' => $detailedStats
         ]);
     }
 
@@ -287,4 +413,36 @@ class StatisticsController extends Controller
         // Keep only the specified categories
         return array_intersect_key($distribution, array_flip($categories));
     }
-}
+
+    private function getMonthlyTrends($startDate, $endDate)
+    {
+        $months = [];
+        $current = Carbon::parse($startDate)->startOfMonth();
+        $end = Carbon::parse($endDate)->endOfMonth();
+
+        while ($current <= $end) {
+            $monthKey = $current->format('Y-m');
+            $months[$monthKey] = [
+                'hr' => HrExpense::where('status', 'approved')
+                    ->whereYear('created_at', $current->year)
+                    ->whereMonth('created_at', $current->month)
+                    ->sum('total_amount_requested'),
+                'operating' => OperatingExpense::where('status', 'approved')
+                    ->whereYear('created_at', $current->year)
+                    ->whereMonth('created_at', $current->month)
+                    ->sum('total_amount'),
+                'liquidations' => Liquidation::where('status', 'approved')
+                    ->whereYear('created_at', $current->year)
+                    ->whereMonth('created_at', $current->month)
+                    ->sum('total_amount'),
+                'reimbursements' => ReimbursementRequest::where('status', 'approved')
+                    ->whereYear('created_at', $current->year)
+                    ->whereMonth('created_at', $current->month)
+                    ->sum('amount'),
+            ];
+            $current->addMonth();
+        }
+
+        return $months;
+    }
+}   
