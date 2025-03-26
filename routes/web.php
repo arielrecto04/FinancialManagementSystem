@@ -18,6 +18,7 @@ use App\Http\Controllers\AuditLogController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
 
 /*  
 |--------------------------------------------------------------------------
@@ -70,8 +71,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/request-form', function () {
-        return Inertia::render('RequestForm');
+    Route::get('/request-form', function (Request $request) {
+        return Inertia::render('RequestForm', [
+            'type' => $request->type
+        ]);
     })->name('request.form');
 
     // Supply and Reimbursement routes

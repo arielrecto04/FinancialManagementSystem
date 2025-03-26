@@ -28,13 +28,15 @@ class StatisticsController extends Controller
                 HrExpense::min('created_at') ?? now(),
                 OperatingExpense::min('created_at') ?? now()
             );
+            // Convert string date to Carbon object
+            $startDate = Carbon::parse($startDate);
             $endDate = now();
         } else {
             $startDate = $request->input('startDate') ? Carbon::parse($request->input('startDate')) : Carbon::now()->startOfMonth();
             $endDate = $request->input('endDate') ? Carbon::parse($request->input('endDate')) : Carbon::now();
         }
         
-        // Add view option
+        // Get view option from request
         $viewOption = $request->input('viewOption', 'daily');
 
         // Get all expenses within date range
@@ -51,8 +53,8 @@ class StatisticsController extends Controller
         $monthlyStats = $this->calculateMonthlyStats($expenses);
         $annualStats = $this->calculateAnnualStats($expenses);
 
-        // Calculate category distribution
-        $categoryDistribution = $this->calculateCategoryDistribution($expenses);
+        // Calculate category distribution with viewOption
+        $categoryDistribution = $this->calculateCategoryDistribution($expenses, $viewOption);
 
         // Add new detailed statistics with date range and view period
         $detailedStats = [
@@ -168,11 +170,12 @@ class StatisticsController extends Controller
                     ->whereBetween('created_at', [$startDate, $endDate])
                     ->sum('amount'),
             ],
-            'monthly_trends' => $this->getMonthlyTrends($startDate, $endDate),
+            'monthly_trends' => $this->getMonthlyTrends($startDate, $endDate, $viewOption),
             'view_period' => [
                 'type' => $viewOption,
                 'start_date' => $startDate->format('Y-m-d'),
                 'end_date' => $endDate->format('Y-m-d'),
+                'isAllTime' => $isAllTime
             ],
         ];
 
@@ -184,7 +187,8 @@ class StatisticsController extends Controller
                 'annual' => $annualStats
             ],
             'categoryData' => $categoryDistribution,
-            'detailedStats' => $detailedStats
+            'detailedStats' => $detailedStats,
+            'currentViewOption' => $viewOption
         ]);
     }
 
@@ -386,7 +390,7 @@ class StatisticsController extends Controller
         ];
     }
 
-    private function calculateCategoryDistribution($expenses)
+    private function calculateCategoryDistribution($expenses, $viewOption)
     {
         $categories = [
             'Supply Request',
@@ -398,23 +402,40 @@ class StatisticsController extends Controller
         ];
 
         $distribution = $expenses->groupBy('category')
-            ->map(function ($categoryExpenses) {
-                return collect($categoryExpenses)->sum('amount');
+            ->map(function ($categoryExpenses) use ($viewOption) {
+                // Group by the selected period
+                $groupedExpenses = collect($categoryExpenses)->groupBy(function ($expense) use ($viewOption) {
+                    switch ($viewOption) {
+                        case 'daily':
+                            return $expense['date']->format('Y-m-d');
+                        case 'weekly':
+                            return $expense['date']->format('Y-W');
+                        case 'monthly':
+                            return $expense['date']->format('Y-m');
+                        case 'annual':
+                            return $expense['date']->format('Y');
+                    }
+                });
+
+                // Calculate average per period
+                $totalAmount = collect($categoryExpenses)->sum('amount');
+                $periodCount = $groupedExpenses->count() ?: 1;
+                
+                return $totalAmount / $periodCount;
             })
             ->toArray();
 
-        // Ensure all categories exist in the distribution, with 0 if no expenses
+        // Ensure all categories exist
         foreach ($categories as $category) {
             if (!isset($distribution[$category])) {
                 $distribution[$category] = 0;
             }
         }
 
-        // Keep only the specified categories
         return array_intersect_key($distribution, array_flip($categories));
     }
 
-    private function getMonthlyTrends($startDate, $endDate)
+    private function getMonthlyTrends($startDate, $endDate, $viewOption)
     {
         $months = [];
         $current = Carbon::parse($startDate)->startOfMonth();
@@ -422,24 +443,61 @@ class StatisticsController extends Controller
 
         while ($current <= $end) {
             $monthKey = $current->format('Y-m');
+            
+            // Get the period grouping based on viewOption
+            $periodGrouping = match($viewOption) {
+                'daily' => DB::raw('DATE(created_at)'),
+                'weekly' => DB::raw('YEARWEEK(created_at)'),
+                'monthly' => DB::raw('DATE_FORMAT(created_at, "%Y-%m")'),
+                'annual' => DB::raw('YEAR(created_at)'),
+            };
+
             $months[$monthKey] = [
                 'hr' => HrExpense::where('status', 'approved')
                     ->whereYear('created_at', $current->year)
                     ->whereMonth('created_at', $current->month)
-                    ->sum('total_amount_requested'),
+                    ->select(
+                        DB::raw('SUM(total_amount_requested) as total'),
+                        $periodGrouping
+                    )
+                    ->groupBy($periodGrouping)
+                    ->get()
+                    ->avg('total') ?? 0,
+
                 'operating' => OperatingExpense::where('status', 'approved')
                     ->whereYear('created_at', $current->year)
                     ->whereMonth('created_at', $current->month)
-                    ->sum('total_amount'),
+                    ->select(
+                        DB::raw('SUM(total_amount) as total'),
+                        $periodGrouping
+                    )
+                    ->groupBy($periodGrouping)
+                    ->get()
+                    ->avg('total') ?? 0,
+
                 'liquidations' => Liquidation::where('status', 'approved')
                     ->whereYear('created_at', $current->year)
                     ->whereMonth('created_at', $current->month)
-                    ->sum('total_amount'),
+                    ->select(
+                        DB::raw('SUM(total_amount) as total'),
+                        $periodGrouping
+                    )
+                    ->groupBy($periodGrouping)
+                    ->get()
+                    ->avg('total') ?? 0,
+
                 'reimbursements' => ReimbursementRequest::where('status', 'approved')
                     ->whereYear('created_at', $current->year)
                     ->whereMonth('created_at', $current->month)
-                    ->sum('amount'),
+                    ->select(
+                        DB::raw('SUM(amount) as total'),
+                        $periodGrouping
+                    )
+                    ->groupBy($periodGrouping)
+                    ->get()
+                    ->avg('total') ?? 0,
             ];
+            
             $current->addMonth();
         }
 

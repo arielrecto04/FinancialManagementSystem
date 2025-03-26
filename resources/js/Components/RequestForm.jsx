@@ -80,8 +80,8 @@ const icons = {
     ),
 };
 
-export default function RequestForm({ auth, errors = {} }) {
-    const [formType, setFormType] = useState('supply');
+export default function RequestForm({ auth, errors = {}, type }) {
+    const [formType, setFormType] = useState(type || 'supply');
     const [items, setItems] = useState([{ name: '', quantity: '', price: '' }]);
     const [processing, setProcessing] = useState(false);
     

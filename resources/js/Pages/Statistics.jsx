@@ -5,16 +5,33 @@ import ReactApexChart from 'react-apexcharts';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 
-export default function Statistics({ statistics, categoryData, detailedStats }) {
-    const [viewOption, setViewOption] = useState('daily'); // 'daily', 'weekly', 'monthly', 'annual'
+export default function Statistics({ statistics, categoryData, detailedStats, currentViewOption }) {
+    const [viewOption, setViewOption] = useState(currentViewOption || 'daily'); // 'daily', 'weekly', 'monthly', 'annual'
     const [chartType, setChartType] = useState('pie'); // 'pie' or 'stack'
-    const [dateRange, setDateRange] = useState({
-        startDate: new Date(),
-        endDate: new Date()
+    
+    // Initialize date range from props if available
+    const [dateRange, setDateRange] = useState(() => {
+        if (detailedStats && detailedStats.view_period) {
+            return {
+                startDate: new Date(detailedStats.view_period.start_date),
+                endDate: new Date(detailedStats.view_period.end_date)
+            };
+        }
+        return {
+            startDate: new Date(), 
+            endDate: new Date()
+        };
     });
+    
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [key, setKey] = useState(0); // Add this state for forcing refresh
-    const [isAllTime, setIsAllTime] = useState(false);
+    const [isAllTime, setIsAllTime] = useState(() => {
+        // Initialize from props if available
+        if (detailedStats && detailedStats.view_period) {
+            return !!detailedStats.view_period.isAllTime;
+        }
+        return false;
+    });
 
     const categories = [
         'Supply Request',
@@ -96,6 +113,17 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
             labels: {
                 colors: '#000000'
             }
+        },
+        title: {
+            text: `Average ${viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expenses by Category`,
+            align: 'center'
+        },
+        tooltip: {
+            y: {
+                formatter: function(value) {
+                    return `Average per ${viewOption}: ${formatCurrency(value)}`;
+                }
+            }
         }
     };
 
@@ -142,7 +170,7 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
         },
         yaxis: {
             title: {
-                text: 'Amount (PHP)',
+                text: `Average Amount per ${viewOption.charAt(0).toUpperCase() + viewOption.slice(1)}`,
                 style: {
                     color: '#000000'
                 }
@@ -159,11 +187,15 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
         colors: ['#2E93fA'],
         tooltip: {
             y: {
-                formatter: function (val) {
-                    return formatCurrency(val);
+                formatter: function(value) {
+                    return `Average per ${viewOption}: ${formatCurrency(value)}`;
                 }
             },
             theme: 'light'
+        },
+        title: {
+            text: `Average ${viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expenses by Category`,
+            align: 'center'
         }
     };
 
@@ -198,8 +230,13 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
     // Add handler for all time toggle
     const handleAllTimeToggle = () => {
         setIsAllTime(!isAllTime);
+        
+        // When toggling all time, need to pass correct params
         router.get(route('statistics.index'), {
-            isAllTime: !isAllTime
+            isAllTime: !isAllTime,
+            viewOption: viewOption, // Make sure to keep current view option
+            startDate: dateRange.startDate instanceof Date ? dateRange.startDate.toISOString().split('T')[0] : dateRange.startDate,
+            endDate: dateRange.endDate instanceof Date ? dateRange.endDate.toISOString().split('T')[0] : dateRange.endDate
         }, {
             preserveState: true,
             preserveScroll: true,
@@ -231,6 +268,17 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
             labels: {
                 formatter: (val) => formatCurrency(val)
             }
+        },
+        title: {
+            text: `Average ${viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expense Trends`,
+            align: 'center'
+        },
+        tooltip: {
+            y: {
+                formatter: function(value) {
+                    return `Average per ${viewOption}: ${formatCurrency(value)}`;
+                }
+            }
         }
     };
 
@@ -238,18 +286,33 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
     const processCategoryData = (categoryGroup) => {
         if (!categoryGroup || !categoryGroup.categories) return [];
         
-        // Convert the collection to an array and calculate totals for the current period
         return Object.entries(categoryGroup.categories).map(([category, periodData]) => {
             const total = periodData.reduce((sum, period) => sum + parseFloat(period.total), 0);
-            const count = periodData.reduce((sum, period) => sum + parseInt(period.count), 0);
-            const average = total / periodData.length;
+            const count = periodData.length; // Number of periods
+            const average = total / count;
 
             return {
                 category_name: category,
                 total: total,
                 count: count,
-                average: average
+                average: average,
+                period_average: average / count // Average per selected period
             };
+        });
+    };
+
+    // Update the viewOption handler
+    const handleViewOptionChange = (period) => {
+        setViewOption(period.toLowerCase());
+        // Send the new viewOption to backend
+        router.get(route('statistics.index'), {
+            startDate: dateRange.startDate instanceof Date ? dateRange.startDate.toISOString().split('T')[0] : dateRange.startDate,
+            endDate: dateRange.endDate instanceof Date ? dateRange.endDate.toISOString().split('T')[0] : dateRange.endDate,
+            viewOption: period.toLowerCase(),
+            isAllTime: isAllTime
+        }, {
+            preserveState: true,
+            preserveScroll: true,
         });
     };
 
@@ -289,7 +352,7 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
                                 <label className="block text-sm font-medium text-gray-700 mb-2">From</label>
                                 <input
                                     type="date"
-                                    value={dateRange.startDate.toISOString().split('T')[0]}
+                                    value={dateRange.startDate instanceof Date ? dateRange.startDate.toISOString().split('T')[0] : dateRange.startDate}
                                     onChange={(e) => handleDateRangeChange('startDate', new Date(e.target.value))}
                                     disabled={isAllTime}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white hover:border-gray-400 transition-colors"
@@ -299,7 +362,7 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
                                 <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
                                 <input
                                     type="date"
-                                    value={dateRange.endDate.toISOString().split('T')[0]}
+                                    value={dateRange.endDate instanceof Date ? dateRange.endDate.toISOString().split('T')[0] : dateRange.endDate}
                                     onChange={(e) => handleDateRangeChange('endDate', new Date(e.target.value))}
                                     disabled={isAllTime}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white hover:border-gray-400 transition-colors"
@@ -316,7 +379,7 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
                                 {['Daily', 'Weekly', 'Monthly', 'Annual'].map((period) => (
                                     <button
                                         key={period}
-                                        onClick={() => setViewOption(period.toLowerCase())}
+                                        onClick={() => handleViewOptionChange(period)}
                                         className={`px-4 py-2 rounded-lg transition-all duration-200 ${
                                             viewOption === period.toLowerCase()
                                                 ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
@@ -410,7 +473,7 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
                                 </svg>
                             </div>
                             <h3 className="text-xl font-semibold text-gray-800">
-                                {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expense Distribution
+                                Average {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expense Distribution
                             </h3>
                         </div>
                         <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100">
@@ -464,13 +527,13 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
                                                 </span>
                                                 <div className="text-right">
                                                     <div className="text-lg font-semibold text-blue-600">
-                                                        {formatCurrency(categoryData.total)}
+                                                        {formatCurrency(categoryData.period_average)}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {categoryData.count} requests
+                                                        Average per {viewOption}
                                                     </div>
                                                     <div className="text-xs text-gray-400">
-                                                        Avg: {formatCurrency(categoryData.average)}
+                                                        Total: {formatCurrency(categoryData.total)}
                                                     </div>
                                                 </div>
                                             </div>
@@ -492,7 +555,9 @@ export default function Statistics({ statistics, categoryData, detailedStats }) 
 
                         {/* Monthly Trends Chart */}
                         <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
-                            <h3 className="text-lg font-semibold mb-4">Monthly Expense Trends</h3>
+                            <h3 className="text-lg font-semibold mb-4">
+                                Average {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expense Trends
+                            </h3>
                             <ReactApexChart
                                 options={monthlyTrendOptions}
                                 series={[

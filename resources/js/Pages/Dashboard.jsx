@@ -287,6 +287,29 @@ const WavyBackground = () => (
         </div>
     );
 
+const RequestFormCard = ({ title, description, icon, route }) => (
+    <div className="p-6 bg-white border border-gray-200/70 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
+        <div className="flex items-start space-x-4">
+            <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
+                {icon}
+            </div>
+            <div className="flex-1">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">{title}</h4>
+                <p className="text-sm text-gray-600 mb-4">{description}</p>
+                <Link
+                    href={route}
+                    className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+                >
+                    Create Request
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                </Link>
+            </div>
+        </div>
+    </div>
+);
+
 export default function Dashboard({ 
     auth, 
     userStats = {}, 
@@ -524,17 +547,157 @@ export default function Dashboard({
                             </div>
                         </>
                     ) : (
-                        // User view
-                        <div className="p-6 bg-white shadow-sm sm:rounded-lg">
-                            <h3 className="text-lg font-semibold mb-4">User Dashboard</h3>
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div className="p-6 border rounded-lg hover:shadow-md transition-shadow">
-                                    <h4 className="font-medium mb-2">Supply Request</h4>
-                                    <p className="text-sm text-gray-600">Manage your supply requests here</p>
+                        // User view - Enhanced version
+                        <div className="py-12">
+                            <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                                {/* Welcome Section */}
+                                <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-200/70 p-6">
+                                    <div className="flex items-center space-x-4">
+                                        <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
+                                            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h1 className="text-2xl font-semibold text-gray-800">Welcome, {auth.user.name}</h1>
+                                            <p className="text-gray-600 mt-1">Manage your requests and track their status</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="p-6 border rounded-lg hover:shadow-md transition-shadow">
-                                    <h4 className="font-medium mb-2">Reimbursement</h4>
-                                    <p className="text-sm text-gray-600">Submit and track reimbursement requests</p>
+
+                                {/* Request Forms Section */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {/* Supply Request Card */}
+                                    <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-sm border border-gray-200/70 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
+                                        <div className="p-6">
+                                            <div className="flex items-start justify-between">
+                                                <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
+                                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                                    </svg>
+                                                </div>
+                                                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">Most Common</span>
+                                            </div>
+                                            <h3 className="mt-4 text-lg font-semibold text-gray-800">Supply Request</h3>
+                                            <p className="mt-2 text-sm text-gray-600">Request office supplies, equipment, and materials for your work needs.</p>
+                                            <div className="mt-4">
+                                                <Link
+                                                    href={route('request.form', { type: 'supply' })}
+                                                    className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                                                >
+                                                    Create Supply Request
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Reimbursement Request Card */}
+                                    <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl shadow-sm border border-gray-200/70 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
+                                        <div className="p-6">
+                                            <div className="flex items-start justify-between">
+                                                <div className="p-3 bg-emerald-100 rounded-lg ring-1 ring-emerald-100/50">
+                                                    <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <h3 className="mt-4 text-lg font-semibold text-gray-800">Reimbursement Request</h3>
+                                            <p className="mt-2 text-sm text-gray-600">Submit claims for business expenses with receipt attachments.</p>
+                                            <div className="mt-4">
+                                                <Link
+                                                    href={route('request.form', { type: 'reimbursement' })}
+                                                    className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+                                                >
+                                                    Create Reimbursement Request
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Liquidation Request Card */}
+                                    <div className="bg-gradient-to-br from-violet-50 to-white rounded-xl shadow-sm border border-gray-200/70 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
+                                        <div className="p-6">
+                                            <div className="flex items-start justify-between">
+                                                <div className="p-3 bg-violet-100 rounded-lg ring-1 ring-violet-100/50">
+                                                    <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <h3 className="mt-4 text-lg font-semibold text-gray-800">Liquidation Request</h3>
+                                            <p className="mt-2 text-sm text-gray-600">Submit detailed reports for cash advances and project expenses.</p>
+                                            <div className="mt-4">
+                                                <Link
+                                                    href={route('request.form', { type: 'liquidation' })}
+                                                    className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors"
+                                                >
+                                                    Create Liquidation Request
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* HR Expense Request Section - Only shown for HR role */}
+                                {auth.user.role === 'hr' && (
+                                    <div className="mt-6">
+                                        <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl shadow-sm border border-gray-200/70 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
+                                            <div className="p-6">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="p-3 bg-purple-100 rounded-lg ring-1 ring-purple-100/50">
+                                                        <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                                <h3 className="mt-4 text-lg font-semibold text-gray-800">HR Expense Request</h3>
+                                                <p className="mt-2 text-sm text-gray-600">Submit HR-related expense requests and manage department budgets.</p>
+                                                <div className="mt-4">
+                                                    <Link
+                                                        href={route('request.form', { type: 'hrExpenses' })}
+                                                        className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+                                                    >
+                                                        Create HR Expense Request
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Help & Information Section */}
+                                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200/70 p-6">
+                                        <div className="flex items-start space-x-4">
+                                            <div className="p-3 bg-amber-100 rounded-lg ring-1 ring-amber-100/50">
+                                                <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-gray-800">Need Assistance?</h3>
+                                                <p className="mt-2 text-sm text-gray-600">
+                                                    For HR or Operating expenses, please contact your department head or the HR department directly. For technical support, reach out to IT department.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200/70 p-6">
+                                        <div className="flex items-start space-x-4">
+                                            <div className="p-3 bg-rose-100 rounded-lg ring-1 ring-rose-100/50">
+                                                <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-gray-800">Important Notice</h3>
+                                                <p className="mt-2 text-sm text-gray-600">
+                                                    Please ensure all requests are submitted with complete documentation. Incomplete requests may delay the approval process.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

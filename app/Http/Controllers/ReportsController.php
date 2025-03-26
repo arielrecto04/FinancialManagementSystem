@@ -473,12 +473,14 @@ class ReportsController extends Controller
         // Strict budget check for approvals
         if ($request->status === 'approved') {
             if (floatval($adminBudget->remaining_budget) < $requestAmount) {
-                return response()->json([
-                    'error' => 'Insufficient budget',
-                    'message' => 'You do not have sufficient budget to approve this request.',
-                    'remaining_budget' => $this->formatNumber($adminBudget->remaining_budget),
-                    'required_amount' => $this->formatNumber($requestAmount)
-                ], 422);
+                return back()->with('error', [
+                    'title' => 'Insufficient Budget',
+                    'message' => sprintf(
+                        'Unable to approve this request. Your remaining budget is ₱%s, but this request requires ₱%s.',
+                        $this->formatNumber($adminBudget->remaining_budget),
+                        $this->formatNumber($requestAmount)
+                    )
+                ]);
             }
 
             DB::beginTransaction();

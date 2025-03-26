@@ -304,70 +304,74 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                 });
 
                 // Submit the action
-        router.post(route('reports.update-status', selectedRequest.extracted_id), {
-            status: actionType,
-            type: selectedRequest.extracted_type,
-        }, {
-            onSuccess: (page) => {
-                if (page.props.flash.error) {
+                router.post(route('reports.update-status', selectedRequest.extracted_id), {
+                    status: actionType,
+                    type: selectedRequest.extracted_type,
+                }, {
+                    onSuccess: (page) => {
+                        // Check for error flash message
+                        if (page.props.flash.error) {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Error',
-                                text: page.props.flash.error,
+                                title: page.props.flash.error.title,
+                                text: page.props.flash.error.message,
+                                confirmButtonColor: '#EF4444'
                             });
-                } else {
-                    // Update local statistics
-                            setLocalStatistics(prev => {
-                                const newStats = { ...prev };
-                                if (selectedRequest.status === 'pending') {
-                                    newStats.pendingRequests--;
-                                }
-                                if (actionType === 'approved') {
-                                    newStats.approvedRequests++;
-                                    if (selectedRequest.status === 'rejected') {
-                                        newStats.rejectedRequests--;
-                                    }
-                                } else if (actionType === 'rejected') {
-                                    newStats.rejectedRequests++;
-                                    if (selectedRequest.status === 'approved') {
-                                        newStats.approvedRequests--;
-                                    }
-                                }
-                                return newStats;
-                            });
-
-                            // Update budget if action is 'approved'
-                    if (actionType === 'approved' && adminBudget) {
-                        const requestAmount = selectedRequest.type === 'Reimbursement' 
-                            ? parseFloat(selectedRequest.amount || 0) 
-                            : parseFloat(selectedRequest.total_amount || 0);
-
-                        setAdminBudget(prev => ({
-                            ...prev,
-                            remaining_budget: parseFloat(prev.remaining_budget) - requestAmount,
-                            used_budget: parseFloat(prev.used_budget) + requestAmount
-                        }));
-                            }
-
-                            // Show success message
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Success!',
-                                text: actionType === 'approved' 
-                                    ? 'Request has been approved.' 
-                                    : 'Request has been rejected.',
-                                confirmButtonColor: '#10B981'
-                            });
-
-                            router.reload({ only: ['requests'] });
+                            return;
                         }
-            },
-            onError: (errors) => {
-                console.error('Error updating status:', errors);
+
+                        // Success handling
+                        setLocalStatistics(prev => {
+                            const newStats = { ...prev };
+                            if (selectedRequest.status === 'pending') {
+                                newStats.pendingRequests--;
+                            }
+                            if (actionType === 'approved') {
+                                newStats.approvedRequests++;
+                                if (selectedRequest.status === 'rejected') {
+                                    newStats.rejectedRequests--;
+                                }
+                            } else if (actionType === 'rejected') {
+                                newStats.rejectedRequests++;
+                                if (selectedRequest.status === 'approved') {
+                                    newStats.approvedRequests--;
+                                }
+                            }
+                            return newStats;
+                        });
+
+                        // Update budget if action is 'approved'
+                        if (actionType === 'approved' && adminBudget) {
+                            const requestAmount = selectedRequest.type === 'Reimbursement' 
+                                ? parseFloat(selectedRequest.amount || 0) 
+                                : parseFloat(selectedRequest.total_amount || 0);
+
+                            setAdminBudget(prev => ({
+                                ...prev,
+                                remaining_budget: parseFloat(prev.remaining_budget) - requestAmount,
+                                used_budget: parseFloat(prev.used_budget) + requestAmount
+                            }));
+                        }
+
+                        // Show success message
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: actionType === 'approved' 
+                                ? 'Request has been approved.' 
+                                : 'Request has been rejected.',
+                            confirmButtonColor: '#10B981'
+                        });
+
+                        router.reload({ only: ['requests'] });
+                    },
+                    onError: (errors) => {
+                        console.error('Error updating status:', errors);
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
                             text: 'Failed to update request status. Please try again.',
+                            confirmButtonColor: '#EF4444'
                         });
                     }
                 });
