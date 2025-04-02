@@ -8,6 +8,16 @@ import "react-datepicker/dist/react-datepicker.css";
 export default function Statistics({ statistics, categoryData, detailedStats, currentViewOption }) {
     const [viewOption, setViewOption] = useState(currentViewOption || 'daily'); // 'daily', 'weekly', 'monthly', 'annual'
     const [chartType, setChartType] = useState('pie'); // 'pie' or 'stack'
+    const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'hr', 'operating', 'liquidation'
+    
+    // Add console logging to debug data structure
+    useEffect(() => {
+        console.log('Detailed Stats:', detailedStats);
+        console.log('Active Tab:', activeTab);
+        if (detailedStats && detailedStats[activeTab]) {
+            console.log('Current Tab Data:', detailedStats[activeTab]);
+        }
+    }, [detailedStats, activeTab]);
     
     // Initialize date range from props if available
     const [dateRange, setDateRange] = useState(() => {
@@ -51,10 +61,19 @@ export default function Statistics({ statistics, categoryData, detailedStats, cu
             [type]: date
         }));
         
+        // Format dates for API
+        const formattedStartDate = dateRange.startDate instanceof Date 
+            ? dateRange.startDate.toISOString().split('T')[0] 
+            : dateRange.startDate;
+        const formattedEndDate = dateRange.endDate instanceof Date 
+            ? dateRange.endDate.toISOString().split('T')[0] 
+            : dateRange.endDate;
+        
         // Fetch new data based on date range
         router.get(route('statistics.index'), {
-            startDate: type === 'startDate' ? date.toISOString().split('T')[0] : dateRange.startDate.toISOString().split('T')[0],
-            endDate: type === 'endDate' ? date.toISOString().split('T')[0] : dateRange.endDate.toISOString().split('T')[0],
+            startDate: type === 'startDate' ? date.toISOString().split('T')[0] : formattedStartDate,
+            endDate: type === 'endDate' ? date.toISOString().split('T')[0] : formattedEndDate,
+            viewOption: viewOption,
             isAllTime: false
         }, {
             preserveState: true,
@@ -200,23 +219,24 @@ export default function Statistics({ statistics, categoryData, detailedStats, cu
     };
 
     const getCurrentStats = () => {
-        return statistics[viewOption] || {
+        return statistics.overview || {
             totalExpenses: 0,
             averageExpense: 0,
-            highestDay: 'N/A',
-            highestWeek: 'N/A',
-            highestMonth: 'N/A',
-            highestYear: 'N/A'
+            highestAmount: 0,
+            highestPeriod: 'N/A',
+            totalRequests: 0
         };
     };
 
     const getHighestPeriod = () => {
         const stats = getCurrentStats();
+        if (!stats.highestPeriod) return 'N/A';
+        
         switch(viewOption) {
-            case 'daily': return stats.highestDay;
-            case 'weekly': return stats.highestWeek;
-            case 'monthly': return stats.highestMonth;
-            case 'annual': return stats.highestYear;
+            case 'daily': return new Date(stats.highestPeriod).toLocaleDateString();
+            case 'weekly': return `Week ${stats.highestPeriod}`;
+            case 'monthly': return new Date(stats.highestPeriod + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            case 'annual': return stats.highestPeriod;
             default: return 'N/A';
         }
     };
@@ -234,7 +254,7 @@ export default function Statistics({ statistics, categoryData, detailedStats, cu
         // When toggling all time, need to pass correct params
         router.get(route('statistics.index'), {
             isAllTime: !isAllTime,
-            viewOption: viewOption, // Make sure to keep current view option
+            viewOption: viewOption,
             startDate: dateRange.startDate instanceof Date ? dateRange.startDate.toISOString().split('T')[0] : dateRange.startDate,
             endDate: dateRange.endDate instanceof Date ? dateRange.endDate.toISOString().split('T')[0] : dateRange.endDate
         }, {
@@ -322,6 +342,33 @@ export default function Statistics({ statistics, categoryData, detailedStats, cu
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    {/* Main Tabs */}
+                    <div className="mb-6 bg-white p-4 rounded-xl shadow-sm">
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { id: 'overview', label: 'Overview', icon: '📊' },
+                                { id: 'hr', label: 'HR Expenses', icon: '👥' },
+                                { id: 'operating', label: 'Operating Expenses', icon: '💼' },
+                                { id: 'liquidation', label: 'Liquidations', icon: '💰' },
+                                { id: 'supply', label: 'Supply Requests', icon: '📦' },
+                                { id: 'reimbursement', label: 'Reimbursements', icon: '💸' }
+                            ].map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                                        activeTab === tab.id
+                                            ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
+                                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 hover:border-gray-300'
+                                    }`}
+                                >
+                                    <span>{tab.icon}</span>
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                         {/* Date Range Section */}
                     <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
                         <h3 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
@@ -414,6 +461,9 @@ export default function Statistics({ statistics, categoryData, detailedStats, cu
                             </div>
                         </div>
 
+                    {/* Content based on active tab */}
+                    {activeTab === 'overview' ? (
+                        <>
                     {/* Statistics Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
@@ -499,62 +549,448 @@ export default function Statistics({ statistics, categoryData, detailedStats, cu
                             )}
                         </div>
                     </div>
-
-                    {/* Category Breakdown Cards */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                        {['hr_expenses', 'operating_expenses', 'liquidations', 'reimbursements'].map((type) => (
-                            <div key={type} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
-                                <div className="flex items-center space-x-3 mb-4">
-                                    <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
-                                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                        </svg>
+                        </>
+                    ) : (
+                        <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
+                            <h3 className="text-xl font-semibold mb-4 text-gray-800">
+                                {activeTab === 'hr' ? 'HR Expenses Breakdown' :
+                                 activeTab === 'operating' ? 'Operating Expenses Breakdown' :
+                                 activeTab === 'liquidation' ? 'Liquidations Breakdown' :
+                                 activeTab === 'supply' ? 'Supply Requests Breakdown' :
+                                 'Reimbursements Breakdown'}
+                            </h3>
+                            
+                            {/* Summary Cards */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <div className="text-sm text-gray-500">Total Requests</div>
+                                    <div className="text-xl font-semibold">
+                                        {detailedStats[activeTab]?.total_requests || 0}
                                     </div>
-                                    <h3 className="text-lg font-semibold text-gray-800 capitalize">
-                                        {type.replace(/_/g, ' ')} Breakdown
-                                    </h3>
                                 </div>
-
-                                <div className="space-y-4">
-                                    {processCategoryData(detailedStats[type]).map((categoryData) => (
-                                        <div 
-                                            key={categoryData.category_name}
-                                            className="p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
-                                        >
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-700 font-medium">
-                                                    {categoryData.category_name}
-                                                </span>
-                                                <div className="text-right">
-                                                    <div className="text-lg font-semibold text-blue-600">
-                                                        {formatCurrency(categoryData.period_average)}
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <div className="text-sm text-gray-500">Unique Requestors</div>
+                                    <div className="text-xl font-semibold">
+                                        {detailedStats[activeTab]?.unique_requestors || 0}
                                                     </div>
-                                                    <div className="text-sm text-gray-500">
-                                                        Average per {viewOption}
                                                     </div>
-                                                    <div className="text-xs text-gray-400">
-                                                        Total: {formatCurrency(categoryData.total)}
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <div className="text-sm text-gray-500">Total Amount</div>
+                                    <div className="text-xl font-semibold">
+                                        {formatCurrency(detailedStats[activeTab]?.total_amount || 0)}
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
 
-                                    {/* Total for this type */}
-                                    <div className="mt-4 pt-4 border-t border-gray-200">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-gray-600 font-medium">Total Amount</span>
-                                            <span className="text-lg font-bold text-gray-800">
-                                                {formatCurrency(detailedStats[type].total_amount || 0)}
-                                            </span>
+                            {/* Category Distribution Chart */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                {/* Pie Chart */}
+                                <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100">
+                                    <ReactApexChart
+                                        options={{
+                                            chart: {
+                                                type: 'pie',
+                                            },
+                                            labels: Object.keys(detailedStats[activeTab]?.categories || {}),
+                                            colors: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+                                            responsive: [{
+                                                breakpoint: 480,
+                                                options: {
+                                                    chart: {
+                                                        width: 300
+                                                    },
+                                                    legend: {
+                                                        position: 'bottom'
+                                                    }
+                                                }
+                                            }],
+                                            dataLabels: {
+                                                style: {
+                                                    colors: ['#000000']
+                                                }
+                                            },
+                                            legend: {
+                                                labels: {
+                                                    colors: '#000000'
+                                                }
+                                            },
+                                            title: {
+                                                text: `${activeTab === 'hr' ? 'HR' : 
+                                                      activeTab === 'operating' ? 'Operating' : 
+                                                      activeTab === 'liquidation' ? 'Liquidation' :
+                                                      'Supply'} Expenses Distribution`,
+                                                align: 'center'
+                                            },
+                                            tooltip: {
+                                                y: {
+                                                    formatter: function(value) {
+                                                        return formatCurrency(value);
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                        series={Object.values(detailedStats[activeTab]?.categories || {}).map(cat => 
+                                            cat.reduce((sum, item) => sum + parseFloat(item.total || 0), 0)
+                                        )}
+                                        type="pie"
+                                        height={400}
+                                    />
+                                        </div>
+
+                                {/* Bar Chart */}
+                                <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100">
+                                    <ReactApexChart
+                                        options={{
+                                            chart: {
+                                                type: 'bar',
+                                                stacked: false,
+                                                toolbar: {
+                                                    show: true
+                                                }
+                                            },
+                                            plotOptions: {
+                                                bar: {
+                                                    horizontal: false,
+                                                    columnWidth: '55%',
+                                                    borderRadius: 6,
+                                                },
+                                            },
+                                            dataLabels: {
+                                                enabled: true,
+                                                formatter: function (val) {
+                                                    return formatCurrency(val);
+                                                },
+                                                style: {
+                                                    fontSize: '12px',
+                                                    colors: ['#000000'],
+                                                }
+                                            },
+                                            xaxis: {
+                                                categories: Object.keys(detailedStats[activeTab]?.categories || {}),
+                                                labels: {
+                                                    rotate: -45,
+                                                    trim: true,
+                                                    maxHeight: 120,
+                                                    style: {
+                                                        colors: '#000000',
+                                                        fontSize: '12px'
+                                                    }
+                                                }
+                                            },
+                                            yaxis: {
+                                                title: {
+                                                    text: 'Amount (PHP)',
+                                                    style: {
+                                                        color: '#000000'
+                                                    }
+                                                },
+                                                labels: {
+                                                    formatter: function (val) {
+                                                        return formatCurrency(val);
+                                                    },
+                                                    style: {
+                                                        colors: '#000000'
+                                                    }
+                                                }
+                                            },
+                                            title: {
+                                                text: `${activeTab === 'hr' ? 'HR' : 
+                                                      activeTab === 'operating' ? 'Operating' : 
+                                                      activeTab === 'liquidation' ? 'Liquidation' :
+                                                      'Supply'} Expenses by Category`,
+                                                align: 'center'
+                                            },
+                                            tooltip: {
+                                                y: {
+                                                    formatter: function(value) {
+                                                        return formatCurrency(value);
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                        series={[
+                                            {
+                                                name: 'Total Amount',
+                                                data: Object.values(detailedStats[activeTab]?.categories || {}).map(cat => 
+                                                    cat.reduce((sum, item) => sum + parseFloat(item.total || 0), 0)
+                                                )
+                                            },
+                                            {
+                                                name: 'Average Amount',
+                                                data: Object.values(detailedStats[activeTab]?.categories || {}).map(cat => 
+                                                    cat.reduce((sum, item) => sum + parseFloat(item.average || 0), 0) / (cat.length || 1)
+                                                )
+                                            }
+                                        ]}
+                                        type="bar"
+                                        height={400}
+                                    />
                                         </div>
                                     </div>
+
+                            {/* Additional Charts for Specific Breakdowns */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                {/* Highest/Lowest Amount Chart */}
+                                <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100">
+                                    <ReactApexChart
+                                        options={{
+                                            chart: {
+                                                type: 'bar',
+                                                stacked: false,
+                                                toolbar: {
+                                                    show: true
+                                                }
+                                            },
+                                            plotOptions: {
+                                                bar: {
+                                                    horizontal: false,
+                                                    columnWidth: '55%',
+                                                    borderRadius: 6,
+                                                },
+                                            },
+                                            dataLabels: {
+                                                enabled: true,
+                                                formatter: function (val) {
+                                                    return formatCurrency(val);
+                                                },
+                                                style: {
+                                                    fontSize: '12px',
+                                                    colors: ['#000000'],
+                                                }
+                                            },
+                                            xaxis: {
+                                                categories: Object.keys(detailedStats[activeTab]?.categories || {}),
+                                                labels: {
+                                                    rotate: -45,
+                                                    trim: true,
+                                                    maxHeight: 120,
+                                                    style: {
+                                                        colors: '#000000',
+                                                        fontSize: '12px'
+                                                    }
+                                                }
+                                            },
+                                            yaxis: {
+                                                title: {
+                                                    text: 'Amount (PHP)',
+                                                    style: {
+                                                        color: '#000000'
+                                                    }
+                                                },
+                                                labels: {
+                                                    formatter: function (val) {
+                                                        return formatCurrency(val);
+                                                    },
+                                                    style: {
+                                                        colors: '#000000'
+                                                    }
+                                                }
+                                            },
+                                            title: {
+                                                text: 'Highest/Lowest Amounts by Category',
+                                                align: 'center'
+                                            },
+                                            tooltip: {
+                                                y: {
+                                                    formatter: function(value) {
+                                                        return formatCurrency(value);
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                        series={[
+                                            {
+                                                name: 'Highest Amount',
+                                                data: Object.values(detailedStats[activeTab]?.categories || {}).map(cat => 
+                                                    Math.max(...cat.map(item => parseFloat(item.highest_amount || 0)))
+                                                )
+                                            },
+                                            {
+                                                name: 'Lowest Amount',
+                                                data: Object.values(detailedStats[activeTab]?.categories || {}).map(cat => 
+                                                    Math.min(...cat.map(item => parseFloat(item.lowest_amount || 0)))
+                                                )
+                                            }
+                                        ]}
+                                        type="bar"
+                                        height={300}
+                                    />
+                                </div>
+
+                                {/* Request Count Chart */}
+                                <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100">
+                                    <ReactApexChart
+                                        options={{
+                                            chart: {
+                                                type: 'bar',
+                                                stacked: false,
+                                                toolbar: {
+                                                    show: true
+                                                }
+                                            },
+                                            plotOptions: {
+                                                bar: {
+                                                    horizontal: false,
+                                                    columnWidth: '55%',
+                                                    borderRadius: 6,
+                                                },
+                                            },
+                                            dataLabels: {
+                                                enabled: true,
+                                                style: {
+                                                    fontSize: '12px',
+                                                    colors: ['#000000'],
+                                                }
+                                            },
+                                            xaxis: {
+                                                categories: Object.keys(detailedStats[activeTab]?.categories || {}),
+                                                labels: {
+                                                    rotate: -45,
+                                                    trim: true,
+                                                    maxHeight: 120,
+                                                    style: {
+                                                        colors: '#000000',
+                                                        fontSize: '12px'
+                                                    }
+                                                }
+                                            },
+                                            yaxis: {
+                                                title: {
+                                                    text: 'Number of Requests',
+                                                    style: {
+                                                        color: '#000000'
+                                                    }
+                                                },
+                                                labels: {
+                                                    style: {
+                                                        colors: '#000000'
+                                                    }
+                                                }
+                                            },
+                                            title: {
+                                                text: 'Request Count by Category',
+                                                align: 'center'
+                                            }
+                                        }}
+                                        series={[
+                                            {
+                                                name: 'Total Requests',
+                                                data: Object.values(detailedStats[activeTab]?.categories || {}).map(cat => 
+                                                    cat.reduce((sum, item) => sum + parseInt(item.count || 0), 0)
+                                                )
+                                            },
+                                            {
+                                                name: 'Unique Requestors',
+                                                data: Object.values(detailedStats[activeTab]?.categories || {}).map(cat => 
+                                                    cat.reduce((sum, item) => sum + parseInt(item.unique_requestors || 0), 0)
+                                                )
+                                            }
+                                        ]}
+                                        type="bar"
+                                        height={300}
+                                    />
                                 </div>
                             </div>
-                        ))}
 
-                        {/* Monthly Trends Chart */}
-                        <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
+                            {/* Special Chart for Liquidations */}
+                            {activeTab === 'liquidation' && (
+                                <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100 mb-6">
+                                    <ReactApexChart
+                                        options={{
+                                            chart: {
+                                                type: 'bar',
+                                                stacked: false,
+                                                toolbar: {
+                                                    show: true
+                                                }
+                                            },
+                                            plotOptions: {
+                                                bar: {
+                                                    horizontal: false,
+                                                    columnWidth: '55%',
+                                                    borderRadius: 6,
+                                                },
+                                            },
+                                            dataLabels: {
+                                                enabled: true,
+                                                formatter: function (val) {
+                                                    return formatCurrency(val);
+                                                },
+                                                style: {
+                                                    fontSize: '12px',
+                                                    colors: ['#000000'],
+                                                }
+                                            },
+                                            xaxis: {
+                                                categories: Object.keys(detailedStats[activeTab]?.categories || {}),
+                                                labels: {
+                                                    rotate: -45,
+                                                    trim: true,
+                                                    maxHeight: 120,
+                                                    style: {
+                                                        colors: '#000000',
+                                                        fontSize: '12px'
+                                                    }
+                                                }
+                                            },
+                                            yaxis: {
+                                                title: {
+                                                    text: 'Amount (PHP)',
+                                                    style: {
+                                                        color: '#000000'
+                                                    }
+                                                },
+                                                labels: {
+                                                    formatter: function (val) {
+                                                        return formatCurrency(val);
+                                                    },
+                                                    style: {
+                                                        colors: '#000000'
+                                                    }
+                                                }
+                                            },
+                                            title: {
+                                                text: 'Liquidation Breakdown by Category',
+                                                align: 'center'
+                                            },
+                                            tooltip: {
+                                                y: {
+                                                    formatter: function(value) {
+                                                        return formatCurrency(value);
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                        series={[
+                                            {
+                                                name: 'Cash Advance',
+                                                data: Object.values(detailedStats[activeTab]?.categories || {}).map(cat => 
+                                                    cat.reduce((sum, item) => sum + parseFloat(item.total_cash_advance || 0), 0)
+                                                )
+                                            },
+                                            {
+                                                name: 'Refund',
+                                                data: Object.values(detailedStats[activeTab]?.categories || {}).map(cat => 
+                                                    cat.reduce((sum, item) => sum + parseFloat(item.total_refund || 0), 0)
+                                                )
+                                            },
+                                            {
+                                                name: 'Reimburse',
+                                                data: Object.values(detailedStats[activeTab]?.categories || {}).map(cat => 
+                                                    cat.reduce((sum, item) => sum + parseFloat(item.total_reimburse || 0), 0)
+                                                )
+                                            }
+                                        ]}
+                                        type="bar"
+                                        height={400}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Monthly Trends Chart - Show in all tabs */}
+                    <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-xl shadow-sm mt-6">
                             <h3 className="text-lg font-semibold mb-4">
                                 Average {viewOption.charAt(0).toUpperCase() + viewOption.slice(1)} Expense Trends
                             </h3>
@@ -581,7 +1017,6 @@ export default function Statistics({ statistics, categoryData, detailedStats, cu
                                 type="line"
                                 height={400}
                             />
-                        </div>
                     </div>
                 </div>
             </div>
