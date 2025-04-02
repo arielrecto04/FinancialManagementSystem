@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
@@ -35,11 +36,22 @@ class UserController extends Controller
             'role' => 'required|string|in:user,admin,hr,superadmin'
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
+        ]);
+
+        // Log user creation
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'create',
+            'action' => 'User Created',
+            'description' => 'Created new user: ' . $user->name . ' (' . $user->role . ')',
+            'ip_address' => $request->ip()
         ]);
 
         return redirect()->route('users.index')->with('success', 'User created successfully');
@@ -68,6 +80,10 @@ class UserController extends Controller
 
         $validated = $request->validate($rules);
 
+        // Store old values for audit log
+        $oldName = $user->name;
+        $oldRole = $user->role;
+
         // Update user data
         $userData = [
             'name' => $validated['name'],
@@ -82,6 +98,24 @@ class UserController extends Controller
 
         $user->update($userData);
 
+        // Log user update
+        $changes = [];
+        if ($oldName !== $user->name) $changes[] = 'name';
+        if ($oldRole !== $user->role) $changes[] = 'role';
+        if ($request->filled('password')) $changes[] = 'password';
+
+        if (!empty($changes)) {
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name,
+                'user_role' => auth()->user()->role,
+                'type' => 'update',
+                'action' => 'User Updated',
+                'description' => 'Updated user ' . $oldName . ': ' . implode(', ', $changes),
+                'ip_address' => $request->ip()
+            ]);
+        }
+
         return redirect()->route('users.index')->with('success', 'User updated successfully');
     }
 
@@ -92,7 +126,22 @@ class UserController extends Controller
             return redirect()->route('users.index')->with('error', 'You cannot delete your own account');
         }
 
+        // Store user info for audit log
+        $userName = $user->name;
+        $userRole = $user->role;
+
         $user->delete();
+
+        // Log user deletion
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'delete',
+            'action' => 'User Deleted',
+            'description' => 'Deleted user: ' . $userName . ' (' . $userRole . ')',
+            'ip_address' => request()->ip()
+        ]);
 
         return redirect()->route('users.index')->with('success', 'User deleted successfully');
     }

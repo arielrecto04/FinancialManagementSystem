@@ -15,6 +15,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RequestsExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use App\Models\AuditLog;
 
 class ReportsController extends Controller
 {
@@ -500,6 +501,21 @@ class ReportsController extends Controller
                     'used_budget' => $newUsedBudget
                 ]);
 
+                // Get the authenticated user
+                $user = auth()->user();
+
+                // Create audit log for approval
+                AuditLog::create([
+                    'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'user_role' => $user->role,
+                    'type' => 'request_approve',
+                    'action' => 'Approve Request',
+                    'description' => 'Approved ' . $requestModel->getTable() . ' #' . $id,
+                    'amount' => $requestAmount,
+                    'ip_address' => request()->ip()
+                ]);
+
                 DB::commit();
 
                 // Get updated statistics
@@ -522,6 +538,21 @@ class ReportsController extends Controller
             $requestModel->update([
                 'status' => $request->status,
                 'remarks' => $request->remarks ?? ''
+            ]);
+
+            // Get the authenticated user
+            $user = auth()->user();
+
+            // Create audit log for rejection
+            AuditLog::create([
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'user_role' => $user->role,
+                'type' => 'request_reject',
+                'action' => 'Reject Request',
+                'description' => 'Rejected ' . $requestModel->getTable() . ' #' . $id,
+                'amount' => $requestAmount,
+                'ip_address' => request()->ip()
             ]);
 
             // Get updated statistics

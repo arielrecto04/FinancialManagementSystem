@@ -28,6 +28,8 @@ trait AuditLogTrait
     {
         AuditLog::create([
             'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
             'action' => class_basename($model) . ' ' . $type,
             'type' => $type,
             'description' => $description,

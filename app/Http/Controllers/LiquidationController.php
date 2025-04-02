@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Liquidation;
 use App\Models\LiquidationItem;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -50,6 +51,18 @@ class LiquidationController extends Controller
                 ]);
             }
 
+            // Log the liquidation request creation
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name,
+                'user_role' => auth()->user()->role,
+                'type' => 'create',
+                'action' => 'Liquidation Request Created',
+                'description' => 'Created new liquidation request for ' . $validated['expense_type'],
+                'amount' => $validated['total_amount'],
+                'ip_address' => $request->ip()
+            ]);
+
             DB::commit();
 
             return redirect()->back()->with('success', 'Liquidation request submitted successfully.');
@@ -86,11 +99,48 @@ class LiquidationController extends Controller
         try {
             $liquidation->update($validated);
             
+            // Log the status change
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name,
+                'user_role' => auth()->user()->role,
+                'type' => $validated['status'] === 'approved' ? 'approve' : 'reject',
+                'action' => 'Liquidation Request ' . ucfirst($validated['status']),
+                'description' => 'Liquidation request ' . $validated['status'] . ' by ' . auth()->user()->name,
+                'amount' => $liquidation->total_amount,
+                'ip_address' => $request->ip()
+            ]);
+            
             return redirect()->back()->with('success', 'Liquidation request updated successfully.');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withErrors(['error' => 'Failed to update liquidation request.'])
                 ->withInput();
         }
+    }
+
+    public function destroy(Liquidation $liquidation)
+    {
+        $this->authorize('delete', $liquidation);
+        
+        // Store info for audit log
+        $amount = $liquidation->total_amount;
+        $type = $liquidation->expense_type;
+        
+        $liquidation->delete();
+
+        // Log the deletion
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'delete',
+            'action' => 'Liquidation Request Deleted',
+            'description' => 'Deleted liquidation request for ' . $type,
+            'amount' => $amount,
+            'ip_address' => request()->ip()
+        ]);
+
+        return redirect()->back()->with('success', 'Liquidation request deleted successfully.');
     }
 } 

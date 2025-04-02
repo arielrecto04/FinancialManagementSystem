@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AdminBudget;
 use App\Models\User;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -37,6 +38,18 @@ class AdminBudgetController extends Controller
                 'used_budget' => 0
             ]);
 
+            // Log the budget creation
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name,
+                'user_role' => auth()->user()->role,
+                'type' => 'budget_update',
+                'action' => 'Budget Created',
+                'description' => 'Initial budget allocation for ' . $budget->user->name,
+                'amount' => floatval($validated['total_budget']),
+                'ip_address' => $request->ip()
+            ]);
+
             return redirect()->back()->with('success', 'Budget allocated successfully');
         } catch (\Exception $e) {
             Log::error('Failed to create budget:', ['error' => $e->getMessage()]);
@@ -47,42 +60,74 @@ class AdminBudgetController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            DB::beginTransaction();
+            
             $budget = AdminBudget::findOrFail($id);
             
             $validated = $request->validate([
-                'total_budget' => 'required|numeric|min:0'
+                'total_budget' => 'required|numeric|min:0',
+                'replenishment_amount' => 'nullable|numeric|min:0'
             ]);
 
-            Log::info('Received update data:', $validated);
+            $updateData = [];
+            $logType = '';
+            $logAction = '';
+            $logDescription = '';
+            $logAmount = 0;
 
-            $updateData = [
-                'total_budget' => $validated['total_budget']
-            ];
+            // If replenishment amount is provided, add it to current total
+            if (!empty($validated['replenishment_amount'])) {
+                $newTotal = $budget->total_budget + floatval($validated['replenishment_amount']);
+                $updateData['total_budget'] = $newTotal;
+                $updateData['remaining_budget'] = $newTotal - $budget->used_budget;
+                $logType = 'budget_replenish';
+                $logAction = 'Budget Replenished';
+                $logDescription = 'Budget replenished for ' . $budget->user->name;
+                $logAmount = floatval($validated['replenishment_amount']);
+            } else {
+                // Otherwise, use the provided total_budget
+                $updateData['total_budget'] = floatval($validated['total_budget']);
+                $updateData['remaining_budget'] = floatval($validated['total_budget']) - $budget->used_budget;
+                $logType = 'budget_update';
+                $logAction = 'Budget Updated';
+                $logDescription = 'Budget updated for ' . $budget->user->name;
+                $logAmount = floatval($validated['total_budget']);
+            }
 
             // If total_budget is being reset to 0, also reset used_budget
-            if ($validated['total_budget'] == 0) {
+            if ($updateData['total_budget'] == 0) {
                 $updateData['used_budget'] = 0;
                 $updateData['remaining_budget'] = 0;
+                $logType = 'budget_reset';
+                $logAction = 'Budget Reset';
+                $logDescription = 'Budget reset to 0 for ' . $budget->user->name;
+                $logAmount = 0;
             }
 
-            Log::info('Updating budget:', [
-                'budget_id' => $id,
-                'old_data' => $budget->toArray(),
-                'new_data' => $updateData
+            // Update the budget
+            $budget->update($updateData);
+
+            // Create the audit log
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name,
+                'user_role' => auth()->user()->role,
+                'type' => $logType,
+                'action' => $logAction,
+                'description' => $logDescription,
+                'amount' => $logAmount,
+                'ip_address' => $request->ip()
             ]);
 
-            $result = $budget->update($updateData);
-            
-            if (!$result) {
-                throw new \Exception('Failed to update budget');
-            }
-
-            $budget->refresh();
-            Log::info('Updated budget:', $budget->toArray());
+            DB::commit();
 
             return redirect()->back()->with('success', 'Budget updated successfully');
         } catch (\Exception $e) {
-            Log::error('Failed to update budget:', ['error' => $e->getMessage()]);
+            DB::rollback();
+            Log::error('Failed to update budget:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()->withErrors(['error' => 'Failed to update budget: ' . $e->getMessage()]);
         }
     }
@@ -90,7 +135,24 @@ class AdminBudgetController extends Controller
     public function destroy(AdminBudget $budget)
     {
         try {
+            // Store budget info for audit log
+            $budgetAmount = $budget->total_budget;
+            $userName = $budget->user->name;
+
             $budget->delete();
+
+            // Log budget deletion
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name,
+                'user_role' => auth()->user()->role,
+                'type' => 'budget_delete',
+                'action' => 'Budget Deleted',
+                'description' => 'Deleted budget for user: ' . $userName,
+                'amount' => $budgetAmount,
+                'ip_address' => request()->ip()
+            ]);
+
             return redirect()->back()->with('success', 'Budget removed successfully');
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Failed to remove budget: ' . $e->getMessage()]);

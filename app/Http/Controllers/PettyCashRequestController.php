@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PettyCashRequest;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -57,6 +58,18 @@ class PettyCashRequestController extends Controller
 
         $pettyCashRequest->save();
 
+        // Log the petty cash request creation
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'create',
+            'action' => 'Petty Cash Request Created',
+            'description' => 'Created new petty cash request for ' . $validated['purpose'],
+            'amount' => $validated['amount'],
+            'ip_address' => $request->ip()
+        ]);
+
         return redirect()->back()->with('success', 'Petty cash request submitted successfully.');
     }
 
@@ -85,6 +98,18 @@ class PettyCashRequestController extends Controller
             'approved_at' => $validated['status'] === 'approved' ? now() : null,
         ]);
 
+        // Log the status change
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => $validated['status'] === 'approved' ? 'approve' : 'reject',
+            'action' => 'Petty Cash Request ' . ucfirst($validated['status']),
+            'description' => 'Petty cash request ' . $validated['status'] . ' by ' . auth()->user()->name,
+            'amount' => $pettyCashRequest->amount,
+            'ip_address' => $request->ip()
+        ]);
+
         return redirect()->back()->with('success', 'Petty cash request updated successfully.');
     }
 
@@ -92,7 +117,23 @@ class PettyCashRequestController extends Controller
     {
         $this->authorize('delete', $pettyCashRequest);
         
+        // Store info for audit log
+        $amount = $pettyCashRequest->amount;
+        $purpose = $pettyCashRequest->purpose;
+        
         $pettyCashRequest->delete();
+
+        // Log the deletion
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'delete',
+            'action' => 'Petty Cash Request Deleted',
+            'description' => 'Deleted petty cash request for ' . $purpose,
+            'amount' => $amount,
+            'ip_address' => request()->ip()
+        ]);
 
         return redirect()->back()->with('success', 'Petty cash request deleted successfully.');
     }

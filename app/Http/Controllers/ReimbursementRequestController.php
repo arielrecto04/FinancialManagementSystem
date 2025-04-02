@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ReimbursementRequest;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -33,6 +34,18 @@ class ReimbursementRequestController extends Controller
             
             $reimbursement->save();
 
+            // Log the reimbursement request creation
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name,
+                'user_role' => auth()->user()->role,
+                'type' => 'create',
+                'action' => 'Reimbursement Request Created',
+                'description' => 'Created new reimbursement request for ' . $validated['expense_type'],
+                'amount' => $validated['amount'],
+                'ip_address' => $request->ip()
+            ]);
+
             return redirect()->back()->with('success', 'Reimbursement request submitted successfully!');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -45,5 +58,59 @@ class ReimbursementRequestController extends Controller
                 ->with('error', 'Failed to submit reimbursement request')
                 ->withInput();
         }
+    }
+
+    public function updateStatus(Request $request, ReimbursementRequest $reimbursement)
+    {
+        $this->authorize('update', $reimbursement);
+        
+        $validated = $request->validate([
+            'status' => 'required|in:approved,rejected',
+            'remarks' => 'required|string'
+        ]);
+
+        $reimbursement->update([
+            'status' => $validated['status'],
+            'remarks' => $validated['remarks']
+        ]);
+
+        // Log the status change
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => $validated['status'] === 'approved' ? 'approve' : 'reject',
+            'action' => 'Reimbursement Request ' . ucfirst($validated['status']),
+            'description' => 'Reimbursement request ' . $validated['status'] . ' by ' . auth()->user()->name,
+            'amount' => $reimbursement->amount,
+            'ip_address' => $request->ip()
+        ]);
+
+        return redirect()->back()->with('success', 'Reimbursement request status updated successfully.');
+    }
+
+    public function destroy(ReimbursementRequest $reimbursement)
+    {
+        $this->authorize('delete', $reimbursement);
+        
+        // Store info for audit log
+        $amount = $reimbursement->amount;
+        $type = $reimbursement->expense_type;
+        
+        $reimbursement->delete();
+
+        // Log the deletion
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'delete',
+            'action' => 'Reimbursement Request Deleted',
+            'description' => 'Deleted reimbursement request for ' . $type,
+            'amount' => $amount,
+            'ip_address' => request()->ip()
+        ]);
+
+        return redirect()->back()->with('success', 'Reimbursement request deleted successfully.');
     }
 } 

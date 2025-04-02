@@ -14,9 +14,12 @@ return new class extends Migration
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('user_name');
+            $table->string('user_role');
             $table->string('action');
             $table->string('type'); // create, update, delete, login, logout
             $table->text('description');
+            $table->decimal('amount', 15, 2)->nullable();
             $table->string('ip_address');
             $table->timestamps();
         });

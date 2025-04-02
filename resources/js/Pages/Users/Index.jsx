@@ -26,6 +26,7 @@ export default function Index({ auth, users, budgets, flash }) {
 
     const budgetForm = useForm({
         total_budget: '',
+        replenishment_amount: '',
     });
 
     const resetForm = useForm();
@@ -62,6 +63,7 @@ export default function Index({ auth, users, budgets, flash }) {
         const budget = getUserBudget(user.id);
         setSelectedUser(user);
         budgetForm.setData('total_budget', budget?.total_budget?.toString() || '');
+        budgetForm.setData('replenishment_amount', budget?.replenishment_amount?.toString() || '');
         setShowBudgetModal(true);
     };
 
@@ -78,30 +80,67 @@ export default function Index({ auth, users, budgets, flash }) {
         setProcessing(true);
         const budget = getUserBudget(selectedUser.id);
 
+        // Prepare the data to send
+        const formData = {
+            total_budget: budgetForm.data.total_budget || '0',
+            replenishment_amount: budgetForm.data.replenishment_amount || '0'
+        };
+
         if (budget) {
-            budgetForm.patch(route('admin-budgets.update', budget.id), {
-                preserveScroll: true,
-                preserveState: true,
-                onSuccess: () => {
-                    closeBudgetModal();
-                    router.visit(route('users.index'), {
-                        preserveScroll: true,
-                        preserveState: true,
-                        only: ['budgets']
-                    });
-                    setProcessing(false);
-                },
-                onError: () => setProcessing(false),
-                onFinish: () => setProcessing(false),
-            });
+            // If there's a replenishment amount, send it as a separate field
+            if (formData.replenishment_amount !== '0') {
+                router.patch(route('admin-budgets.update', budget.id), {
+                    total_budget: budget.total_budget,
+                    replenishment_amount: formData.replenishment_amount
+                }, {
+                    preserveScroll: true,
+                    preserveState: true,
+                    onSuccess: () => {
+                        closeBudgetModal();
+                        router.visit(route('users.index'), {
+                            preserveScroll: true,
+                            preserveState: true,
+                            only: ['budgets']
+                        });
+                        setProcessing(false);
+                    },
+                    onError: () => setProcessing(false),
+                    onFinish: () => {
+                        setProcessing(false);
+                        closeBudgetModal();
+                    },
+                });
+            } else {
+                // Regular budget update
+                router.patch(route('admin-budgets.update', budget.id), {
+                    total_budget: formData.total_budget
+                }, {
+                    preserveScroll: true,
+                    preserveState: true,
+                    onSuccess: () => {
+                        closeBudgetModal();
+                        router.visit(route('users.index'), {
+                            preserveScroll: true,
+                            preserveState: true,
+                            only: ['budgets']
+                        });
+                        setProcessing(false);
+                    },
+                    onError: () => setProcessing(false),
+                    onFinish: () => {
+                        setProcessing(false);
+                        closeBudgetModal();
+                    },
+                });
+            }
         } else {
-            budgetForm.post(route('admin-budgets.store'), {
+            // Creating new budget
+            router.post(route('admin-budgets.store'), {
+                user_id: selectedUser.id,
+                total_budget: formData.total_budget
+            }, {
                 preserveScroll: true,
                 preserveState: true,
-                data: {
-                    ...budgetForm.data,
-                    user_id: selectedUser.id,
-                },
                 onSuccess: () => {
                     closeBudgetModal();
                     router.visit(route('users.index'), {
@@ -112,7 +151,10 @@ export default function Index({ auth, users, budgets, flash }) {
                     setProcessing(false);
                 },
                 onError: () => setProcessing(false),
-                onFinish: () => setProcessing(false),
+                onFinish: () => {
+                    setProcessing(false);
+                    closeBudgetModal();
+                },
             });
         }
     };
@@ -134,10 +176,7 @@ export default function Index({ auth, users, budgets, flash }) {
         
         setProcessing(true);
         
-        // Initialize form data
-        resetForm.setData({ total_budget: '0' });
-        
-        // Make the PATCH request
+        // Make the PATCH request with total_budget set to 0
         router.patch(route('admin-budgets.update', selectedBudget.id), 
             { total_budget: '0' },
             {
@@ -158,6 +197,7 @@ export default function Index({ auth, users, budgets, flash }) {
                 },
                 onFinish: () => {
                     setProcessing(false);
+                    closeResetModal();
                 }
             }
         );
@@ -494,7 +534,7 @@ export default function Index({ auth, users, budgets, flash }) {
                     </h2>
 
                     <div className="mt-6">
-                        <InputLabel htmlFor="total_budget" value="Total Budget" />
+                        <InputLabel htmlFor="total_budget" value="Set Total Budget" />
                         <TextInput
                             id="total_budget"
                             type="number"
@@ -503,13 +543,33 @@ export default function Index({ auth, users, budgets, flash }) {
                             className="mt-1 block w-full"
                             value={budgetForm.data.total_budget}
                             onChange={e => budgetForm.setData('total_budget', e.target.value)}
-                            required
+                            placeholder="Leave empty to only replenish"
                         />
+                        <p className="mt-1 text-sm text-gray-500">
+                            Leave empty to only replenish the existing budget
+                        </p>
+                    </div>
+
+                    <div className="mt-6">
+                        <InputLabel htmlFor="replenishment_amount" value="Replenishment Amount" />
+                        <TextInput
+                            id="replenishment_amount"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            className="mt-1 block w-full"
+                            value={budgetForm.data.replenishment_amount}
+                            onChange={e => budgetForm.setData('replenishment_amount', e.target.value)}
+                            placeholder="Enter amount to add to current budget"
+                        />
+                        <p className="mt-1 text-sm text-gray-500">
+                            Enter the amount you want to add to the current budget
+                        </p>
                     </div>
 
                     <div className="mt-6 flex justify-end gap-4">
                         <SecondaryButton onClick={closeBudgetModal}>Cancel</SecondaryButton>
-                        <PrimaryButton disabled={processing || !budgetForm.data.total_budget}>
+                        <PrimaryButton disabled={processing || (!budgetForm.data.total_budget && !budgetForm.data.replenishment_amount)}>
                             {processing ? 'Saving...' : 'Save Budget'}
                         </PrimaryButton>
                     </div>

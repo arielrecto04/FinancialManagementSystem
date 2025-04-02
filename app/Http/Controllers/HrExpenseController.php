@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\HrExpense;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -50,6 +51,18 @@ class HrExpenseController extends Controller
             $hrExpense->status = 'pending';
             $hrExpense->save();
 
+            // Log the HR expense request creation
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name,
+                'user_role' => auth()->user()->role,
+                'type' => 'create',
+                'action' => 'HR Expense Request Created',
+                'description' => 'Created new HR expense request for ' . $validated['expenses_category'],
+                'amount' => $validated['total_amount_requested'],
+                'ip_address' => $request->ip()
+            ]);
+
             return redirect()->back()->with('success', 'HR expense request submitted successfully.');
 
         } catch (\Exception $e) {
@@ -84,6 +97,18 @@ class HrExpenseController extends Controller
 
         $hrExpense->update($validated);
 
+        // Log the status change
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => $validated['status'] === 'approved' ? 'approve' : 'reject',
+            'action' => 'HR Expense Request ' . ucfirst($validated['status']),
+            'description' => 'HR expense request ' . $validated['status'] . ' by ' . auth()->user()->name,
+            'amount' => $hrExpense->total_amount_requested,
+            'ip_address' => $request->ip()
+        ]);
+
         return redirect()->back()->with('success', 'HR expense request status updated successfully.');
     }
 
@@ -94,7 +119,23 @@ class HrExpenseController extends Controller
     {
         $this->authorize('delete', $hrExpense);
         
+        // Store info for audit log
+        $amount = $hrExpense->total_amount_requested;
+        $category = $hrExpense->expenses_category;
+        
         $hrExpense->delete();
+
+        // Log the deletion
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'delete',
+            'action' => 'HR Expense Request Deleted',
+            'description' => 'Deleted HR expense request for ' . $category,
+            'amount' => $amount,
+            'ip_address' => request()->ip()
+        ]);
 
         return redirect()->route('hr-expenses.index')->with('success', 'HR expense request deleted successfully.');
     }

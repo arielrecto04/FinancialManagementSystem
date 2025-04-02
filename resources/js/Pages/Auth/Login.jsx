@@ -25,9 +25,9 @@ export default function Login({ status }) {
                         />
                     </div>
 
-                    <div className="text-center mb-8">
+                    <div className="text-center mb- 8">
                         <h2 className="text-xl font-semibold text-gray-700">
-                            INNOVATO INFORMATION TECHNOLOGY SYSTEM
+                            IITS Financial Management System
                         </h2>
                     </div>
 

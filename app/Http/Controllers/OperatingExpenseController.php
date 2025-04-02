@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\OperatingExpense;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -48,6 +49,18 @@ class OperatingExpenseController extends Controller
             $operatingExpense->status = 'pending';
             $operatingExpense->save();
 
+            // Log the operating expense request creation
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name,
+                'user_role' => auth()->user()->role,
+                'type' => 'create',
+                'action' => 'Operating Expense Request Created',
+                'description' => 'Created new operating expense request for ' . $validated['expense_category'],
+                'amount' => $validated['total_amount'],
+                'ip_address' => $request->ip()
+            ]);
+
             return redirect()->back()->with('success', 'Operating expense request submitted successfully.');
 
         } catch (\Exception $e) {
@@ -82,6 +95,18 @@ class OperatingExpenseController extends Controller
 
         $operatingExpense->update($validated);
 
+        // Log the status change
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => $validated['status'] === 'approved' ? 'approve' : 'reject',
+            'action' => 'Operating Expense Request ' . ucfirst($validated['status']),
+            'description' => 'Operating expense request ' . $validated['status'] . ' by ' . auth()->user()->name,
+            'amount' => $operatingExpense->total_amount,
+            'ip_address' => $request->ip()
+        ]);
+
         return redirect()->back()->with('success', 'Operating expense request status updated successfully.');
     }
 
@@ -92,7 +117,23 @@ class OperatingExpenseController extends Controller
     {
         $this->authorize('delete', $operatingExpense);
         
+        // Store info for audit log
+        $amount = $operatingExpense->total_amount;
+        $category = $operatingExpense->expense_category;
+        
         $operatingExpense->delete();
+
+        // Log the deletion
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'delete',
+            'action' => 'Operating Expense Request Deleted',
+            'description' => 'Deleted operating expense request for ' . $category,
+            'amount' => $amount,
+            'ip_address' => request()->ip()
+        ]);
 
         return redirect()->route('operating-expenses.index')->with('success', 'Operating expense request deleted successfully.');
     }
