@@ -10,56 +10,49 @@ class AuditLogController extends Controller
 {
     public function index(Request $request)
     {
-        $query = AuditLog::orderBy('created_at', 'desc');
+        $query = AuditLog::query();
 
-        // Filter by type if specified
-        if ($request->has('type') && $request->type !== 'all') {
-            if ($request->type === 'financial') {
-                // For financial tab, show only budget-related activities
-                $query->where(function ($q) {
-                    $q->where('type', 'like', 'budget_%')
-                      ->orWhere('action', 'like', '%Budget%')
-                      ->orWhere('action', 'like', '%budget%');
-                });
-            } else {
-                // For requests tab, exclude budget-related activities
-                $query->where(function ($q) {
-                    $q->where(function ($subQ) {
-                        $subQ->where('type', 'not like', 'budget_%')
-                             ->where('action', 'not like', '%Budget%')
-                             ->where('action', 'not like', '%budget%');
-                    });
-                });
-            }
-        }
-
-        // Search functionality
+        // Apply search filter
         if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('user_name', 'like', "%{$search}%")
-                  ->orWhere('action', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('user_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('action', 'like', "%{$searchTerm}%")
+                  ->orWhere('description', 'like', "%{$searchTerm}%");
             });
         }
 
-        $logs = $query->paginate(10);
+        // Apply type filter
+        if ($request->has('filter') && $request->input('filter') !== 'all') {
+            $query->where('type', $request->input('filter'));
+        }
+
+        // Apply tab filter and paginate based on tab
+        if ($request->has('tab')) {
+            if ($request->input('tab') === 'financial') {
+                $query->where(function ($q) {
+                    $q->where('type', 'like', 'budget_%')
+                      ->orWhere('action', 'like', '%budget%');
+                });
+            } else {
+                $query->where(function ($q) {
+                    $q->where('type', 'not like', 'budget_%')
+                      ->where('action', 'not like', '%budget%');
+                });
+            }
+        } else {
+            // Default to request logs if no tab specified
+            $query->where(function ($q) {
+                $q->where('type', 'not like', 'budget_%')
+                  ->where('action', 'not like', '%budget%');
+            });
+        }
+
+        $logs = $query->latest()->paginate(10);
 
         return Inertia::render('AuditLogs', [
             'logs' => [
-                'data' => collect($logs->items())->map(function ($log) {
-                    return [
-                        'id' => $log->id,
-                        'user_name' => $log->user_name,
-                        'user_role' => $log->user_role,
-                        'action' => $log->action,
-                        'type' => $log->type,
-                        'description' => $log->description,
-                        'amount' => $log->amount ? number_format((float)$log->amount, 2, '.', '') : null,
-                        'ip_address' => $log->ip_address,
-                        'created_at' => $log->created_at,
-                    ];
-                })->all(),
+                'data' => $logs->items(),
                 'meta' => [
                     'current_page' => $logs->currentPage(),
                     'from' => $logs->firstItem(),
@@ -70,7 +63,7 @@ class AuditLogController extends Controller
                     'to' => $logs->lastItem(),
                     'total' => $logs->total(),
                 ],
-            ]
+            ],
         ]);
     }
 } 

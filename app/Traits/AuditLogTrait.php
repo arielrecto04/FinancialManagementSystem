@@ -34,6 +34,6 @@ trait AuditLogTrait
             'type' => $type,
             'description' => $description,
             'ip_address' => request()->ip()
-        ]);
+        ]); 
     }
 } 
