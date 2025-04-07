@@ -117,6 +117,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('petty-cash-requests.approvals');
         Route::post('/petty-cash-requests/{id}/update-status', [PettyCashRequestController::class, 'updateStatus'])
             ->name('petty-cash-requests.update-status');
+        Route::get('/petty-cash-requests/analytics', [PettyCashRequestController::class, 'analytics'])
+            ->name('petty-cash-requests.analytics');
     });
 
     // Audit Logs routes (admin and superadmin only)

@@ -19,21 +19,36 @@ trait AuditLogTrait
                 $newStatus = $model->status;
                 $action = $newStatus === 'approved' ? 'approve' : 'reject';
                 $description = ucfirst($action) . 'd ' . class_basename($model) . ' #' . $model->id;
-                self::logAction($model, $action, $description);
+                
+                // For petty cash and budget-related items, pass true as fourth param to mark as financial
+                $isFinancial = in_array(class_basename($model), ['PettyCashRequest', 'Budget', 'BudgetAllocation']);
+                self::logAction($model, $action, $description, $isFinancial);
             }
         });
     }
 
-    protected static function logAction($model, $type, $description)
+    protected static function logAction($model, $type, $description, $isFinancial = false)
     {
-        AuditLog::create([
+        $logData = [
             'user_id' => auth()->id(),
             'user_name' => auth()->user()->name,
             'user_role' => auth()->user()->role,
             'action' => class_basename($model) . ' ' . $type,
-            'type' => $type,
+            'type' => $isFinancial ? 'budget_' . $type : $type,
             'description' => $description,
             'ip_address' => request()->ip()
-        ]); 
+        ];
+        
+        // Add amount for financial transactions if it exists in the model
+        if ($isFinancial && isset($model->amount)) {
+            $logData['amount'] = $model->amount;
+        }
+        
+        // For petty cash approvals, get amount from request if available
+        if ($isFinancial && class_basename($model) === 'PettyCashRequest' && $type === 'approve' && request()->has('amount')) {
+            $logData['amount'] = request()->amount;
+        }
+        
+        AuditLog::create($logData); 
     }
 } 

@@ -148,12 +148,25 @@ class PettyCashRequestController extends Controller
         
         $validated = $request->validate([
             'status' => 'required|in:approved,rejected',
-            'remarks' => 'required|string'
+            'remarks' => 'required|string',
+            'amount' => 'sometimes|numeric'  // Get the amount from the request
         ]);
 
         $pettyCashRequest->update([
             'status' => $validated['status'],
             'remarks' => $validated['remarks']
+        ]);
+
+        // Create audit log entry with financial information
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'budget_' . ($validated['status'] === 'approved' ? 'approve' : 'reject'),
+            'action' => 'PettyCashRequest ' . ($validated['status'] === 'approved' ? 'approve' : 'reject'),
+            'description' => ucfirst($validated['status']) . ' petty cash request #' . $pettyCashRequest->request_number,
+            'amount' => $request->has('amount') ? $request->amount : $pettyCashRequest->amount,
+            'ip_address' => $request->ip()
         ]);
 
         return response()->json([
@@ -204,6 +217,181 @@ class PettyCashRequestController extends Controller
             'pettyCashRequests' => $total,
             'pendingPettyCashRequests' => $pending,
             'completedPettyCashRequests' => $completed
+        ];
+    }
+
+    public function analytics(Request $request)
+    {
+        // Ensure user has permission
+        if (!auth()->user() || auth()->user()->role !== 'superadmin') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Initialize query with filters
+        $query = PettyCashRequest::query();
+
+        // Apply year and month filters
+        if ($request->has('year') && $request->year) {
+            $query->whereYear('created_at', $request->year);
+        }
+        
+        if ($request->has('month') && $request->month) {
+            $query->whereMonth('created_at', $request->month);
+        }
+        
+        // Apply category filter if provided
+        if ($request->has('category') && $request->category && $request->category !== 'all') {
+            $query->where('category', $request->category);
+        }
+
+        // Get total requests count
+        $totalRequests = $query->count();
+
+        // Get status counts with the same filters
+        $statusCounts = [
+            'approved' => (clone $query)->where('status', 'approved')->count(),
+            'rejected' => (clone $query)->where('status', 'rejected')->count(),
+            'pending' => (clone $query)->where('status', 'pending')->count(),
+        ];
+
+        // Calculate total approved amount
+        $approvedAmount = (clone $query)->where('status', 'approved')->sum('amount');
+
+        // Get current month count - if we're not already filtering by month
+        $currentMonth = now()->format('Y-m');
+        $currentMonthQuery = clone $query;
+        if (!$request->has('month') || !$request->month) {
+            $currentMonthQuery = $currentMonthQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$currentMonth]);
+        }
+        $currentMonthCount = $currentMonthQuery->count();
+
+        // Get monthly trend (for selected year or last 6 months if year not specified)
+        $monthlyTrend = [];
+        
+        if ($request->has('year') && $request->year) {
+            // If year is specified, show all months of that year
+            for ($i = 1; $i <= 12; $i++) {
+                $monthQuery = clone $query;
+                $monthQuery->whereYear('created_at', $request->year)
+                          ->whereMonth('created_at', $i);
+                          
+                $monthName = date('M', mktime(0, 0, 0, $i, 10));
+                
+                $monthlyTrend[] = [
+                    'month' => $monthName . ' ' . $request->year,
+                    'count' => $monthQuery->count(),
+                    'amount' => $monthQuery->sum('amount')
+                ];
+            }
+        } else {
+            // Default to showing last 6 months
+            for ($i = 5; $i >= 0; $i--) {
+                $date = now()->subMonths($i);
+                $monthQuery = clone $query;
+                $monthQuery->whereYear('created_at', $date->year)
+                          ->whereMonth('created_at', $date->month);
+                          
+                $monthlyTrend[] = [
+                    'month' => $date->format('M Y'),
+                    'count' => $monthQuery->count(),
+                    'amount' => $monthQuery->sum('amount')
+                ];
+            }
+        }
+
+        // Get category stats with the same base filters
+        $categoryQuery = clone $query;
+        $categoryStats = $categoryQuery->select('category')
+            ->selectRaw('COUNT(*) as count')
+            ->selectRaw('SUM(amount) as totalAmount')
+            ->groupBy('category')
+            ->orderByDesc('totalAmount')
+            ->get();
+
+        // Average processing time (days between date_requested and updated_at for approved/rejected)
+        $processingTimeQuery = clone $query;
+        $avgProcessingTime = $processingTimeQuery->whereIn('status', ['approved', 'rejected'])
+            ->whereNotNull('updated_at')
+            ->selectRaw('AVG(DATEDIFF(updated_at, date_requested)) as avg_days')
+            ->first()
+            ->avg_days ?? 0;
+            
+        // Get processing time distribution for histogram
+        $processingTimeDistribution = [
+            'same_day' => 0, // 0 days
+            '1_2_days' => 0, // 1-2 days
+            '3_5_days' => 0, // 3-5 days
+            '1_2_weeks' => 0, // 6-14 days
+            'more_than_2_weeks' => 0 // 15+ days
+        ];
+        
+        $processingTimeData = (clone $query)->whereIn('status', ['approved', 'rejected'])
+            ->whereNotNull('updated_at')
+            ->selectRaw('DATEDIFF(updated_at, date_requested) as days')
+            ->get();
+            
+        foreach ($processingTimeData as $item) {
+            $days = $item->days;
+            
+            if ($days == 0) {
+                $processingTimeDistribution['same_day']++;
+            } elseif ($days <= 2) {
+                $processingTimeDistribution['1_2_days']++;
+            } elseif ($days <= 5) {
+                $processingTimeDistribution['3_5_days']++;
+            } elseif ($days <= 14) {
+                $processingTimeDistribution['1_2_weeks']++;
+            } else {
+                $processingTimeDistribution['more_than_2_weeks']++;
+            }
+        }
+        
+        // Get this week vs last week data
+        $now = now();
+        $thisWeekStart = $now->copy()->startOfWeek();
+        $thisWeekEnd = $now->copy()->endOfWeek();
+        $lastWeekStart = $now->copy()->subWeek()->startOfWeek();
+        $lastWeekEnd = $now->copy()->subWeek()->endOfWeek();
+        
+        $weeklyComparison = [
+            'thisWeek' => [],
+            'lastWeek' => []
+        ];
+        
+        // Get data for each day of the week
+        for ($i = 0; $i < 7; $i++) {
+            $thisWeekDay = $thisWeekStart->copy()->addDays($i);
+            $lastWeekDay = $lastWeekStart->copy()->addDays($i);
+            
+            $weeklyComparison['thisWeek'][$i] = (clone $query)
+                ->whereDate('created_at', $thisWeekDay->format('Y-m-d'))
+                ->count();
+                
+            $weeklyComparison['lastWeek'][$i] = (clone $query)
+                ->whereDate('created_at', $lastWeekDay->format('Y-m-d'))
+                ->count();
+        }
+        
+        // Get basic request data for amount histogram
+        $requestsData = (clone $query)->select('id', 'amount', 'status', 'created_at')->get();
+
+        return [
+            'totalRequests' => $totalRequests,
+            'statusCounts' => $statusCounts,
+            'approvedAmount' => $approvedAmount,
+            'currentMonthCount' => $currentMonthCount,
+            'monthlyTrend' => $monthlyTrend,
+            'categoryStats' => $categoryStats,
+            'avgProcessingTime' => round($avgProcessingTime, 1),
+            'processingTimeDistribution' => array_values($processingTimeDistribution),
+            'weeklyComparison' => $weeklyComparison,
+            'requestsData' => $requestsData,
+            // Include applied filters in response
+            'appliedFilters' => [
+                'year' => $request->year,
+                'month' => $request->month,
+                'category' => $request->category
+            ]
         ];
     }
 } 

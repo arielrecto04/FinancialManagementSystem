@@ -117,6 +117,17 @@ export default function RequestForm({ auth, errors = {}, type }) {
         department: auth?.user?.department || ''
     });
 
+    // Add this near the top with other state declarations
+    const [operatingExpensesData, setOperatingExpensesData] = useState({
+        date_of_request: new Date().toISOString().split('T')[0],
+        expense_category: '',
+        description: '',
+        expense_items: [{ description: '', amount: '' }],
+        total_amount: '0',
+        expected_payment_date: '',
+        additional_comment: ''
+    });
+
     // Sample request status data
     const [requests] = useState([
         { id: 28, status: 'Approved', date: '2024-03-20', type: 'Supply Request' },
@@ -591,14 +602,58 @@ export default function RequestForm({ auth, errors = {}, type }) {
 
     // HR Expenses Request form state
     const { data: hrExpensesData, setData: setHrExpensesData, post: postHrExpenses, processing: hrExpensesProcessing } = useForm({
-        date_of_request: '',
+        date_of_request: new Date().toISOString().split('T')[0],
         expenses_category: '',
         description_of_expenses: '',
-        breakdown_of_expense: '',
-        total_amount_requested: '',
+        expense_items: [{ description: '', amount: '' }],
+        total_amount_requested: '0',
         expected_payment_date: '',
         additional_comment: '',
     });
+
+    // Add HR expense item
+    const addHrExpenseItem = () => {
+        const currentItems = [...hrExpensesData.expense_items];
+        const newItems = [...currentItems, { description: '', amount: '' }];
+        
+        setHrExpensesData('expense_items', newItems);
+        updateHrExpensesTotalAmount(newItems);
+    };
+
+    // Remove HR expense item
+    const removeHrExpenseItem = (index) => {
+        const currentItems = [...hrExpensesData.expense_items];
+        if (currentItems.length === 1) {
+            // Don't remove if it's the last item
+            return;
+        }
+        
+        const newItems = currentItems.filter((_, i) => i !== index);
+        setHrExpensesData('expense_items', newItems);
+        updateHrExpensesTotalAmount(newItems);
+    };
+
+    // Update HR expense item
+    const updateHrExpenseItem = (index, field, value) => {
+        const currentItems = [...hrExpensesData.expense_items];
+        currentItems[index][field] = value;
+        
+        setHrExpensesData('expense_items', currentItems);
+        
+        // If amount was updated, recalculate total
+        if (field === 'amount') {
+            updateHrExpensesTotalAmount(currentItems);
+        }
+    };
+
+    // Update total amount based on itemized expenses
+    const updateHrExpensesTotalAmount = (items) => {
+        const total = items.reduce((sum, item) => {
+            return sum + (Number(item.amount) || 0);
+        }, 0);
+        
+        setHrExpensesData('total_amount_requested', total.toFixed(2));
+    };
 
     // HR Expenses Request form submission handler
     const handleHrExpensesSubmit = async (e) => {
@@ -606,11 +661,30 @@ export default function RequestForm({ auth, errors = {}, type }) {
         setProcessing(true);
 
         try {
+            // Check if items are valid
+            if (hrExpensesData.expense_items.some(item => !item.description || !item.amount)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Incomplete Form',
+                    text: 'Please fill in all expense item fields',
+                    confirmButtonColor: '#3085d6'
+                });
+                setProcessing(false);
+                return;
+            }
+
+            // Create a formatted breakdown string from the expense items
+            const breakdownText = hrExpensesData.expense_items
+                .map(item => `${item.description}: ₱${parseFloat(item.amount).toFixed(2)}`)
+                .join('\n');
+
             const formData = {
                 date_of_request: hrExpensesData.date_of_request,
                 expenses_category: hrExpensesData.expenses_category,
                 description_of_expenses: hrExpensesData.description_of_expenses,
-                breakdown_of_expense: hrExpensesData.breakdown_of_expense,
+                breakdown_of_expense: breakdownText, // Add this to satisfy backend validation
+                expense_items: hrExpensesData.expense_items,
+                expense_items_json: JSON.stringify(hrExpensesData.expense_items), // Add serialized items
                 total_amount_requested: hrExpensesData.total_amount_requested,
                 expected_payment_date: hrExpensesData.expected_payment_date,
                 additional_comment: hrExpensesData.additional_comment
@@ -635,8 +709,8 @@ export default function RequestForm({ auth, errors = {}, type }) {
                         date_of_request: new Date().toISOString().split('T')[0],
                         expenses_category: '',
                         description_of_expenses: '',
-                        breakdown_of_expense: '',
-                        total_amount_requested: '',
+                        expense_items: [{ description: '', amount: '' }],
+                        total_amount_requested: '0',
                         expected_payment_date: '',
                         additional_comment: ''
                     });
@@ -672,28 +746,36 @@ export default function RequestForm({ auth, errors = {}, type }) {
         }
     };
 
-    // Add Operating Expenses Request form state
-    const { data: operatingExpensesData, setData: setOperatingExpensesData, post: postOperatingExpenses, processing: operatingExpensesProcessing } = useForm({
-        date_of_request: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-        expense_category: '',
-        description: '',
-        breakdown_of_expense: '',
-        total_amount: '',
-        expected_payment_date: '',
-        additional_comment: '',
-    });
-
     // Operating Expenses Request form submission handler
     const handleOperatingExpensesSubmit = (e) => {
         e.preventDefault();
         setProcessing(true);
 
         try {
+            // Check if items are valid
+            if (operatingExpensesData.expense_items.some(item => !item.description || !item.amount)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Incomplete Form',
+                    text: 'Please fill in all expense item fields',
+                    confirmButtonColor: '#3085d6'
+                });
+                setProcessing(false);
+                return;
+            }
+
+            // Create a formatted breakdown string from the expense items
+            const breakdownText = operatingExpensesData.expense_items
+                .map(item => `${item.description}: ₱${parseFloat(item.amount).toFixed(2)}`)
+                .join('\n');
+            
             const formData = {
                 date_of_request: operatingExpensesData.date_of_request,
                 expense_category: operatingExpensesData.expense_category,
                 description: operatingExpensesData.description,
-                breakdown_of_expense: operatingExpensesData.breakdown_of_expense,
+                breakdown_of_expense: breakdownText, // Add this to satisfy backend validation
+                expense_items: operatingExpensesData.expense_items,
+                expense_items_json: JSON.stringify(operatingExpensesData.expense_items), // Add serialized items
                 total_amount: operatingExpensesData.total_amount,
                 expected_payment_date: operatingExpensesData.expected_payment_date,
                 additional_comment: operatingExpensesData.additional_comment
@@ -719,8 +801,8 @@ export default function RequestForm({ auth, errors = {}, type }) {
                         date_of_request: new Date().toISOString().split('T')[0],
                         expense_category: '',
                         description: '',
-                        breakdown_of_expense: '',
-                        total_amount: '',
+                        expense_items: [{ description: '', amount: '' }],
+                        total_amount: '0',
                         expected_payment_date: '',
                         additional_comment: ''
                     });
@@ -831,6 +913,76 @@ export default function RequestForm({ auth, errors = {}, type }) {
             console.error('Error submitting petty cash request:', error);
             setProcessing(false);
         }
+    };
+
+    // Add Operating expense item
+    const addOperatingExpenseItem = () => {
+        console.log('addOperatingExpenseItem called');
+        
+        setOperatingExpensesData(prevState => {
+            const currentItems = [...prevState.expense_items];
+            const newItems = [...currentItems, { description: '', amount: '' }];
+            
+            console.log('Adding item to expense_items. New length:', newItems.length);
+            
+            // Calculate new total
+            const total = newItems.reduce((sum, item) => {
+                return sum + (Number(item.amount) || 0);
+            }, 0);
+            
+            return {
+                ...prevState,
+                expense_items: newItems,
+                total_amount: total.toFixed(2)
+            };
+        });
+    };
+
+    // Remove Operating expense item
+    const removeOperatingExpenseItem = (index) => {
+        setOperatingExpensesData(prevState => {
+            const currentItems = [...prevState.expense_items];
+            
+            // Don't remove if it's the last item
+            if (currentItems.length === 1) {
+                return prevState;
+            }
+            
+            const newItems = currentItems.filter((_, i) => i !== index);
+            
+            // Calculate new total
+            const total = newItems.reduce((sum, item) => {
+                return sum + (Number(item.amount) || 0);
+            }, 0);
+            
+            return {
+                ...prevState,
+                expense_items: newItems,
+                total_amount: total.toFixed(2)
+            };
+        });
+    };
+
+    // Update Operating expense item
+    const updateOperatingExpenseItem = (index, field, value) => {
+        setOperatingExpensesData(prevState => {
+            const currentItems = [...prevState.expense_items];
+            currentItems[index][field] = value;
+            
+            // Calculate new total if amount field was updated
+            let newTotal = prevState.total_amount;
+            if (field === 'amount') {
+                newTotal = currentItems.reduce((sum, item) => {
+                    return sum + (Number(item.amount) || 0);
+                }, 0).toFixed(2);
+            }
+            
+            return {
+                ...prevState,
+                expense_items: currentItems,
+                total_amount: newTotal
+            };
+        });
     };
 
     return (
@@ -1572,18 +1724,68 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                 </div>
 
                                 <div className="mb-4">
+                                    <div className="flex items-center justify-between mb-2">
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.hrExpenses}
-                                        Breakdown of Expense
+                                            Itemized Breakdown of Expenses
                                     </label>
-                                    <textarea
-                                        value={hrExpensesData.breakdown_of_expense}
-                                        onChange={(e) => setHrExpensesData('breakdown_of_expense', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        rows="3"
-                                        placeholder="Please provide a detailed breakdown of the expense (e.g., item costs, quantities, etc.)"
-                                        required
-                                    />
+                                        <button
+                                            type="button"
+                                            onClick={addHrExpenseItem}
+                                            className="text-blue-500 hover:text-blue-600"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="space-y-2 mb-4">
+                                        {hrExpensesData.expense_items.map((item, index) => (
+                                            <div key={index} className="flex items-center space-x-2 p-3 rounded-md bg-gray-50 border border-gray-200">
+                                                <div className="flex-grow">
+                                                    <div className="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
+                                                        <div className="flex-grow">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Description"
+                                                                value={item.description}
+                                                                onChange={(e) => updateHrExpenseItem(index, 'description', e.target.value)}
+                                                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                                required
+                                                            />
+                                                        </div>
+                                                        <div className="md:w-1/3">
+                                                            <div className="relative rounded-md shadow-sm">
+                                                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                                                    <span className="text-gray-500 sm:text-sm">₱</span>
+                                                                </div>
+                                                                <input
+                                                                    type="number"
+                                                                    placeholder="Amount"
+                                                                    value={item.amount}
+                                                                    onChange={(e) => updateHrExpenseItem(index, 'amount', e.target.value)}
+                                                                    className="block w-full rounded-md border-gray-300 pl-8 pr-12 focus:border-blue-500 focus:ring-blue-500"
+                                                                    step="0.01"
+                                                                    min="0"
+                                                                    required
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeHrExpenseItem(index)}
+                                                    className="text-red-500 hover:text-red-600"
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div className="mb-4">
@@ -1591,15 +1793,18 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                         {icons.amount}
                                         Total Amount Requested
                                     </label>
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <span className="text-gray-500 sm:text-sm">₱</span>
+                                        </div>
                                     <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
+                                            type="text"
                                         value={hrExpensesData.total_amount_requested}
-                                        onChange={(e) => setHrExpensesData('total_amount_requested', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        required
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pl-8"
+                                            disabled
                                     />
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">Auto-calculated from itemized expenses</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -1662,7 +1867,10 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                     <input
                                         type="date"
                                         value={operatingExpensesData.date_of_request}
-                                        onChange={(e) => setOperatingExpensesData('date_of_request', e.target.value)}
+                                        onChange={(e) => setOperatingExpensesData({
+                                            ...operatingExpensesData,
+                                            date_of_request: e.target.value
+                                        })}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     />
@@ -1678,7 +1886,10 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                     </label>
                                     <select
                                         value={operatingExpensesData.expense_category}
-                                        onChange={(e) => setOperatingExpensesData('expense_category', e.target.value)}
+                                        onChange={(e) => setOperatingExpensesData({
+                                            ...operatingExpensesData,
+                                            expense_category: e.target.value
+                                        })}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     >
@@ -1699,7 +1910,10 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                     </label>
                                     <textarea
                                         value={operatingExpensesData.description}
-                                        onChange={(e) => setOperatingExpensesData('description', e.target.value)}
+                                        onChange={(e) => setOperatingExpensesData({
+                                            ...operatingExpensesData,
+                                            description: e.target.value
+                                        })}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         rows="3"
                                         required
@@ -1707,18 +1921,68 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                 </div>
 
                                 <div className="mb-4">
+                                    <div className="flex items-center justify-between mb-2">
                                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
                                         {icons.operatingExpenses}
-                                        Breakdown of Expense
+                                            Itemized Breakdown of Expenses
                                     </label>
-                                    <textarea
-                                        value={operatingExpensesData.breakdown_of_expense}
-                                        onChange={(e) => setOperatingExpensesData('breakdown_of_expense', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        rows="3"
-                                        placeholder="Please provide a detailed breakdown of the expense (e.g., item costs, quantities, etc.)"
-                                        required
-                                    />
+                                        <button
+                                            type="button"
+                                            onClick={addOperatingExpenseItem}
+                                            className="text-blue-500 hover:text-blue-600"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="space-y-2 mb-4">
+                                        {operatingExpensesData.expense_items.map((item, index) => (
+                                            <div key={index} className="flex items-center space-x-2 p-3 rounded-md bg-gray-50 border border-gray-200">
+                                                <div className="flex-grow">
+                                                    <div className="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
+                                                        <div className="flex-grow">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Description"
+                                                                value={item.description}
+                                                                onChange={(e) => updateOperatingExpenseItem(index, 'description', e.target.value)}
+                                                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                                required
+                                                            />
+                                                        </div>
+                                                        <div className="md:w-1/3">
+                                                            <div className="relative rounded-md shadow-sm">
+                                                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                                                    <span className="text-gray-500 sm:text-sm">₱</span>
+                                                                </div>
+                                                                <input
+                                                                    type="number"
+                                                                    placeholder="Amount"
+                                                                    value={item.amount}
+                                                                    onChange={(e) => updateOperatingExpenseItem(index, 'amount', e.target.value)}
+                                                                    className="block w-full rounded-md border-gray-300 pl-8 pr-12 focus:border-blue-500 focus:ring-blue-500"
+                                                                    step="0.01"
+                                                                    min="0"
+                                                                    required
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeOperatingExpenseItem(index)}
+                                                    className="text-red-500 hover:text-red-600"
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div className="mb-4">
@@ -1726,16 +1990,18 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                         {icons.amount}
                                         Total Amount
                                     </label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={operatingExpensesData.total_amount}
-                                        onChange={(e) => setOperatingExpensesData('total_amount', parseFloat(e.target.value) || '')}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        placeholder="Enter the total amount requested"
-                                        required
-                                    />
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <span className="text-gray-500 sm:text-sm">₱</span>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={operatingExpensesData.total_amount}
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pl-8"
+                                            disabled
+                                        />
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">Auto-calculated from itemized expenses</p>
                                 </div>
 
                                 <div className="mb-4">
@@ -1746,7 +2012,10 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                     <input
                                         type="date"
                                         value={operatingExpensesData.expected_payment_date}
-                                        onChange={(e) => setOperatingExpensesData('expected_payment_date', e.target.value)}
+                                        onChange={(e) => setOperatingExpensesData({
+                                            ...operatingExpensesData,
+                                            expected_payment_date: e.target.value
+                                        })}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     />
@@ -1759,7 +2028,10 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                     </label>
                                     <textarea
                                         value={operatingExpensesData.additional_comment}
-                                        onChange={(e) => setOperatingExpensesData('additional_comment', e.target.value)}
+                                        onChange={(e) => setOperatingExpensesData({
+                                            ...operatingExpensesData,
+                                            additional_comment: e.target.value
+                                        })}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         rows="3"
                                     />
@@ -1768,7 +2040,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                 <div className="flex flex-col space-y-2">
                                     <button 
                                         type="submit" 
-                                        disabled={operatingExpensesProcessing}
+                                        disabled={processing}
                                         className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                                     >
                                         Submit Operating Expenses Request
