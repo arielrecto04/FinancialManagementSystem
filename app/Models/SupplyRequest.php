@@ -10,6 +10,7 @@ class SupplyRequest extends Model
     use AuditLogTrait;
 
     protected $fillable = [
+        'id',
         'user_id',
         'request_number',
         'department',

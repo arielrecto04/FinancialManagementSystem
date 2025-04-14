@@ -7,9 +7,12 @@ use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class SupplyRequestController extends Controller
 {
+    use AuthorizesRequests;
+
     public function store(Request $request)
     {
         try {
@@ -109,5 +112,52 @@ class SupplyRequestController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Supply request deleted successfully.');
+    }
+
+    public function updateItems(Request $request, $requestNumber)
+    {
+        // Find the supply request by request_number
+        $supplyRequest = SupplyRequest::where('request_number', $requestNumber)->firstOrFail();
+        
+        // Check if user is authorized to update this request
+        if (!auth()->user()->role === 'superadmin' && $supplyRequest->status !== 'pending') {
+            return response()->json([
+                'message' => 'Only pending requests can be edited'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'items' => 'required|array',
+            'items.*.name' => 'required|string',
+            'items.*.quantity' => 'required|numeric',
+            'items.*.price' => 'required|numeric'
+        ]);
+
+        // Calculate total amount
+        $totalAmount = collect($validated['items'])->reduce(function ($carry, $item) {
+            return $carry + ($item['quantity'] * $item['price']);
+        }, 0);
+
+        $supplyRequest->update([
+            'items_json' => $validated['items'],
+            'total_amount' => $totalAmount
+        ]);
+
+        // Log the items update
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'update',
+            'action' => 'Supply Request Items Updated',
+            'description' => 'Updated items in supply request for ' . $supplyRequest->department,
+            'amount' => $totalAmount,
+            'ip_address' => $request->ip()
+        ]);
+
+        return response()->json([
+            'message' => 'Items updated successfully',
+            'request' => $supplyRequest->load('user')
+        ]);
     }
 } 

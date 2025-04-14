@@ -124,6 +124,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Audit Logs routes (admin and superadmin only)
     Route::get('/audit-logs', [AuditLogController::class, 'index'])
         ->name('audit-logs.index');
+
+    // Add this new route for updating supply request items
+    Route::put('/supply-requests/{requestNumber}/items', [SupplyRequestController::class, 'updateItems'])
+        ->name('supply-requests.update-items');
 });
 
 Route::middleware(['auth'])->group(function () {

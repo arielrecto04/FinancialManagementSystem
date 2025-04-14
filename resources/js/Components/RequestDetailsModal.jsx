@@ -1,10 +1,13 @@
 import React from 'react';
 import { formatDate } from '@/utils';
+import { formatCurrency } from '@/utils/currency';
+import Modal from '@/Components/Modal';
 
-export default function RequestDetailsModal({ isOpen, onClose, request }) {
+export default function RequestDetailsModal({ isOpen, onClose, request, onEditItems, auth }) {
     if (!isOpen || !request) return null;
 
     const isSupplyRequest = request.type === 'Supply' || request.type === 'Supply Request' || request.type?.toLowerCase().includes('supply');
+    const canEditItems = auth?.user?.role === 'superadmin' || (request?.status === 'pending' && request?.type === 'Supply Request');
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -73,34 +76,46 @@ export default function RequestDetailsModal({ isOpen, onClose, request }) {
                                 {isSupplyRequest && (
                                     <>
                                         <div className="mt-4">
-                                            <h3 className="text-lg font-medium text-gray-900">Items</h3>
-                                            <div className="mt-2 bg-white shadow overflow-hidden sm:rounded-md">
-                                                <table className="min-w-full divide-y divide-gray-200">
-                                                    <thead className="bg-gray-50">
-                                                        <tr>
-                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
-                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="bg-white divide-y divide-gray-200">
-                                                        {request.items_json && Array.isArray(request.items_json) ? (
-                                                            request.items_json.map((item, index) => (
-                                                                <tr key={index}>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.name}</td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.quantity}</td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₱{parseFloat(item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₱{(parseFloat(item.price) * parseFloat(item.quantity)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                                                </tr>
-                                                            ))
-                                                        ) : (
-                                                            <tr>
-                                                                <td colSpan="4" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No items available</td>
-                                                            </tr>
-                                                        )}
-                                                    </tbody>
-                                                </table>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h3 className="text-lg font-medium text-gray-900">Items</h3>
+                                                {canEditItems && (
+                                                    <button
+                                                        onClick={onEditItems}
+                                                        className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+                                                    >
+                                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                        Edit Items
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="mt-4 space-y-4">
+                                                {request.items_json && Array.isArray(request.items_json) ? (
+                                                    request.items_json.map((item, index) => (
+                                                        <div key={index} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                                            <div className="flex-1">
+                                                                <p className="font-medium">{item.name}</p>
+                                                                <p className="text-sm text-gray-600">
+                                                                    Quantity: {item.quantity} × {item.price}
+                                                                </p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="font-medium">{item.quantity * item.price}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <p className="text-gray-500 italic">No items found</p>
+                                                )}
+                                            </div>
+                                            <div className="mt-6 flex justify-end">
+                                                <div className="text-right">
+                                                    <p className="text-sm text-gray-600">Total Amount</p>
+                                                    <p className="text-xl font-semibold">
+                                                        {request.total_amount}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                     </>

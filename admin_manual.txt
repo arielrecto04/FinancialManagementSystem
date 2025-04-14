@@ -1,0 +1,264 @@
+# Financial Management System - Admin Manual
+
+## Table of Contents
+1. Introduction
+2. System Overview
+3. User Management
+4. Request Management
+5. Reporting and Analytics
+6. System Configuration
+7. Troubleshooting
+8. Security Guidelines
+
+## 1. Introduction
+
+This manual is designed for administrators of the Financial Management System. It provides detailed instructions on managing the system, users, and financial requests.
+
+## 2. System Overview
+
+### 2.1 System Architecture
+- Built on Laravel framework
+- Uses Inertia.js for frontend
+- React.js for user interface
+- MySQL database
+
+### 2.2 Admin Access Levels
+- Superadmin: Full system access
+- Admin: Limited administrative access
+- HR Admin: HR-specific access
+
+### 2.3 Key Features
+- User management
+- Request approval workflow
+- Financial reporting
+- System configuration
+- Audit logging
+
+## 3. User Management
+
+### 3.1 Adding New Users
+1. Navigate to User Management section
+2. Click "Add New User"
+3. Fill in required information:
+   - Name
+   - Email
+   - Department
+   - Role (Regular User, HR, Admin, Superadmin)
+4. Set initial password
+5. Click "Create User"
+
+### 3.2 Managing User Roles
+1. Access User Management
+2. Select user to modify
+3. Click "Edit Role"
+4. Choose new role from dropdown
+5. Save changes
+
+### 3.3 User Permissions
+- Regular Users:
+  - Submit requests
+  - View own requests
+  - Edit pending requests
+  
+- HR Users:
+  - All regular user permissions
+  - Access HR expense forms
+  - View HR-related requests
+  
+- Admin:
+  - All HR user permissions
+  - Access petty cash forms
+  - Approve/reject requests
+  - View all requests
+  - Generate reports
+  
+- Superadmin:
+  - All admin permissions
+  - System configuration
+  - User management
+  - Database access
+
+## 4. Request Management
+
+### 4.1 Request Types
+1. Supply Requests
+2. Reimbursements
+3. Liquidations
+4. Petty Cash Requests
+5. HR Expenses
+6. Operating Expenses
+
+### 4.2 Request Approval Process
+1. Access Pending Requests dashboard
+2. Review request details:
+   - Request information
+   - Supporting documents
+   - Itemized expenses
+3. Take action:
+   - Approve
+   - Reject
+   - Request more information
+4. Add comments (if needed)
+5. Submit decision
+
+### 4.3 Request Status Management
+- Pending: New requests awaiting review
+- Approved: Requests that have been approved
+- Rejected: Requests that have been denied
+- On Hold: Requests requiring additional information
+- Completed: Requests that have been processed
+
+## 5. Reporting and Analytics
+
+### 5.1 Generating Reports
+1. Access Reports section
+2. Select report type:
+   - Financial summaries
+   - Department expenses
+   - Request types
+   - Approval rates
+3. Set date range
+4. Choose export format (PDF, Excel, CSV)
+5. Generate report
+
+### 5.2 Key Metrics
+- Total requests by type
+- Average approval time
+- Department spending
+- Request volume trends
+- Budget utilization
+
+## 6. System Configuration
+
+### 6.1 Basic Settings
+1. Access System Settings
+2. Configure:
+   - Company information
+   - Department settings
+   - Expense categories
+   - Approval workflows
+   - Notification settings
+
+### 6.2 Workflow Configuration
+1. Set up approval chains
+2. Configure notification triggers
+3. Define escalation rules
+4. Set up automated approvals
+
+### 6.3 Security Settings
+1. Password policies
+2. Session timeouts
+3. IP restrictions
+4. Two-factor authentication
+
+## 7. Troubleshooting
+
+### 7.1 Common Issues
+1. User Access Problems
+   - Verify user role
+   - Check permissions
+   - Reset password if needed
+
+2. Request Processing Issues
+   - Check workflow configuration
+   - Verify approver assignments
+   - Review system logs
+
+3. System Performance
+   - Monitor server resources
+   - Check database performance
+   - Review error logs
+
+### 7.2 Error Logs
+1. Access System Logs
+2. Filter by:
+   - Error type
+   - Date range
+   - User
+   - Request type
+3. Export logs for analysis
+
+## 8. Security Guidelines
+
+### 8.1 User Security
+1. Regular password changes
+2. Strong password requirements
+3. Session management
+4. Access monitoring
+
+### 8.2 Data Security
+1. Regular backups
+2. Data encryption
+3. Access controls
+4. Audit logging
+
+### 8.3 System Security
+1. Regular updates
+2. Security patches
+3. Firewall configuration
+4. Intrusion detection
+
+## 9. Maintenance Procedures
+
+### 9.1 Regular Maintenance
+1. Daily:
+   - Check system logs
+   - Monitor performance
+   - Review pending requests
+
+2. Weekly:
+   - Backup verification
+   - User access review
+   - Security audit
+
+3. Monthly:
+   - System updates
+   - Performance optimization
+   - Report generation
+
+### 9.2 Backup Procedures
+1. Database backups
+2. File system backups
+3. Configuration backups
+4. Test restoration procedures
+
+## 10. Emergency Procedures
+
+### 10.1 System Outage
+1. Identify cause
+2. Notify users
+3. Implement workaround
+4. Restore service
+5. Document incident
+
+### 10.2 Data Recovery
+1. Access backup
+2. Verify data integrity
+3. Restore data
+4. Test system
+5. Document recovery
+
+## 11. Contact Information
+
+For technical support:
+- Email: [Your Support Email]
+- Phone: [Your Support Phone]
+- Hours: [Support Hours]
+
+For emergency support:
+- Email: [Emergency Email]
+- Phone: [Emergency Phone]
+- 24/7 Availability
+
+## 12. Version History
+
+Version 1.0 - Initial Release
+- Basic request management
+- User roles
+- Approval workflow
+
+Version 1.1 - Current
+- Enhanced reporting
+- Improved security
+- Additional request types
+- Performance optimizations 
