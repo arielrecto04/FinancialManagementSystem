@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class PettyCashRequestController extends Controller
 {
@@ -144,7 +145,7 @@ class PettyCashRequestController extends Controller
             return response()->json(['message' => 'Unauthorized action.'], 403);
         }
 
-        $pettyCashRequest = PettyCashRequest::findOrFail($id);
+        $pettyCashRequest = PettyCashRequest::with('user')->findOrFail($id);
         
         $validated = $request->validate([
             'status' => 'required|in:approved,rejected',
@@ -152,27 +153,61 @@ class PettyCashRequestController extends Controller
             'amount' => 'sometimes|numeric'  // Get the amount from the request
         ]);
 
-        $pettyCashRequest->update([
-            'status' => $validated['status'],
-            'remarks' => $validated['remarks']
-        ]);
+        try {
+            DB::beginTransaction();
 
-        // Create audit log entry with financial information
-        AuditLog::create([
-            'user_id' => auth()->id(),
-            'user_name' => auth()->user()->name,
-            'user_role' => auth()->user()->role,
-            'type' => 'budget_' . ($validated['status'] === 'approved' ? 'approve' : 'reject'),
-            'action' => 'PettyCashRequest ' . ($validated['status'] === 'approved' ? 'approve' : 'reject'),
-            'description' => ucfirst($validated['status']) . ' petty cash request #' . $pettyCashRequest->request_number,
-            'amount' => $request->has('amount') ? $request->amount : $pettyCashRequest->amount,
-            'ip_address' => $request->ip()
-        ]);
+            // Update the petty cash request status
+            $pettyCashRequest->update([
+                'status' => $validated['status'],
+                'remarks' => $validated['remarks']
+            ]);
 
-        return response()->json([
-            'message' => 'Status updated successfully',
-            'request' => $pettyCashRequest->load('user')
-        ]);
+            // If request is approved, replenish the user's budget
+            if ($validated['status'] === 'approved') {
+                // Get the user's current budget
+                $userBudget = \App\Models\AdminBudget::where('user_id', $pettyCashRequest->user_id)->first();
+
+                if ($userBudget) {
+                    // Calculate new budget values
+                    $amount = $request->has('amount') ? $request->amount : $pettyCashRequest->amount;
+                    $newTotalBudget = $userBudget->total_budget + $amount;
+                    $newRemainingBudget = $userBudget->remaining_budget + $amount;
+
+                    // Update the budget
+                    $userBudget->update([
+                        'total_budget' => $newTotalBudget,
+                        'remaining_budget' => $newRemainingBudget,
+                        'replenishment_amount' => $amount
+                    ]);
+                }
+            }
+
+            // Create audit log entry with financial information
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name,
+                'user_role' => auth()->user()->role,
+                'type' => 'budget_' . ($validated['status'] === 'approved' ? 'approve' : 'reject'),
+                'action' => 'PettyCashRequest ' . ($validated['status'] === 'approved' ? 'approve' : 'reject'),
+                'description' => ucfirst($validated['status']) . ' petty cash request #' . $pettyCashRequest->request_number . 
+                    ($validated['status'] === 'approved' ? ' and replenished budget' : ''),
+                'amount' => $request->has('amount') ? $request->amount : $pettyCashRequest->amount,
+                'ip_address' => $request->ip()
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Status updated successfully',
+                'request' => $pettyCashRequest->load('user')
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'An error occurred while updating status: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function approvals(Request $request)
