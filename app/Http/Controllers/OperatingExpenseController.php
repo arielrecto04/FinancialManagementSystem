@@ -150,13 +150,8 @@ class OperatingExpenseController extends Controller
      */
     public function updateItems(Request $request, $requestNumber)
     {
-        // Find the operating expense request by request_number
         $operatingExpense = OperatingExpense::where('request_number', $requestNumber)->firstOrFail();
         
-        // Allow updates if:
-        // 1. User is a superadmin
-        // 2. User owns the request and it's pending
-        // 3. User is an admin
         $user = auth()->user();
         $canEdit = 
             $user->role === 'superadmin' || 
@@ -169,7 +164,6 @@ class OperatingExpenseController extends Controller
             ], 403);
         }
 
-        // Get breakdown from either breakdown or breakdown_of_expense field
         $breakdown = $request->input('breakdown_of_expense');
         if (!$breakdown) {
             return response()->json([
@@ -183,7 +177,6 @@ class OperatingExpenseController extends Controller
             'total_amount' => $request->input('total_amount')
         ];
 
-        // Validate the total amount
         if (!is_numeric($validated['total_amount']) || $validated['total_amount'] < 0) {
             return response()->json([
                 'message' => 'The total amount must be a positive number',
@@ -193,21 +186,6 @@ class OperatingExpenseController extends Controller
 
         $operatingExpense->update($validated);
 
-        // Log the update
-        AuditLog::create([
-            'user_id' => auth()->id(),
-            'user_name' => auth()->user()->name,
-            'user_role' => auth()->user()->role,
-            'type' => 'update',
-            'action' => 'Operating Expense Request Updated',
-            'description' => 'Updated breakdown of expense in operating expense request for ' . $operatingExpense->expense_category,
-            'amount' => $validated['total_amount'],
-            'ip_address' => $request->ip()
-        ]);
-
-        return response()->json([
-            'message' => 'Breakdown updated successfully',
-            'request' => $operatingExpense->load('user')
-        ]);
+        return response()->json(['message' => 'Items updated successfully']);
     }
 }

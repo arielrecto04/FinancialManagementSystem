@@ -125,54 +125,40 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        console.log('EditItemsModal - Request prop:', request);
-        
-        if (request?.type === 'HR Expense') {
+        if (isOpen && request) {
             try {
-                // Get breakdown from either breakdown_of_expense or breakdown field
-                const breakdownText = request.breakdown_of_expense || request.breakdown;
-                // Split by newlines and parse each line
-                const breakdownLines = breakdownText?.split('\n').filter(line => line.trim()) || [];
-                console.log('Breakdown lines:', breakdownLines);
-                
-                const parsedItems = breakdownLines.map(line => {
-                    // Match the format "Description: ₱Amount"
-                    const matches = line.match(/^(.*?):\s*₱(\d+(?:\.\d{2})?)/);
-                    if (matches) {
-                        return {
-                            description: matches[1].trim(),
-                            amount: parseFloat(matches[2])
-                        };
-                    }
-                    return null;
-                }).filter(item => item !== null);
-                
-                console.log('Parsed items:', parsedItems);
-                setItems(parsedItems);
+                if (request?.type === 'HR Expense' || request?.type === 'Operating Expense') {
+                    const breakdownText = request.breakdown_of_expense || request.breakdown;
+                    const breakdownLines = breakdownText?.split('\n').filter(line => line.trim()) || [];
+                    
+                    const parsedItems = breakdownLines.map(line => {
+                        const matches = line.match(/^(.*?):\s*₱(\d+(?:\.\d{2})?)/);
+                        if (matches) {
+                            return {
+                                description: matches[1].trim(),
+                                amount: parseFloat(matches[2])
+                            };
+                        }
+                        return null;
+                    }).filter(item => item !== null);
+                    
+                    setItems(parsedItems);
+                } else if (request?.items_json) {
+                    const parsedItems = Array.isArray(request.items_json) 
+                        ? request.items_json 
+                        : JSON.parse(request.items_json);
+                    setItems(parsedItems);
+                } else {
+                    setItems([]);
+                }
                 setError(null);
             } catch (error) {
-                console.error('Error parsing breakdown:', error);
-                setError('Error loading breakdown items');
-                setItems([]);
-            }
-        } else if (request?.items_json) {
-            try {
-                const parsedItems = Array.isArray(request.items_json) 
-                    ? request.items_json 
-                    : JSON.parse(request.items_json);
-                console.log('EditItemsModal - Parsed items:', parsedItems);
-                setItems(parsedItems);
-                setError(null);
-            } catch (error) {
-                console.error('EditItemsModal - Error parsing items:', error);
+                console.error('Error parsing items:', error);
                 setError('Error loading items');
                 setItems([]);
             }
-        } else {
-            console.log('EditItemsModal - No items found');
-            setItems([]);
         }
-    }, [request]);
+    }, [isOpen, request]);
 
     const handleUpdateItem = (index, field, value) => {
         const newItems = [...items];
@@ -186,7 +172,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
     };
 
     const handleAddItem = () => {
-        if (request?.type === 'HR Expense') {
+        if (request?.type === 'HR Expense' || request?.type === 'Operating Expense') {
             setItems([...items, { description: '', amount: 0 }]);
         } else {
             setItems([...items, { name: '', quantity: '', price: '' }]);
@@ -194,7 +180,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
     };
 
     const calculateTotal = () => {
-        if (request?.type === 'HR Expense') {
+        if (request?.type === 'HR Expense' || request?.type === 'Operating Expense') {
             return items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
         }
         return items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.price || 0)), 0);
@@ -202,30 +188,32 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Submitting form with request ID:', request?.request_number);
         
         try {
             if (request?.type === 'HR Expense') {
-                // Format items back to breakdown text
                 const breakdownText = items
-                    .map(item => {
-                        const amount = parseFloat(item.amount);
-                        return `${item.description}: ₱${amount.toFixed(2)}`;
-                    })
+                    .map(item => `${item.description}: ₱${parseFloat(item.amount).toFixed(2)}`)
                     .join('\n');
 
-                console.log('Submitting breakdown:', breakdownText);
-
-                const response = await axios.put(`/hr-expenses/${request.request_number}/items`, {
+                await axios.put(`/hr-expenses/${request.request_number}/items`, {
                     breakdown_of_expense: breakdownText,
                     total_amount_requested: calculateTotal()
                 });
-                console.log('Update response:', response);
-            } else {
-                const response = await axios.put(`/supply-requests/${request.request_number}/items`, {
+            }
+            else if (request?.type === 'Operating Expense') {
+                const breakdownText = items
+                    .map(item => `${item.description}: ₱${parseFloat(item.amount).toFixed(2)}`)
+                    .join('\n');
+
+                await axios.put(`/operating-expenses/${request.request_number}/items`, {
+                    breakdown_of_expense: breakdownText,
+                    total_amount: calculateTotal()
+                });
+            }
+            else {
+                await axios.put(`/supply-requests/${request.request_number}/items`, {
                     items: items
                 });
-                console.log('Update response:', response);
             }
             window.location.reload();
         } catch (error) {
@@ -238,7 +226,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
         <Modal show={isOpen} onClose={onClose}>
             <div className="p-6">
                 <h2 className="text-lg font-medium text-gray-900 mb-4">
-                    {request?.type === 'HR Expense' ? 'Edit Breakdown of Expense' : 'Edit Items'}
+                    {request?.type === 'HR Expense' || request?.type === 'Operating Expense' ? 'Edit Breakdown of Expense' : 'Edit Items'}
                 </h2>
                 
                 {error && (
@@ -250,7 +238,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
                 <div className="space-y-4">
                     {Array.isArray(items) && items.map((item, index) => (
                         <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                            {request?.type === 'HR Expense' ? (
+                            {request?.type === 'HR Expense' || request?.type === 'Operating Expense' ? (
                                 <>
                                     <div className="flex-1">
                                         <input

@@ -7,7 +7,9 @@ export default function RequestDetailsModal({ isOpen, onClose, request, onEditIt
     if (!isOpen || !request) return null;
 
     const isSupplyRequest = request.type === 'Supply' || request.type === 'Supply Request' || request.type?.toLowerCase().includes('supply');
-    const canEditItems = auth?.user?.role === 'superadmin' || (request?.status === 'pending' && request?.type === 'Supply Request');
+    const canEditItems = auth?.user?.role === 'superadmin' || 
+        (request?.status === 'pending' && 
+        (request?.type === 'Supply Request' || request?.type === 'HR Expense' || request?.type === 'Operating Expense'));
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -304,7 +306,7 @@ export default function RequestDetailsModal({ isOpen, onClose, request, onEditIt
                                                 
                                                 {(auth?.user?.role === 'superadmin' || request?.status === 'pending') && (
                                                     <button
-                                                        onClick={onEditItems}
+                                                        onClick={() => onEditItems(request)}
                                                         className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
                                                     >
                                                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

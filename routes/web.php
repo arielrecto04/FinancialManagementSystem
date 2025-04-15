@@ -99,7 +99,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/operating-expenses/{operatingExpense}/status', [OperatingExpenseController::class, 'updateStatus'])->name('operating-expenses.update-status');
         Route::delete('/operating-expenses/{operatingExpense}', [OperatingExpenseController::class, 'destroy'])->name('operating-expenses.destroy');
     });
-    Route::put('/operating-expenses/{requestNumber}/items', [OperatingExpenseController::class, 'updateItems'])->name('operating-expenses.update-items');
+    Route::put('/operating-expenses/{requestNumber}/items', [OperatingExpenseController::class, 'updateItems'])
+        ->name('operating-expenses.update-items');
     
     // Liquidation routes
     Route::post('/request/liquidation', [LiquidationController::class, 'store'])->name('request.liquidation.store');
