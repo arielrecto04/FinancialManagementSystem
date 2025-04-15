@@ -43,10 +43,17 @@ class OperatingExpenseController extends Controller
                 'additional_comment' => 'nullable|string',
             ]);
 
+            // Generate request number
+            $latestRequest = OperatingExpense::latest()->first();
+            $latestNumber = $latestRequest ? intval(substr($latestRequest->request_number, 3)) : 0;
+            $newNumber = str_pad($latestNumber + 1, 8, '0', STR_PAD_LEFT);
+            $requestNumber = 'OP-' . $newNumber;
+
             $operatingExpense = new OperatingExpense($validated);
             $operatingExpense->requestor_name = auth()->user()->name;
             $operatingExpense->user_id = auth()->id();
             $operatingExpense->status = 'pending';
+            $operatingExpense->request_number = $requestNumber;
             $operatingExpense->save();
 
             // Log the operating expense request creation
@@ -136,5 +143,71 @@ class OperatingExpenseController extends Controller
         ]);
 
         return redirect()->route('operating-expenses.index')->with('success', 'Operating expense request deleted successfully.');
+    }
+
+    /**
+     * Update the items/breakdown of an operating expense request.
+     */
+    public function updateItems(Request $request, $requestNumber)
+    {
+        // Find the operating expense request by request_number
+        $operatingExpense = OperatingExpense::where('request_number', $requestNumber)->firstOrFail();
+        
+        // Allow updates if:
+        // 1. User is a superadmin
+        // 2. User owns the request and it's pending
+        // 3. User is an admin
+        $user = auth()->user();
+        $canEdit = 
+            $user->role === 'superadmin' || 
+            $user->role === 'admin' ||
+            ($user->id === $operatingExpense->user_id && $operatingExpense->status === 'pending');
+            
+        if (!$canEdit) {
+            return response()->json([
+                'message' => 'You are not authorized to edit this request'
+            ], 403);
+        }
+
+        // Get breakdown from either breakdown or breakdown_of_expense field
+        $breakdown = $request->input('breakdown_of_expense');
+        if (!$breakdown) {
+            return response()->json([
+                'message' => 'The breakdown field is required',
+                'errors' => ['breakdown_of_expense' => ['The breakdown field is required']]
+            ], 422);
+        }
+
+        $validated = [
+            'breakdown_of_expense' => $breakdown,
+            'total_amount' => $request->input('total_amount')
+        ];
+
+        // Validate the total amount
+        if (!is_numeric($validated['total_amount']) || $validated['total_amount'] < 0) {
+            return response()->json([
+                'message' => 'The total amount must be a positive number',
+                'errors' => ['total_amount' => ['The total amount must be a positive number']]
+            ], 422);
+        }
+
+        $operatingExpense->update($validated);
+
+        // Log the update
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'update',
+            'action' => 'Operating Expense Request Updated',
+            'description' => 'Updated breakdown of expense in operating expense request for ' . $operatingExpense->expense_category,
+            'amount' => $validated['total_amount'],
+            'ip_address' => $request->ip()
+        ]);
+
+        return response()->json([
+            'message' => 'Breakdown updated successfully',
+            'request' => $operatingExpense->load('user')
+        ]);
     }
 }

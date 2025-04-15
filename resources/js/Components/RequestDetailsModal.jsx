@@ -257,6 +257,7 @@ export default function RequestDetailsModal({ isOpen, onClose, request, onEditIt
                                             <div className="flex justify-between items-center mb-2">
                                                 <p className="text-sm text-gray-500">Breakdown of Expense</p>
                                                 {(auth?.user?.role === 'superadmin' || request?.status === 'pending') && (
+
                                                     <button
                                                         onClick={onEditItems}
                                                         className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
@@ -297,15 +298,33 @@ export default function RequestDetailsModal({ isOpen, onClose, request, onEditIt
                                             <p className="text-sm text-gray-500">Description</p>
                                             <p className="font-medium">{request.description}</p>
                                         </div>
-                                        {request.breakdown && (
-                                            <div>
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2">
                                                 <p className="text-sm text-gray-500">Breakdown of Expenses</p>
-                                                <p className="font-medium whitespace-pre-line">{request.breakdown}</p>
+                                                
+                                                {(auth?.user?.role === 'superadmin' || request?.status === 'pending') && (
+                                                    <button
+                                                        onClick={onEditItems}
+                                                        className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+                                                    >
+                                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                        Edit Breakdown
+                                                    </button>
+                                                )}
                                             </div>
-                                        )}
+                                            <div className="bg-gray-50 rounded-lg p-4">
+                                                <p className="font-medium whitespace-pre-line">
+                                                    {request.breakdown_of_expense || request.breakdown}
+                                                </p>
+                                            </div>
+                                        </div>
                                         <div>
                                             <p className="text-sm text-gray-500">Total Amount</p>
-                                            <p className="font-medium">₱{parseFloat(request.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                            <p className="font-medium text-lg">
+                                                {formatCurrency(request.total_amount)}
+                                            </p>
                                         </div>
                                         {request.expected_payment_date && (
                                             <div>

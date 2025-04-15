@@ -27,6 +27,7 @@ class OperatingExpense extends Model
         'additional_comment',
         'status',
         'rejection_reason',
+        'request_number'
     ];
 
     /**

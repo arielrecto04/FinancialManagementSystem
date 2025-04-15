@@ -355,11 +355,11 @@ class ReportsController extends Controller
                 'total_amount' => $request->total_amount,
                 'created_at' => $request->created_at->format('Y-m-d'),
                 'remarks' => $request->remarks,
-                'expense_type' => $request->expense_type,
+                'expense_type' => $request->expense_category,
                 'description' => $request->description,
                 'receipt_path' => $request->receipt_path,
                 'expected_payment_date' => $request->expected_payment_date,
-                'breakdown' => $request->breakdown
+                'breakdown_of_expense' => $request->breakdown_of_expense
             ];
         };
     }

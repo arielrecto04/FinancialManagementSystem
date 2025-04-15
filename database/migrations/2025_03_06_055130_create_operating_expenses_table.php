@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('operating_expenses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('request_number')->unique();
             $table->string('requestor_name');
             $table->date('date_of_request');
             $table->string('expense_category');
