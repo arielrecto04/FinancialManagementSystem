@@ -24,6 +24,12 @@ export default function Index({ auth, users, budgets, flash }) {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
+    // Add debug logging
+    console.log('Current user role:', auth?.user?.role);
+    console.log('Is admin?', auth?.user?.role === 'admin');
+    console.log('Auth object:', auth);
+    console.log('Budgets:', budgets);
+
     const budgetForm = useForm({
         total_budget: '',
         replenishment_amount: '',
@@ -60,6 +66,11 @@ export default function Index({ auth, users, budgets, flash }) {
     };
 
     const openBudgetModal = (user) => {
+        // Add debug logging
+        console.log('Opening budget modal for user:', user);
+        console.log('Current user is admin:', auth?.user?.role === 'admin');
+        console.log('Can set budget:', user.role === 'admin' || user.role === 'superadmin');
+        
         const budget = getUserBudget(user.id);
         setSelectedUser(user);
         budgetForm.setData('total_budget', budget?.total_budget?.toString() || '');
@@ -279,7 +290,7 @@ export default function Index({ auth, users, budgets, flash }) {
                                                 <span className="text-lg font-semibold text-blue-600">
                                                     ₱{budget ? parseFloat(budget.total_budget).toLocaleString() : '0'}
                                                 </span>
-                                                {auth.user.role === 'superadmin' && (
+                                                {((auth.user.role === 'superadmin') || (auth.user.role === 'admin' && user.role === 'admin')) && (
                                                     <button
                                                         onClick={() => openBudgetModal(user)}
                                                         className="p-1 text-blue-600 hover:text-blue-800"
@@ -317,7 +328,7 @@ export default function Index({ auth, users, budgets, flash }) {
                                             <FiEdit2 className="w-4 h-4 mr-1" />
                                             Edit
                                         </Link>
-                                        {auth.user.role === 'superadmin' && budget && (
+                                        {((auth.user.role === 'superadmin') || (auth.user.role === 'admin' && user.role === 'admin')) && budget && (
                                             <button
                                                 onClick={() => handleResetBudget(user.id, budget)}
                                                 className="inline-flex items-center text-sm text-orange-600 hover:text-orange-900"
@@ -361,6 +372,8 @@ export default function Index({ auth, users, budgets, flash }) {
           
         >
             <Head title="User Management" />
+
+     
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -436,7 +449,7 @@ export default function Index({ auth, users, budgets, flash }) {
                                                                                 <span className={`px-2 py-1 text-sm rounded-md bg-blue-50 text-blue-700`}>
                                                                                     {budget ? `₱${parseFloat(budget.total_budget).toLocaleString()}` : '₱0'}
                                                                                 </span>
-                                                                                {auth.user.role === 'superadmin' && (
+                                                                                {((auth.user.role === 'superadmin') || (auth.user.role === 'admin' && user.role === 'admin')) && (
                                                                                     <button
                                                                                         onClick={() => openBudgetModal(user)}
                                                                                         className="p-1 text-blue-600 hover:text-blue-800"
@@ -484,7 +497,7 @@ export default function Index({ auth, users, budgets, flash }) {
                                                                     <FiTrash2 className="w-4 h-4 mr-1" />
                                                                     Delete
                                                                 </button>
-                                                                {activeTab === 'admins' && canSetBudget && budget && auth.user.role === 'superadmin' && (
+                                                                {activeTab === 'admins' && canSetBudget && budget && ((auth.user.role === 'superadmin') || (auth.user.role === 'admin' && user.role === 'admin')) && (
                                                                     <button
                                                                         onClick={() => handleResetBudget(user.id, budget)}
                                                                         className="inline-flex items-center text-orange-600 hover:text-orange-900"
