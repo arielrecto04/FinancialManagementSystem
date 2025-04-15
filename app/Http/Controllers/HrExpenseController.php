@@ -45,9 +45,16 @@ class HrExpenseController extends Controller
         try {
             $user = Auth::user();
             
+            // Generate request number
+            $latestRequest = HrExpense::latest()->first();
+            $latestNumber = $latestRequest ? intval(substr($latestRequest->request_number, 3)) : 0;
+            $newNumber = str_pad($latestNumber + 1, 8, '0', STR_PAD_LEFT);
+            $requestNumber = 'HR-' . $newNumber;
+            
             $hrExpense = new HrExpense($validated);
             $hrExpense->user_id = $user->id;
             $hrExpense->requestor_name = $user->name;
+            $hrExpense->request_number = $requestNumber;
             $hrExpense->status = 'pending';
             $hrExpense->save();
 
@@ -138,5 +145,71 @@ class HrExpenseController extends Controller
         ]);
 
         return redirect()->route('hr-expenses.index')->with('success', 'HR expense request deleted successfully.');
+    }
+
+    /**
+     * Update the items of an HR expense request.
+     */
+    public function updateItems(Request $request, $requestNumber)
+    {
+        // Find the HR expense request by request_number
+        $hrExpense = HrExpense::where('request_number', $requestNumber)->firstOrFail();
+        
+        // Allow updates if:
+        // 1. User is a superadmin
+        // 2. User owns the request and it's pending
+        // 3. User is an admin
+        $user = auth()->user();
+        $canEdit = 
+            $user->role === 'superadmin' || 
+            $user->role === 'admin' ||
+            ($user->id === $hrExpense->user_id && $hrExpense->status === 'pending');
+            
+        if (!$canEdit) {
+            return response()->json([
+                'message' => 'You are not authorized to edit this request'
+            ], 403);
+        }
+
+        // Get breakdown from either breakdown or breakdown_of_expense field
+        $breakdown = $request->input('breakdown') ?? $request->input('breakdown_of_expense');
+        if (!$breakdown) {
+            return response()->json([
+                'message' => 'The breakdown field is required',
+                'errors' => ['breakdown_of_expense' => ['The breakdown field is required']]
+            ], 422);
+        }
+
+        $validated = [
+            'breakdown_of_expense' => $breakdown,
+            'total_amount_requested' => $request->input('total_amount_requested')
+        ];
+
+        // Validate the total amount
+        if (!is_numeric($validated['total_amount_requested']) || $validated['total_amount_requested'] < 0) {
+            return response()->json([
+                'message' => 'The total amount must be a positive number',
+                'errors' => ['total_amount_requested' => ['The total amount must be a positive number']]
+            ], 422);
+        }
+
+        $hrExpense->update($validated);
+
+        // Log the update
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'user_role' => auth()->user()->role,
+            'type' => 'update',
+            'action' => 'HR Expense Request Updated',
+            'description' => 'Updated breakdown of expense in HR expense request for ' . $hrExpense->expenses_category,
+            'amount' => $validated['total_amount_requested'],
+            'ip_address' => $request->ip()
+        ]);
+
+        return response()->json([
+            'message' => 'Breakdown updated successfully',
+            'request' => $hrExpense->load('user')
+        ]);
     }
 }

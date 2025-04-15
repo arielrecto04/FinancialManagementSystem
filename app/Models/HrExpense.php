@@ -18,6 +18,7 @@ class HrExpense extends Model
     protected $fillable = [
         'user_id',
         'requestor_name',
+        'request_number',
         'date_of_request',
         'expenses_category',
         'description_of_expenses',

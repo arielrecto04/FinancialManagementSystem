@@ -126,9 +126,36 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
 
     useEffect(() => {
         console.log('EditItemsModal - Request prop:', request);
-        console.log('EditItemsModal - Request number:', request?.request_number);
         
-        if (request?.items_json) {
+        if (request?.type === 'HR Expense') {
+            try {
+                // Get breakdown from either breakdown_of_expense or breakdown field
+                const breakdownText = request.breakdown_of_expense || request.breakdown;
+                // Split by newlines and parse each line
+                const breakdownLines = breakdownText?.split('\n').filter(line => line.trim()) || [];
+                console.log('Breakdown lines:', breakdownLines);
+                
+                const parsedItems = breakdownLines.map(line => {
+                    // Match the format "Description: ₱Amount"
+                    const matches = line.match(/^(.*?):\s*₱(\d+(?:\.\d{2})?)/);
+                    if (matches) {
+                        return {
+                            description: matches[1].trim(),
+                            amount: parseFloat(matches[2])
+                        };
+                    }
+                    return null;
+                }).filter(item => item !== null);
+                
+                console.log('Parsed items:', parsedItems);
+                setItems(parsedItems);
+                setError(null);
+            } catch (error) {
+                console.error('Error parsing breakdown:', error);
+                setError('Error loading breakdown items');
+                setItems([]);
+            }
+        } else if (request?.items_json) {
             try {
                 const parsedItems = Array.isArray(request.items_json) 
                     ? request.items_json 
@@ -142,7 +169,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
                 setItems([]);
             }
         } else {
-            console.log('EditItemsModal - No items_json found');
+            console.log('EditItemsModal - No items found');
             setItems([]);
         }
     }, [request]);
@@ -158,21 +185,48 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
         setItems(newItems);
     };
 
+    const handleAddItem = () => {
+        if (request?.type === 'HR Expense') {
+            setItems([...items, { description: '', amount: 0 }]);
+        } else {
+            setItems([...items, { name: '', quantity: '', price: '' }]);
+        }
+    };
+
     const calculateTotal = () => {
-        return items.reduce((sum, item) => {
-            return sum + (Number(item.quantity || 0) * Number(item.price || 0));
-        }, 0);
+        if (request?.type === 'HR Expense') {
+            return items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        }
+        return items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.price || 0)), 0);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Submitting form with request ID:', request.id);
+        console.log('Submitting form with request ID:', request?.request_number);
         
         try {
-            const response = await axios.put(`/supply-requests/${request.request_number}/items`, {
-                items: items
-            });
-            console.log('Update response:', response);
+            if (request?.type === 'HR Expense') {
+                // Format items back to breakdown text
+                const breakdownText = items
+                    .map(item => {
+                        const amount = parseFloat(item.amount);
+                        return `${item.description}: ₱${amount.toFixed(2)}`;
+                    })
+                    .join('\n');
+
+                console.log('Submitting breakdown:', breakdownText);
+
+                const response = await axios.put(`/hr-expenses/${request.request_number}/items`, {
+                    breakdown_of_expense: breakdownText,
+                    total_amount_requested: calculateTotal()
+                });
+                console.log('Update response:', response);
+            } else {
+                const response = await axios.put(`/supply-requests/${request.request_number}/items`, {
+                    items: items
+                });
+                console.log('Update response:', response);
+            }
             window.location.reload();
         } catch (error) {
             console.error('Error updating items:', error);
@@ -183,7 +237,9 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
     return (
         <Modal show={isOpen} onClose={onClose}>
             <div className="p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Edit Items</h2>
+                <h2 className="text-lg font-medium text-gray-900 mb-4">
+                    {request?.type === 'HR Expense' ? 'Edit Breakdown of Expense' : 'Edit Items'}
+                </h2>
                 
                 {error && (
                     <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
@@ -194,33 +250,59 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
                 <div className="space-y-4">
                     {Array.isArray(items) && items.map((item, index) => (
                         <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                            <div className="flex-1">
-                                <input
-                                    type="text"
-                                    value={item.name || ''}
-                                    onChange={(e) => handleUpdateItem(index, 'name', e.target.value)}
-                                    className="w-full px-3 py-2 border rounded-md"
-                                    placeholder="Item name"
-                                />
-                            </div>
-                            <div className="w-24">
-                                <input
-                                    type="number"
-                                    value={item.quantity || ''}
-                                    onChange={(e) => handleUpdateItem(index, 'quantity', e.target.value)}
-                                    className="w-full px-3 py-2 border rounded-md"
-                                    placeholder="Qty"
-                                />
-                            </div>
-                            <div className="w-32">
-                                <input
-                                    type="number"
-                                    value={item.price || ''}
-                                    onChange={(e) => handleUpdateItem(index, 'price', e.target.value)}
-                                    className="w-full px-3 py-2 border rounded-md"
-                                    placeholder="Price"
-                                />
-                            </div>
+                            {request?.type === 'HR Expense' ? (
+                                <>
+                                    <div className="flex-1">
+                                        <input
+                                            type="text"
+                                            value={item.description || ''}
+                                            onChange={(e) => handleUpdateItem(index, 'description', e.target.value)}
+                                            className="w-full px-3 py-2 border rounded-md"
+                                            placeholder="Description"
+                                        />
+                                    </div>
+                                    <div className="w-32">
+                                        <input
+                                            type="number"
+                                            value={item.amount || ''}
+                                            onChange={(e) => handleUpdateItem(index, 'amount', e.target.value)}
+                                            className="w-full px-3 py-2 border rounded-md"
+                                            placeholder="Amount"
+                                            step="0.01"
+                                        />
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex-1">
+                                        <input
+                                            type="text"
+                                            value={item.name || ''}
+                                            onChange={(e) => handleUpdateItem(index, 'name', e.target.value)}
+                                            className="w-full px-3 py-2 border rounded-md"
+                                            placeholder="Item name"
+                                        />
+                                    </div>
+                                    <div className="w-24">
+                                        <input
+                                            type="number"
+                                            value={item.quantity || ''}
+                                            onChange={(e) => handleUpdateItem(index, 'quantity', e.target.value)}
+                                            className="w-full px-3 py-2 border rounded-md"
+                                            placeholder="Qty"
+                                        />
+                                    </div>
+                                    <div className="w-32">
+                                        <input
+                                            type="number"
+                                            value={item.price || ''}
+                                            onChange={(e) => handleUpdateItem(index, 'price', e.target.value)}
+                                            className="w-full px-3 py-2 border rounded-md"
+                                            placeholder="Price"
+                                        />
+                                    </div>
+                                </>
+                            )}
                             <button
                                 onClick={() => handleRemoveItem(index)}
                                 className="p-2 text-red-600 hover:text-red-800"
@@ -232,6 +314,13 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
                         </div>
                     ))}
                 </div>
+
+                <button
+                    onClick={handleAddItem}
+                    className="mt-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                >
+                    Add Item
+                </button>
 
                 <div className="mt-6 flex justify-between items-center">
                     <div className="text-lg font-semibold">

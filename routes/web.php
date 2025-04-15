@@ -89,6 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/hr-expenses/{hrExpense}/status', [HrExpenseController::class, 'updateStatus'])->name('hr-expenses.update-status');
         Route::delete('/hr-expenses/{hrExpense}', [HrExpenseController::class, 'destroy'])->name('hr-expenses.destroy');
     });
+    Route::put('/hr-expenses/{requestNumber}/items', [HrExpenseController::class, 'updateItems'])->name('hr-expenses.update-items');
     
     // Operating Expenses routes
     Route::post('/request/operating-expenses', [OperatingExpenseController::class, 'store'])->name('request.operatingExpenses.store');
