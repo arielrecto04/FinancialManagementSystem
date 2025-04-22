@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputError from '@/Components/InputError';
@@ -6,8 +6,12 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import SelectInput from '@/Components/SelectInput';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 export default function Edit({ auth, user, roles }) {
+    const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
+    
     const { data, setData, put, processing, errors } = useForm({
         name: user.name,
         email: user.email,
@@ -71,25 +75,43 @@ export default function Edit({ auth, user, roles }) {
 
                                 <div>
                                     <InputLabel htmlFor="password" value="Password (leave blank to keep unchanged)" />
-                                    <TextInput
-                                        id="password"
-                                        type="password"
-                                        className="mt-1 block w-full"
-                                        value={data.password}
-                                        onChange={(e) => setData('password', e.target.value)}
-                                    />
+                                    <div className="relative">
+                                        <TextInput
+                                            id="password"
+                                            type={showPassword ? 'text' : 'password'}
+                                            className="mt-1 block w-full pr-10"
+                                            value={data.password}
+                                            onChange={(e) => setData('password', e.target.value)}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute inset-y-0 right-0 flex items-center pr-3 mt-1 text-gray-600 hover:text-gray-900"
+                                        >
+                                            {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+                                        </button>
+                                    </div>
                                     <InputError message={errors.password} className="mt-2" />
                                 </div>
 
                                 <div>
                                     <InputLabel htmlFor="password_confirmation" value="Confirm Password" />
-                                    <TextInput
-                                        id="password_confirmation"
-                                        type="password"
-                                        className="mt-1 block w-full"
-                                        value={data.password_confirmation}
-                                        onChange={(e) => setData('password_confirmation', e.target.value)}
-                                    />
+                                    <div className="relative">
+                                        <TextInput
+                                            id="password_confirmation"
+                                            type={showPasswordConfirmation ? 'text' : 'password'}
+                                            className="mt-1 block w-full pr-10"
+                                            value={data.password_confirmation}
+                                            onChange={(e) => setData('password_confirmation', e.target.value)}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPasswordConfirmation(!showPasswordConfirmation)}
+                                            className="absolute inset-y-0 right-0 flex items-center pr-3 mt-1 text-gray-600 hover:text-gray-900"
+                                        >
+                                            {showPasswordConfirmation ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div>
