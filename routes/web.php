@@ -144,4 +144,37 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/export-pdf', [ReportsController::class, 'exportPDF'])->name('reports.export-pdf');
 });
 
+// Test route for email sending - accessible only in local environment
+if (app()->environment('local')) {
+    Route::get('/test-email', function () {
+        try {
+            $admin = \App\Models\User::where('role', 'admin')->orWhere('role', 'superadmin')->first();
+            
+            if (!$admin) {
+                return 'No admin user found to send test email.';
+            }
+            
+            \Illuminate\Support\Facades\Mail::send('emails.request-notification', [
+                'adminName' => $admin->name,
+                'requestData' => [
+                    'department' => 'Test Department',
+                    'purpose' => 'Testing email functionality',
+                    'date_needed' => now()->format('Y-m-d'),
+                    'total_amount' => 1000,
+                ],
+                'requestType' => 'Test',
+                'requesterName' => 'System Test',
+                'requestNumber' => 'TEST-' . rand(1000, 9999)
+            ], function ($message) use ($admin) {
+                $message->to($admin->email)
+                    ->subject('Test Email from Financial Management System');
+            });
+            
+            return 'Test email sent to ' . $admin->email . '. Please check your email or Mailtrap inbox.';
+        } catch (\Exception $e) {
+            return 'Error sending test email: ' . $e->getMessage();
+        }
+    });
+}
+
 require __DIR__ . '/auth.php';

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\OperatingExpense;
 use App\Models\AuditLog;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -67,6 +68,21 @@ class OperatingExpenseController extends Controller
                 'amount' => $validated['total_amount'],
                 'ip_address' => $request->ip()
             ]);
+            
+            // Send email notification to admin and superadmin users
+            EmailService::sendNewRequestEmail(
+                [
+                    'date_of_request' => $validated['date_of_request'],
+                    'expense_category' => $validated['expense_category'],
+                    'description' => $validated['description'],
+                    'total_amount' => $validated['total_amount'],
+                    'expected_payment_date' => $validated['expected_payment_date'],
+                    'additional_comment' => $validated['additional_comment'] ?? '',
+                ],
+                'Operating Expenses',
+                auth()->user()->name,
+                $requestNumber
+            );
 
             return redirect()->back()->with('success', 'Operating expense request submitted successfully.');
 

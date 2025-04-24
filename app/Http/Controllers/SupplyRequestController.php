@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SupplyRequest;
 use App\Models\AuditLog;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -42,6 +43,14 @@ class SupplyRequestController extends Controller
                 'amount' => $validated['total_amount'],
                 'ip_address' => $request->ip()
             ]);
+            
+            // Send email notification to admin and superadmin users
+            EmailService::sendNewRequestEmail(
+                $validated,
+                'Supply',
+                auth()->user()->name,
+                $validated['request_number']
+            );
 
             return redirect()->back()->with('success', 'Supply request submitted successfully!');
 

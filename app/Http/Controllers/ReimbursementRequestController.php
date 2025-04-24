@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ReimbursementRequest;
 use App\Models\AuditLog;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -45,6 +46,21 @@ class ReimbursementRequestController extends Controller
                 'amount' => $validated['amount'],
                 'ip_address' => $request->ip()
             ]);
+            
+            // Send email notification to admin and superadmin users
+            EmailService::sendNewRequestEmail(
+                [
+                    'department' => $validated['department'],
+                    'expense_date' => $validated['expense_date'],
+                    'expense_type' => $validated['expense_type'],
+                    'amount' => $validated['amount'],
+                    'description' => $validated['description'],
+                    'remarks' => $validated['remarks'] ?? '',
+                ],
+                'Reimbursement',
+                auth()->user()->name,
+                $validated['request_number']
+            );
 
             return redirect()->back()->with('success', 'Reimbursement request submitted successfully!');
 

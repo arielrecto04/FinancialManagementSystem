@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PettyCashRequest;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -38,6 +39,22 @@ class PettyCashController extends Controller
                 'description' => $validated['description'],
                 'status' => 'pending'
             ]);
+            
+            // Send email notification to admin and superadmin users
+            EmailService::sendNewRequestEmail(
+                [
+                    'date' => $validated['date'],
+                    'date_needed' => $validated['dateNeeded'],
+                    'purpose' => $validated['purpose'],
+                    'amount' => $validated['amount'],
+                    'department' => $validated['department'],
+                    'category' => $validated['category'],
+                    'description' => $validated['description'],
+                ],
+                'Petty Cash',
+                auth()->user()->name,
+                $requestNumber
+            );
 
             return redirect()->back()->with('success', 'Petty cash request created successfully.');
 

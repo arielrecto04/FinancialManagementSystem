@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Liquidation;
 use App\Models\LiquidationItem;
 use App\Models\AuditLog;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -62,6 +63,23 @@ class LiquidationController extends Controller
                 'amount' => $validated['total_amount'],
                 'ip_address' => $request->ip()
             ]);
+            
+            // Send email notification to admin and superadmin users
+            EmailService::sendNewRequestEmail(
+                [
+                    'department' => $validated['department'],
+                    'date' => $validated['date'],
+                    'expense_type' => $validated['expense_type'],
+                    'particulars' => $validated['particulars'],
+                    'total_amount' => $validated['total_amount'],
+                    'cash_advance_amount' => $validated['cash_advance_amount'],
+                    'amount_to_refund' => $validated['amount_to_refund'],
+                    'amount_to_reimburse' => $validated['amount_to_reimburse'],
+                ],
+                'Liquidation',
+                auth()->user()->name,
+                'LR-' . $liquidation->id // Generate a request number for the notification
+            );
 
             DB::commit();
 

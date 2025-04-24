@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\HrExpense;
 use App\Models\AuditLog;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -69,6 +70,21 @@ class HrExpenseController extends Controller
                 'amount' => $validated['total_amount_requested'],
                 'ip_address' => $request->ip()
             ]);
+            
+            // Send email notification to admin and superadmin users
+            EmailService::sendNewRequestEmail(
+                [
+                    'date_of_request' => $validated['date_of_request'],
+                    'expenses_category' => $validated['expenses_category'],
+                    'description_of_expenses' => $validated['description_of_expenses'],
+                    'total_amount_requested' => $validated['total_amount_requested'],
+                    'expected_payment_date' => $validated['expected_payment_date'],
+                    'additional_comment' => $validated['additional_comment'] ?? '',
+                ],
+                'HR Expenses',
+                $user->name,
+                $requestNumber
+            );
 
             return redirect()->back()->with('success', 'HR expense request submitted successfully.');
 

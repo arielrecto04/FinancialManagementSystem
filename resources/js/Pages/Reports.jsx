@@ -355,6 +355,28 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
     const [currentPage, setCurrentPage] = useState(pagination ? pagination.current_page : 1);
     const [isEditItemsModalOpen, setIsEditItemsModalOpen] = useState(false);
 
+    // Add effect to check for request parameter in URL
+    useEffect(() => {
+        // Get the 'request' parameter from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const requestNumber = urlParams.get('request');
+        
+        if (requestNumber && requests && requests.length > 0) {
+            // Find the request with matching request_number
+            const foundRequest = requests.find(req => req.request_number === requestNumber);
+            
+            // If found, open the modal for this request
+            if (foundRequest) {
+                handleRowClick(foundRequest);
+                
+                // Optionally, clear the URL parameter to prevent reopening on page refresh
+                const currentUrl = new URL(window.location);
+                currentUrl.searchParams.delete('request');
+                window.history.replaceState({}, '', currentUrl);
+            }
+        }
+    }, [requests]); // Dependency array includes requests to ensure it runs after data is loaded
+
     const statusColors = {
         pending: 'bg-yellow-100 text-yellow-800',
         approved: 'bg-green-100 text-green-800',
