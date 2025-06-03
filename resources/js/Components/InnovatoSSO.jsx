@@ -23,24 +23,27 @@ export default function InnovatoSSO() {
     };
 
     useEffect(() => {
-        // Check if user is already authenticated
         verifyAuth();
 
-        // Load SSO script
         const script = document.createElement("script");
-        script.src = "http://127.0.0.1:8000/SSO/v1/SSO.js";
+        script.src = "https://staging-dtr.iits.website/SSO/v1/SSO.js";
         script.async = true;
         script.onload = () => {
+            const clientId = import.meta.env.VITE_SSO_CLIENT_ID;
+
             const sso = new InnovatoSSOv1({
-                clientId: "NsdfN5VNWEAtcncHpmpaa7D5BplAqH5y",
-                redirectUri: window.location.origin + "/v1/sso/login",
+                clientId: clientId,
+                redirectUri:
+                    import.meta.env.VITE_SSO_REDIRECT_URI ||
+                    `${window.location.origin}/sso/callback`,
                 container: "innovato-sso-button",
                 theme: "light",
                 size: "normal",
+                baseUrl: "http://127.0.0.1:8000",
             });
-
             sso.login()
                 .then((response) => {
+                    console.log("Login successful:", response);
                     handleAuthentication(response);
                 })
                 .catch((error) => {
