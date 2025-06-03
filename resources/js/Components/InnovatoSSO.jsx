@@ -39,7 +39,7 @@ export default function InnovatoSSO() {
                 container: "innovato-sso-button",
                 theme: "light",
                 size: "normal",
-                baseUrl: "http://127.0.0.1:8000",
+                baseUrl: "https://staging-dtr.iits.website",
             });
             sso.login()
                 .then((response) => {
