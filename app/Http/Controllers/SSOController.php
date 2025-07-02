@@ -21,7 +21,7 @@ class SSOController extends Controller
         $role = $this->determineUserRole($ssoRoles);
 
         // Create or update user
-        $user = User::updateOrCreate(
+        $user = User::firstOrCreate(
             ['email' => $userData['user']['email']],
             [
                 'name' => $userData['user']['name'],
