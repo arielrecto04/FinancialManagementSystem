@@ -56,12 +56,13 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
-          remote-dir: /public_html/fms
+          remote-dir: /public_html/fms/
+
           state-name: .git-ftp-state
-          exclude:
-            - "**/.git*"
-            - "**/.git*/**"
-            - "**/node_modules/**"
+          exclude: |                  # ✅ Corrected formatting from a sequence to a multi-line string
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
 
 
 
