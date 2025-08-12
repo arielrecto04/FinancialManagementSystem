@@ -57,6 +57,11 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
           remote-dir: /public_html/fms
+          state-name: .git-ftp-state
+          exclude:
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
 
 
 
