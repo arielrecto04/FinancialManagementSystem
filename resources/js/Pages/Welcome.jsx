@@ -22,8 +22,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     src="https://laravel.com/assets/img/welcome/background.svg"
                 />
                 <div className="relative flex min-h-screen flex-col items-center justify-center selection:bg-[#FF2D20] selection:text-white">
-                    <div className="relative w-full max-w-2xl px-6 lg:max-w-7xl">
-                        <header className="grid grid-cols-2 items-center gap-2 py-10 lg:grid-cols-3">
+                    <div className="relative px-6 w-full max-w-2xl lg:max-w-7xl">
+                        <header className="grid grid-cols-2 gap-2 items-center py-10 lg:grid-cols-3">
                             <div className="flex lg:col-start-2 lg:justify-center">
                                 <svg
                                     className="h-12 w-auto text-white lg:h-16 lg:text-[#FF2D20]"
@@ -37,7 +37,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                     />
                                 </svg>
                             </div>
-                            <nav className="-mx-3 flex flex-1 justify-end">
+                            <nav className="flex flex-1 justify-end -mx-3">
                                 {auth.user ? (
                                     <Link
                                         href={route('dashboard')}
@@ -73,7 +73,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                 >
                                     <div
                                         id="screenshot-container"
-                                        className="relative flex w-full flex-1 items-stretch"
+                                        className="flex relative flex-1 items-stretch w-full"
                                     >
                                         <img
                                             src="https://laravel.com/assets/img/welcome/docs-light.svg"
@@ -89,10 +89,10 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                         <div className="absolute -bottom-16 -left-16 h-40 w-[calc(100%+8rem)] bg-gradient-to-b from-transparent via-white to-white dark:via-zinc-900 dark:to-zinc-900"></div>
                                     </div>
 
-                                    <div className="relative flex items-center gap-6 lg:items-end">
+                                    <div className="flex relative gap-6 items-center lg:items-end">
                                         <div
                                             id="docs-card-content"
-                                            className="flex items-start gap-6 lg:flex-col"
+                                            className="flex gap-6 items-start lg:flex-col"
                                         >
                                             <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16">
                                                 <svg
@@ -350,7 +350,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                             </div>
                         </main>
 
-                        <footer className="py-16 text-center text-sm text-black dark:text-white/70">
+                        <footer className="py-16 text-sm text-center text-black dark:text-white/70">
                             Laravel v{laravelVersion} (PHP v{phpVersion})
                         </footer>
                     </div>
