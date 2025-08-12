@@ -59,12 +59,9 @@ jobs:
           remote-dir: /public_html/fms
           state-name: .git-ftp-state
           exclude:
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-
-
-
+            - "**/.git*"
+            - "**/.git*/**"
+            - "**/node_modules/**"
 
 
 
