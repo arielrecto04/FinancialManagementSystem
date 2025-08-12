@@ -56,7 +56,6 @@ jobs:
           REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
           REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
-          REMOTE_PASSWORD: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
 
 
           SOURCE : "./"
