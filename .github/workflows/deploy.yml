@@ -61,7 +61,12 @@ jobs:
           SOURCE : "./"
           TARGET: "/public_html/fms"
 
-          EXCLUDE: "./vendor ./node_modules ./storage ./bootstrap/cache ./public/storage"
+          EXCLUDE: |
+            /vendor
+            /node_modules
+            /storage
+            /bootstrap/cache
+            /public/storage
 
 
 
