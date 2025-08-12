@@ -49,20 +49,17 @@ jobs:
       - name: Optimize Application
         run: php artisan optimize:clear
 
-      - name: FTP Deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Hostinger SSH Deployment
+        uses: easingthemes/ssh-deploy@main
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
-          remote-dir: /public_html/fms/
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SOURCE : "./"
+          TARGET: "/public_html/fms"
 
-          state-name: .git-ftp-state
-          exclude: |                  # ✅ Corrected formatting from a sequence to a multi-line string
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+          EXCLUDE: "./vendor ./node_modules ./storage ./bootstrap/cache ./public/storage"
+
 
 
 
