@@ -7,9 +7,7 @@ export default function RequestDetailsModal({ isOpen, onClose, request, onEditIt
     if (!isOpen || !request) return null;
 
     const isSupplyRequest = request.type === 'Supply' || request.type === 'Supply Request' || request.type?.toLowerCase().includes('supply');
-    const canEditItems = auth?.user?.role === 'superadmin' || 
-        (request?.status === 'pending' && 
-        (request?.type === 'Supply Request' || request?.type === 'HR Expense' || request?.type === 'Operating Expense'));
+    const canEditItems = auth?.user?.role === 'superadmin';
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -80,7 +78,7 @@ export default function RequestDetailsModal({ isOpen, onClose, request, onEditIt
                                         <div className="mt-4">
                                             <div className="flex justify-between items-center mb-4">
                                                 <h3 className="text-lg font-medium text-gray-900">Items</h3>
-                                                {canEditItems && (
+                                                {auth?.user?.role === 'superadmin' && (
                                                     <button
                                                         onClick={onEditItems}
                                                         className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
@@ -258,8 +256,7 @@ export default function RequestDetailsModal({ isOpen, onClose, request, onEditIt
                                         <div>
                                             <div className="flex justify-between items-center mb-2">
                                                 <p className="text-sm text-gray-500">Breakdown of Expense</p>
-                                                {(auth?.user?.role === 'superadmin' || request?.status === 'pending') && (
-
+                                                {auth?.user?.role === 'superadmin' && (
                                                     <button
                                                         onClick={onEditItems}
                                                         className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
@@ -304,7 +301,7 @@ export default function RequestDetailsModal({ isOpen, onClose, request, onEditIt
                                             <div className="flex justify-between items-center mb-2">
                                                 <p className="text-sm text-gray-500">Breakdown of Expenses</p>
                                                 
-                                                {(auth?.user?.role === 'superadmin' || request?.status === 'pending') && (
+                                                {auth?.user?.role === 'superadmin' && (
                                                     <button
                                                         onClick={() => onEditItems(request)}
                                                         className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"

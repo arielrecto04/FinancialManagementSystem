@@ -15,12 +15,13 @@ use App\Http\Controllers\PettyCashRequestController;
 use App\Http\Controllers\AdminBudgetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\SSOController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 
-/*  
+/*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
@@ -42,12 +43,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // User management routes (admin only)
     Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->group(function () {
         Route::resource('users', UserController::class);
-        
+
         // Admin budget routes
         Route::post('/admin-budgets', [AdminBudgetController::class, 'store'])->name('admin-budgets.store');
         Route::patch('/admin-budgets/{adminBudget}', [AdminBudgetController::class, 'update'])->name('admin-budgets.update');
         Route::delete('/admin-budgets/{adminBudget}', [AdminBudgetController::class, 'destroy'])->name('admin-budgets.destroy');
-        
+
         // Add route to fetch budgets
         Route::get('/admin-budgets', [AdminBudgetController::class, 'index'])->name('admin-budgets.index');
     });
@@ -65,7 +66,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reports/export-excel', [ReportsController::class, 'exportExcel'])->name('reports.export-excel');
     Route::get('/reports/export-pdf', [ReportsController::class, 'exportPDF'])->name('reports.export-pdf');
     Route::post('/reports/{id}/update-status', [ReportsController::class, 'updateStatus'])->name('reports.update-status');
-    
+
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -80,7 +81,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Supply and Reimbursement routes
     Route::post('/request/supply', [SupplyRequestController::class, 'store'])->name('request.supply.store');
     Route::post('/request/reimbursement', [ReimbursementRequestController::class, 'store'])->name('request.reimbursement.store');
-    
+
     // HR Expenses routes
     Route::post('/request/hr-expenses', [HrExpenseController::class, 'store'])->name('request.hrExpenses.store');
     Route::middleware(['can:viewAny,App\Models\HrExpense'])->group(function () {
@@ -90,7 +91,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/hr-expenses/{hrExpense}', [HrExpenseController::class, 'destroy'])->name('hr-expenses.destroy');
     });
     Route::put('/hr-expenses/{requestNumber}/items', [HrExpenseController::class, 'updateItems'])->name('hr-expenses.update-items');
-    
+
     // Operating Expenses routes
     Route::post('/request/operating-expenses', [OperatingExpenseController::class, 'store'])->name('request.operatingExpenses.store');
     Route::middleware(['can:viewAny,App\Models\OperatingExpense'])->group(function () {
@@ -101,7 +102,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
     Route::put('/operating-expenses/{requestNumber}/items', [OperatingExpenseController::class, 'updateItems'])
         ->name('operating-expenses.update-items');
-    
+
     // Liquidation routes
     Route::post('/request/liquidation', [LiquidationController::class, 'store'])->name('request.liquidation.store');
     Route::get('/liquidations', [LiquidationController::class, 'index'])->name('liquidations.index');
@@ -113,7 +114,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Petty Cash routes
     Route::post('/petty-cash', [PettyCashController::class, 'store'])->name('petty-cash.store');
-    
+
     // Petty Cash Approvals (superadmin only)
     Route::middleware(['auth'])->group(function () {
         Route::get('/petty-cash-requests/approvals', [PettyCashRequestController::class, 'approvals'])
@@ -133,6 +134,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('supply-requests.update-items');
 });
 
+// SSO Callback route
+Route::prefix('sso')->group(function () {
+    Route::post('/authenticate', [SSOController::class, 'authenticate'])->name('sso.authenticate');
+    Route::get('/verify', [SSOController::class, 'verify'])->name('sso.verify');
+    Route::post('/logout', [SSOController::class, 'logout'])->name('sso.logout');
+});
+
+
 Route::middleware(['auth'])->group(function () {
     // Statistics routes
     Route::get('/statistics', [StatisticsController::class, 'index'])->name('statistics.index');
@@ -143,5 +152,38 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/export-excel', [ReportsController::class, 'exportExcel'])->name('reports.export-excel');
     Route::get('/reports/export-pdf', [ReportsController::class, 'exportPDF'])->name('reports.export-pdf');
 });
+
+// Test route for email sending - accessible only in local environment
+if (app()->environment('local')) {
+    Route::get('/test-email', function () {
+        try {
+            $admin = \App\Models\User::where('role', 'admin')->orWhere('role', 'superadmin')->first();
+
+            if (!$admin) {
+                return 'No admin user found to send test email.';
+            }
+
+            \Illuminate\Support\Facades\Mail::send('emails.request-notification', [
+                'adminName' => $admin->name,
+                'requestData' => [
+                    'department' => 'Test Department',
+                    'purpose' => 'Testing email functionality',
+                    'date_needed' => now()->format('Y-m-d'),
+                    'total_amount' => 1000,
+                ],
+                'requestType' => 'Test',
+                'requesterName' => 'System Test',
+                'requestNumber' => 'TEST-' . rand(1000, 9999)
+            ], function ($message) use ($admin) {
+                $message->to($admin->email)
+                    ->subject('Test Email from Financial Management System');
+            });
+
+            return 'Test email sent to ' . $admin->email . '. Please check your email or Mailtrap inbox.';
+        } catch (\Exception $e) {
+            return 'Error sending test email: ' . $e->getMessage();
+        }
+    });
+}
 
 require __DIR__ . '/auth.php';
