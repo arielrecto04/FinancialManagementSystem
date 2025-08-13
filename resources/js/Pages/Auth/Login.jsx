@@ -13,20 +13,23 @@ export default function Login({ status }) {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+        <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100">
             <Head title="Log in" />
 
+
+            <h1>Test</h1>
+
             <div className="w-full max-w-md">
-                <div className="bg-white p-8 rounded-3xl shadow-md">
+                <div className="p-8 bg-white rounded-3xl shadow-md">
                     <div className="flex justify-center mb-6">
                         <img
                             src="/images/innovatologo.png"
                             alt="Innovato Logo"
-                            className="h-24 w-auto"
+                            className="w-auto h-24"
                         />
                     </div>
 
-                    <div className="text-center mb-8">
+                    <div className="mb-8 text-center">
                         <h2 className="text-xl font-semibold text-gray-700">
                             IITS Financial Management System
                         </h2>
@@ -44,11 +47,11 @@ export default function Login({ status }) {
                     </div>
 
                     <div className="relative mb-6">
-                        <div className="absolute inset-0 flex items-center">
+                        <div className="flex absolute inset-0 items-center">
                             <div className="w-full border-t border-gray-300"></div>
                         </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-white text-gray-500">
+                        <div className="flex relative justify-center text-sm">
+                            <span className="px-2 text-gray-500 bg-white">
                                 Or continue with
                             </span>
                         </div>
@@ -59,14 +62,14 @@ export default function Login({ status }) {
                             <input
                                 type="text"
                                 placeholder="NAME:"
-                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="px-4 py-3 w-full rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={data.email}
                                 onChange={(e) =>
                                     setData("email", e.target.value)
                                 }
                             />
                             {errors.email && (
-                                <div className="text-red-500 text-sm mt-1">
+                                <div className="mt-1 text-sm text-red-500">
                                     {errors.email}
                                 </div>
                             )}
@@ -76,14 +79,14 @@ export default function Login({ status }) {
                             <input
                                 type="password"
                                 placeholder="PASSWORD:"
-                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="px-4 py-3 w-full rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={data.password}
                                 onChange={(e) =>
                                     setData("password", e.target.value)
                                 }
                             />
                             {errors.password && (
-                                <div className="text-red-500 text-sm mt-1">
+                                <div className="mt-1 text-sm text-red-500">
                                     {errors.password}
                                 </div>
                             )}
