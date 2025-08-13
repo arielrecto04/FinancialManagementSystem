@@ -436,7 +436,6 @@ export default function Dashboard({
         >
             <Head title="Dashboard" />
 
-            <h1>Test</h1>
 
             {/* Add the WavyBackground component */}
             <WavyBackground />
