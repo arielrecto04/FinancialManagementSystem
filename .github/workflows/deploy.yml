@@ -61,7 +61,7 @@ jobs:
           SCRIPT_BEFORE: ls -a
 
 
-          TARGET: "/public_html/fms/"
+          TARGET: ${{ secrets.HOSTINGER_SSH_TARGET_PATH }}
           EXCLUDE: |
             /vendor
             /node_modules
