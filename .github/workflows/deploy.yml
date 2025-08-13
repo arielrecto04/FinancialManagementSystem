@@ -1,6 +1,6 @@
-name: Deploy Laravel Project to Hostinger
+name : Deploy Laravel Project to Hostinger
 
-on:
+on :
   push:
     branches:
       - main
@@ -9,38 +9,67 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to Hostinger
-        uses: appleboy/ssh-action@master
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          # SSH connection details from GitHub Secrets
-          host: ${{ secrets.HOSTINGER_SSH_HOST }}
-          username: ${{ secrets.HOSTINGER_SSH_USER }}
-          port: ${{ secrets.HOSTINGER_SSH_PORT }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          php-version: '8.2'
+          extensions: mbstring, pdo_mysql, xml, curl, zip, bcmath
+          ini-values:
+            display_errors = On
+            error_reporting = E_ALL
 
-          # The script to execute on the remote server
-          # This automates your manual steps
-          script: |
-            # Navigate to your project directory on the server
-            cd /public_html/fms
 
-            # Pull the latest changes from the main branch
-            git pull origin main
+      - name: "nodejs"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-            # Install Composer dependencies
-            composer install --no-interaction --prefer-dist --optimize-autoloader
 
-            # Install NPM dependencies and build assets for production
-            npm install
-            npm run build
+      - name: "npm"
+        run: npm install
 
-            # Run database migrations
-            # Your .env file should already be configured on the server
-            php artisan migrate --force
+      - name: "npm run build"
+        run: npm run build
 
-            # Clear caches and optimize the application
-            php artisan optimize:clear
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+      - name: Install Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+      - name: environment variables
+        run: cp .env.example .env
+
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      - name: Migrate Database
+        run: php artisan migrate --force
+
+      - name: Optimize Application
+        run: php artisan optimize:clear
+
+      - name: Hostinger SSH Deployment
+        uses: easingthemes/ssh-deploy@main
+        with:
+          name: ${{secrets.HOSTINGER_SSH_KEY}}
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+
+
+          SOURCE : "./"
+          TARGET: "/public_html/fms"
+
+          EXCLUDE: |
+            /vendor
+            /node_modules
+            /storage
+            /bootstrap/cache
+            /public/storage
+
+
+
+
+
