@@ -61,7 +61,7 @@ jobs:
           SCRIPT_BEFORE: ls -a
 
 
-          TARGET: "/public_html/fms"
+          TARGET: "/public_html/fms/"
           EXCLUDE: |
             /vendor
             /node_modules
