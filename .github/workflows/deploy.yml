@@ -65,22 +65,10 @@ jobs:
 
           SCRIPT_BEFORE: |
             ls -a
-            echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
-
-            source ~/.bashrc
-
-
-            node -v
-
-
-            npm install
-
-
-            npm run build
 
 
           TARGET: ${{ secrets.HOSTINGER_SSH_TARGET_PATH }}
-          EXCLUDE: "/node_modules, /storage, /bootstrap/cache, /public/storage, /public/build"
+          EXCLUDE: "/node_modules, /storage, /bootstrap/cache, /public/storage"
 
 
 
