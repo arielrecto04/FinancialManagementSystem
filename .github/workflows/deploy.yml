@@ -63,11 +63,25 @@ jobs:
           REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
           REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
 
-          SCRIPT_BEFORE: ls -a
+          SCRIPT_BEFORE: |
+            ls -a
+            echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+
+            source ~/.bashrc
+
+
+            node -v
+
+
+            npm run build
 
 
           TARGET: ${{ secrets.HOSTINGER_SSH_TARGET_PATH }}
-          EXCLUDE: "/node_modules, /storage, /bootstrap/cache, /public/storage"
+          EXCLUDE: "/node_modules, /storage, /bootstrap/cache, /public/storage, /public/build"
+
+
+
+
 
 
 

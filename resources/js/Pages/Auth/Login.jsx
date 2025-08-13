@@ -16,9 +16,6 @@ export default function Login({ status }) {
         <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100">
             <Head title="Log in" />
 
-
-            <h1>Test</h1>
-
             <div className="w-full max-w-md">
                 <div className="p-8 bg-white rounded-3xl shadow-md">
                     <div className="flex justify-center mb-6">
