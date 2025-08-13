@@ -1,5 +1,3 @@
-# .github/workflows/deploy.yml
-
 name: Deploy Laravel Project to Hostinger
 
 on:
@@ -12,17 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to Hostinger
-        # Using the popular appleboy/ssh-action
         uses: appleboy/ssh-action@master
         with:
           # SSH connection details from GitHub Secrets
           host: ${{ secrets.HOSTINGER_SSH_HOST }}
           username: ${{ secrets.HOSTINGER_SSH_USER }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          passphrase: ${{ secrets.HOSTINGER_SSH_PASSPHRASE }} # <-- Add this for your key
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }} # <-- Using your password now
           port: ${{ secrets.HOSTINGER_SSH_PORT }}
 
           # The script to execute on the remote server
+          # This automates your manual steps
           script: |
             # Navigate to your project directory on the server
             cd /public_html/fms
