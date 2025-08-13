@@ -6,12 +6,12 @@ import ReactApexChart from 'react-apexcharts';
 // Add these component definitions before your Dashboard component
 const ExpenseSummaryCard = ({ title, amount, icon }) => {
     return (
-        <div className="p-6 bg-white border border-gray-200/70 rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
-            <div className="flex items-start justify-between">
+        <div className="p-6 bg-white rounded-lg border shadow-sm transition-all duration-200 border-gray-200/70 hover:shadow-md hover:border-gray-300">
+            <div className="flex justify-between items-start">
                 <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
                     {icon}
                 </div>
-                <button className="text-sm text-blue-500 hover:text-blue-700 flex items-center">
+                <button className="flex items-center text-sm text-blue-500 hover:text-blue-700">
                     <span className="mr-1">Update</span>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -21,7 +21,7 @@ const ExpenseSummaryCard = ({ title, amount, icon }) => {
             <h3 className="mt-4 mb-2 text-sm font-medium text-gray-600">{title}</h3>
             <div className="flex items-center">
                 <span className="text-2xl font-semibold">₱{amount}</span>
-                <span className="ml-2 text-sm text-green-500 flex items-center">
+                <span className="flex items-center ml-2 text-sm text-green-500">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                     </svg>
@@ -69,7 +69,7 @@ const HighExpenseItem = ({ type, category, amount, date }) => {
     };
 
     return (
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
+        <div className="flex justify-between items-center p-4 border-b border-gray-100 transition-colors hover:bg-gray-50">
             <div className="flex items-center space-x-3">
                 <div className="p-2 bg-gray-100 rounded-lg">
                     {categoryIcons[type]}
@@ -112,8 +112,8 @@ const UserStatsCard = ({ totalUsers, adminUsers, regularUsers, superadminUsers }
     ];
 
     return (
-        <div className="p-6 bg-white border border-gray-200/70 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
-            <div className="flex items-center justify-between mb-6">
+        <div className="p-6 bg-white rounded-xl border shadow-sm transition-all duration-200 border-gray-200/70 hover:shadow-md hover:border-gray-300">
+            <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center space-x-3">
                     <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
                         <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,17 +124,17 @@ const UserStatsCard = ({ totalUsers, adminUsers, regularUsers, superadminUsers }
                 </div>
                 <Link
                     href={route('users.index')}
-                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                    className="flex items-center text-sm text-blue-600 hover:text-blue-800"
                 >
                     View More
-                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                 </Link>
             </div>
             <div className="grid grid-cols-2 gap-4">
                 {stats.map((stat, index) => (
-                    <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center justify-between hover:border-gray-200 transition-colors">
+                    <div key={index} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100 transition-colors hover:border-gray-200">
                         <div className="flex items-center space-x-3">
                             <div className={`p-2 bg-${stat.color}-100 rounded-lg ring-1 ring-${stat.color}-100/50`}>
                                 {stat.icon}
@@ -176,8 +176,8 @@ const RequestStatsCard = ({ statistics }) => {
     ];
 
     return (
-        <div className="p-6 bg-white border border-gray-200/70 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
-            <div className="flex items-center justify-between mb-6">
+        <div className="p-6 bg-white rounded-xl border shadow-sm transition-all duration-200 border-gray-200/70 hover:shadow-md hover:border-gray-300">
+            <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center space-x-3">
                     <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
                         <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,17 +188,17 @@ const RequestStatsCard = ({ statistics }) => {
                 </div>
                 <Link
                     href={route('reports.index')}
-                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                    className="flex items-center text-sm text-blue-600 hover:text-blue-800"
                 >
                     View More
-                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                 </Link>
             </div>
             <div className="grid grid-cols-2 gap-4">
                 {stats.map((stat, index) => (
-                    <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center justify-between hover:border-gray-200 transition-colors">
+                    <div key={index} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100 transition-colors hover:border-gray-200">
                         <div className="flex items-center space-x-3">
                             <div className={`p-2 bg-${stat.color}-100 rounded-lg ring-1 ring-${stat.color}-100/50`}>
                                 {stat.icon}
@@ -217,8 +217,8 @@ const RequestStatsCard = ({ statistics }) => {
 
 const ExpenseBreakdownCard = ({ expenses }) => {
     return (
-        <div className="p-6 bg-white border border-gray-200/70 rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
-            <div className="flex items-start justify-between">
+        <div className="p-6 bg-white rounded-lg border shadow-sm transition-all duration-200 border-gray-200/70 hover:shadow-md hover:border-gray-300">
+            <div className="flex justify-between items-start">
                 <div className="p-3 bg-yellow-100 rounded-lg ring-1 ring-yellow-100/50">
                     <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
@@ -228,15 +228,15 @@ const ExpenseBreakdownCard = ({ expenses }) => {
             </div>
             <h3 className="mt-4 mb-4 text-sm font-medium text-gray-600">Expense Breakdown</h3>
             <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 transition-colors hover:border-gray-200">
                     <span className="text-sm text-gray-500">HR Expenses</span>
                     <span className="text-lg font-semibold">₱{expenses?.hr?.toLocaleString() ?? 0}</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 transition-colors hover:border-gray-200">
                     <span className="text-sm text-gray-500">Operating Expenses</span>
                     <span className="text-lg font-semibold">₱{expenses?.operating?.toLocaleString() ?? 0}</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 transition-colors hover:border-gray-200">
                     <span className="text-sm text-gray-500">Supply Requests</span>
                     <span className="text-lg font-semibold">₱{expenses?.supply?.toLocaleString() ?? 0}</span>
                 </div>
@@ -247,17 +247,17 @@ const ExpenseBreakdownCard = ({ expenses }) => {
 
 // New Background Component
 const WavyBackground = () => (
-    <div className="absolute inset-0 overflow-hidden -z-10">
+    <div className="overflow-hidden absolute inset-0 -z-10">
         {/* Orange Wave */}
         <div className="absolute top-0 -left-4 w-[120%] h-[500px] opacity-10">
             <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
-                <path 
-                    d="M 0 200 C 300 100 400 400 1000 300 L 1000 0 L 0 0 Z" 
+                <path
+                    d="M 0 200 C 300 100 400 400 1000 300 L 1000 0 L 0 0 Z"
                     fill="#fb923c"
                 >
-                    <animate 
-                        attributeName="d" 
-                        dur="10s" 
+                    <animate
+                        attributeName="d"
+                        dur="10s"
                         repeatCount="indefinite"
                         values="M 0 200 C 300 100 400 400 1000 300 L 1000 0 L 0 0 Z;
                                 M 0 300 C 400 200 500 400 1000 200 L 1000 0 L 0 0 Z;
@@ -269,13 +269,13 @@ const WavyBackground = () => (
         {/* Grey Wave */}
         <div className="absolute top-40 -left-4 w-[120%] h-[500px] opacity-5">
             <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
-                <path 
-                    d="M 0 250 C 400 150 500 450 1000 350 L 1000 0 L 0 0 Z" 
+                <path
+                    d="M 0 250 C 400 150 500 450 1000 350 L 1000 0 L 0 0 Z"
                     fill="#4b5563"
                 >
-                    <animate 
-                        attributeName="d" 
-                        dur="15s" 
+                    <animate
+                        attributeName="d"
+                        dur="15s"
                         repeatCount="indefinite"
                         values="M 0 250 C 400 150 500 450 1000 350 L 1000 0 L 0 0 Z;
                                 M 0 350 C 500 250 600 450 1000 250 L 1000 0 L 0 0 Z;
@@ -288,20 +288,20 @@ const WavyBackground = () => (
     );
 
 const RequestFormCard = ({ title, description, icon, route }) => (
-    <div className="p-6 bg-white border border-gray-200/70 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
+    <div className="p-6 bg-white rounded-xl border shadow-sm transition-all duration-200 border-gray-200/70 hover:shadow-md hover:border-gray-300">
         <div className="flex items-start space-x-4">
             <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
                 {icon}
             </div>
             <div className="flex-1">
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">{title}</h4>
-                <p className="text-sm text-gray-600 mb-4">{description}</p>
+                <h4 className="mb-2 text-lg font-semibold text-gray-800">{title}</h4>
+                <p className="mb-4 text-sm text-gray-600">{description}</p>
                 <Link
                     href={route}
                     className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
                 >
                     Create Request
-                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                 </Link>
@@ -310,16 +310,16 @@ const RequestFormCard = ({ title, description, icon, route }) => (
     </div>
 );
 
-export default function Dashboard({ 
-    auth, 
-    userStats = {}, 
+export default function Dashboard({
+    auth,
+    userStats = {},
     requestStats = {},
     monthlyExpenses = [],
     highestExpenses = [],
     statistics
 }) {
     const { user } = auth;
-    
+
     // Debug props
     console.log('Dashboard Props:', {
         auth,
@@ -385,6 +385,8 @@ export default function Dashboard({
         }
     ];
 
+
+
     const summaryCardIcons = {
         daily: (
             <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -430,7 +432,7 @@ export default function Dashboard({
     return (
         <AuthenticatedLayout
             user={user}
-           
+
         >
             <Head title="Dashboard" />
 
@@ -453,7 +455,7 @@ export default function Dashboard({
                                         superadminUsers={userStats.superadmin_users}
                                     />
                                 </div>
-                                
+
                                 {/* Request Stats Card */}
                                 <div className="lg:col-span-1">
                                     <RequestStatsCard statistics={stats} />
@@ -463,8 +465,8 @@ export default function Dashboard({
                             {/* Charts and Logs Section */}
                             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                                 {/* Bar Chart */}
-                                <div className="col-span-2 p-6 bg-white border border-gray-200/70 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
-                                    <div className="flex items-center justify-between mb-6">
+                                <div className="col-span-2 p-6 bg-white rounded-xl border shadow-sm transition-all duration-200 border-gray-200/70 hover:shadow-md hover:border-gray-300">
+                                    <div className="flex justify-between items-center mb-6">
                                         <div className="flex items-center space-x-3">
                                             <div className="p-3 bg-indigo-100 rounded-lg ring-1 ring-indigo-100/50">
                                                 <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -474,12 +476,12 @@ export default function Dashboard({
                                             <h3 className="text-lg font-semibold text-gray-800">Monthly Expenses</h3>
                                         </div>
                                         <div className="flex space-x-2">
-                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                                            <button className="p-2 text-gray-500 rounded-lg transition-colors hover:text-gray-700 hover:bg-gray-100">
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                                                 </svg>
                                             </button>
-                                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                                            <button className="p-2 text-gray-500 rounded-lg transition-colors hover:text-gray-700 hover:bg-gray-100">
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                                 </svg>
@@ -497,8 +499,8 @@ export default function Dashboard({
                                 </div>
 
                                 {/* Highest Expense Log */}
-                                <div className="p-6 bg-white border border-gray-200/70 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200">
-                                    <div className="flex items-center justify-between mb-6">
+                                <div className="p-6 bg-white rounded-xl border shadow-sm transition-all duration-200 border-gray-200/70 hover:shadow-md hover:border-gray-300">
+                                    <div className="flex justify-between items-center mb-6">
                                         <div className="flex items-center space-x-3">
                                             <div className="p-3 bg-rose-100 rounded-lg ring-1 ring-rose-100/50">
                                                 <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -513,9 +515,9 @@ export default function Dashboard({
                                             {highestExpenses.map((expense, index) => (
                                                 <div
                                                     key={`${expense.type}-${expense.id}`}
-                                                    className="p-4 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
+                                                    className="p-4 bg-gray-50 rounded-lg border border-gray-100 transition-colors hover:border-gray-200"
                                                 >
-                                                    <div className="flex items-start justify-between">
+                                                    <div className="flex justify-between items-start">
                                                         <div className="flex items-center space-x-3">
                                                             <div className={`p-2 ${
                                                                 expense.type === 'HR Expense' ? 'bg-purple-100 ring-purple-100/50' :
@@ -549,9 +551,9 @@ export default function Dashboard({
                     ) : (
                         // User view - Enhanced version
                         <div className="py-12">
-                            <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                            <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                                 {/* Welcome Section */}
-                                <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-200/70 p-6">
+                                <div className="p-6 mb-8 bg-white rounded-xl border shadow-sm border-gray-200/70">
                                     <div className="flex items-center space-x-4">
                                         <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
                                             <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -560,17 +562,17 @@ export default function Dashboard({
                                         </div>
                                         <div>
                                             <h1 className="text-2xl font-semibold text-gray-800">Welcome, {auth.user.name}</h1>
-                                            <p className="text-gray-600 mt-1">Manage your requests and track their status</p>
+                                            <p className="mt-1 text-gray-600">Manage your requests and track their status</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Request Forms Section */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                                     {/* Supply Request Card */}
-                                    <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-sm border border-gray-200/70 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
+                                    <div className="overflow-hidden bg-gradient-to-br from-blue-50 to-white rounded-xl border shadow-sm transition-all duration-200 border-gray-200/70 hover:shadow-md hover:border-gray-300">
                                         <div className="p-6">
-                                            <div className="flex items-start justify-between">
+                                            <div className="flex justify-between items-start">
                                                 <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
                                                     <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -583,7 +585,7 @@ export default function Dashboard({
                                             <div className="mt-4">
                                                 <Link
                                                     href={route('request.form', { type: 'supply' })}
-                                                    className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                                                    className="inline-flex justify-center items-center px-4 py-2 w-full text-sm font-medium text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700"
                                                 >
                                                     Create Supply Request
                                                 </Link>
@@ -592,9 +594,9 @@ export default function Dashboard({
                                     </div>
 
                                     {/* Reimbursement Request Card */}
-                                    <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl shadow-sm border border-gray-200/70 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
+                                    <div className="overflow-hidden bg-gradient-to-br from-emerald-50 to-white rounded-xl border shadow-sm transition-all duration-200 border-gray-200/70 hover:shadow-md hover:border-gray-300">
                                         <div className="p-6">
-                                            <div className="flex items-start justify-between">
+                                            <div className="flex justify-between items-start">
                                                 <div className="p-3 bg-emerald-100 rounded-lg ring-1 ring-emerald-100/50">
                                                     <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -606,7 +608,7 @@ export default function Dashboard({
                                             <div className="mt-4">
                                                 <Link
                                                     href={route('request.form', { type: 'reimbursement' })}
-                                                    className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+                                                    className="inline-flex justify-center items-center px-4 py-2 w-full text-sm font-medium text-white bg-emerald-600 rounded-lg transition-colors hover:bg-emerald-700"
                                                 >
                                                     Create Reimbursement Request
                                                 </Link>
@@ -615,9 +617,9 @@ export default function Dashboard({
                                     </div>
 
                                     {/* Liquidation Request Card */}
-                                    <div className="bg-gradient-to-br from-violet-50 to-white rounded-xl shadow-sm border border-gray-200/70 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
+                                    <div className="overflow-hidden bg-gradient-to-br from-violet-50 to-white rounded-xl border shadow-sm transition-all duration-200 border-gray-200/70 hover:shadow-md hover:border-gray-300">
                                         <div className="p-6">
-                                            <div className="flex items-start justify-between">
+                                            <div className="flex justify-between items-start">
                                                 <div className="p-3 bg-violet-100 rounded-lg ring-1 ring-violet-100/50">
                                                     <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -629,7 +631,7 @@ export default function Dashboard({
                                             <div className="mt-4">
                                                 <Link
                                                     href={route('request.form', { type: 'liquidation' })}
-                                                    className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors"
+                                                    className="inline-flex justify-center items-center px-4 py-2 w-full text-sm font-medium text-white bg-violet-600 rounded-lg transition-colors hover:bg-violet-700"
                                                 >
                                                     Create Liquidation Request
                                                 </Link>
@@ -641,9 +643,9 @@ export default function Dashboard({
                                 {/* HR Expense Request Section - Only shown for HR role */}
                                 {auth.user.role === 'hr' && (
                                     <div className="mt-6">
-                                        <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl shadow-sm border border-gray-200/70 hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden">
+                                        <div className="overflow-hidden bg-gradient-to-br from-purple-50 to-white rounded-xl border shadow-sm transition-all duration-200 border-gray-200/70 hover:shadow-md hover:border-gray-300">
                                             <div className="p-6">
-                                                <div className="flex items-start justify-between">
+                                                <div className="flex justify-between items-start">
                                                     <div className="p-3 bg-purple-100 rounded-lg ring-1 ring-purple-100/50">
                                                         <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -655,7 +657,7 @@ export default function Dashboard({
                                                 <div className="mt-4">
                                                     <Link
                                                         href={route('request.form', { type: 'hrExpenses' })}
-                                                        className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+                                                        className="inline-flex justify-center items-center px-4 py-2 w-full text-sm font-medium text-white bg-purple-600 rounded-lg transition-colors hover:bg-purple-700"
                                                     >
                                                         Create HR Expense Request
                                                     </Link>
@@ -666,8 +668,8 @@ export default function Dashboard({
                                 )}
 
                                 {/* Help & Information Section */}
-                                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200/70 p-6">
+                                <div className="grid grid-cols-1 gap-6 mt-8 md:grid-cols-2">
+                                    <div className="p-6 bg-white rounded-xl border shadow-sm border-gray-200/70">
                                         <div className="flex items-start space-x-4">
                                             <div className="p-3 bg-amber-100 rounded-lg ring-1 ring-amber-100/50">
                                                 <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -683,7 +685,7 @@ export default function Dashboard({
                                         </div>
                                     </div>
 
-                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200/70 p-6">
+                                    <div className="p-6 bg-white rounded-xl border shadow-sm border-gray-200/70">
                                         <div className="flex items-start space-x-4">
                                             <div className="p-3 bg-rose-100 rounded-lg ring-1 ring-rose-100/50">
                                                 <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
