@@ -441,6 +441,8 @@ export default function Dashboard({
             <WavyBackground />
 
             <div className="py-12">
+
+                <H1>TEST</H1>
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     {(user.role === 'admin' || user.role === 'superadmin') ? (
                         // Admin view
