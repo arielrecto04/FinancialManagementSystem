@@ -40,7 +40,9 @@ jobs:
         run: cp .env.example .env
 
       - name: Add SSO Client
-        run : echo "VITE_SSO_CLIENT_ID=${{ secrets.SSO_CLIENT_ID }} VITE_SSO_REDIRECT_URI=https://fms.iits.website/sso/callback" >> .env
+        run: |
+          echo "VITE_SSO_CLIENT_ID=${{ secrets.SSO_CLIENT_ID }}" >> .env
+          echo "VITE_SSO_REDIRECT_URI=https://fms.iits.website/sso/callback" >> .env
 
 
       - name: Generate Application Key
