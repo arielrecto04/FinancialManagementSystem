@@ -31,9 +31,6 @@ jobs:
       - name: "npm"
         run: npm install
 
-      - name: "npm run build"
-        run: npm run build
-
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
       - name: environment variables
@@ -43,6 +40,10 @@ jobs:
         run: |
           echo "VITE_SSO_CLIENT_ID=${{ secrets.SSO_CLIENT_ID }}" >> .env
           echo "VITE_SSO_REDIRECT_URI=https://fms.iits.website/sso/callback" >> .env
+
+
+      - name: "npm run build"
+        run: npm run build
 
 
       - name: Generate Application Key
