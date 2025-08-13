@@ -49,16 +49,17 @@ jobs:
       - name: Optimize Application
         run: php artisan optimize:clear
 
-      - name: Hostinger SSH Deployment ${{ secrets.HOSTINGER_SSH_KEY }}
+      - name: Hostinger SSH Deployment
         uses: easingthemes/ssh-deploy@main
         with:
+          SOURCE : "./"
           SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
           REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
 
 
-          SOURCE : "./"
+
           TARGET: "/public_html/fms"
 
           EXCLUDE: |
