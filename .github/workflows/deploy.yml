@@ -58,10 +58,10 @@ jobs:
           REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
           REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
 
+          SCRIPT_BEFORE: ls -a
 
 
           TARGET: "/public_html/fms"
-
           EXCLUDE: |
             /vendor
             /node_modules
