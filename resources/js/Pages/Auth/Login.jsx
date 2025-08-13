@@ -39,7 +39,7 @@ export default function Login({ status }) {
                     )}
 
                     {/* Add SSO Button */}
-                    <div className="mb-6">
+                    <div className="flex justify-center mb-6 w-full">
                         <InnovatoSSO />
                     </div>
 
