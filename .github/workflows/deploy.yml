@@ -62,7 +62,7 @@ jobs:
 
 
           TARGET: ${{ secrets.HOSTINGER_SSH_TARGET_PATH }}
-          EXCLUDE: "/node_modules /storage /bootstrap/cache /public/storage"
+          EXCLUDE: "/node_modules, /storage, /bootstrap/cache, /public/storage"
 
 
 
