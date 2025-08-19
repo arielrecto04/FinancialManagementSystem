@@ -66,6 +66,7 @@ jobs:
           EXCLUDE: "/node_modules, /storage, /bootstrap/cache, /public/storage, .env"
 
           SCRIPT_AFTER: |
-            echo domains/iits.website/public_html/fms
+            cd ${{ secrets.HOSTINGER_SSH_TARGET_PATH }}
+            git pull origin main
             php artisan migrate
             php artisan optimize:clear
