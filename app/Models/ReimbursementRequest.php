@@ -19,7 +19,8 @@ class ReimbursementRequest extends Model
         'amount',
         'description',
         'receipt_path',
-        'remarks'
+        'remarks',
+        'expense_items'
     ];
 
     protected $casts = [
@@ -30,4 +31,4 @@ class ReimbursementRequest extends Model
     {
         return $this->belongsTo(User::class);
     }
-} 
+}

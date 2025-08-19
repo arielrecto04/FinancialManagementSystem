@@ -127,6 +127,7 @@ class ReportsController extends Controller
 
         // Paginate the results
         $paginatedRequests = collect($allRequests)->forPage($page, $perPage)->values();
+
         $totalPages = ceil(count($allRequests) / $perPage);
 
         return Inertia::render('Reports', [
@@ -286,6 +287,7 @@ class ReportsController extends Controller
     private function transformReimbursementRequest()
     {
         return function ($request) {
+
             return [
                 'request_number' => $request->request_number,
                 'type' => 'Reimbursement',
@@ -293,10 +295,12 @@ class ReportsController extends Controller
                 'department' => $request->department,
                 'status' => $request->status,
                 'amount' => $request->amount,
+                'expense_date' => $request->expense_date->format('Y-m-d h:i A'),
                 'created_at' => $request->created_at->format('Y-m-d'),
                 'remarks' => $request->remarks,
                 'expense_type' => $request->expense_type,
                 'description' => $request->description,
+                'expense_items' => $request->expense_items,
                 'receipt_path' => $request->receipt_path
             ];
         };

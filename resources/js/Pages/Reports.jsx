@@ -385,6 +385,8 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
 
     const handleRowClick = (request) => {
         // Create a copy of the request to avoid modifying the original
+
+        console.log(request, 'handle row click');
         const requestCopy = { ...request };
 
         console.log('Row clicked - Original request:', request);
