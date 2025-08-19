@@ -72,7 +72,10 @@ jobs:
           EXCLUDE: "/node_modules, /storage, /bootstrap/cache, /public/storage, .env"
 
 
-
+          SCRIPT_AFTER: |
+            cd ${secrets.HOSTINGER_SSH_TARGET_PATH}
+            php artisan migrate
+            php artisan optimize:clear
 
 
 
