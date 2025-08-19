@@ -73,7 +73,8 @@ jobs:
 
 
           SCRIPT_AFTER: |
-            cd ${secrets.HOSTINGER_SSH_TARGET_PATH}
+           echo $PATH
+
             php artisan migrate
             php artisan optimize:clear
 
