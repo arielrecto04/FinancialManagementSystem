@@ -387,11 +387,11 @@ class ReportsController extends Controller
         // Get admin budget
         $adminBudget = AdminBudget::where('user_id', auth()->id())->first();
 
-        if (!$adminBudget) {
-            return response()->json([
-                'error' => 'Admin budget not found'
-            ], 404);
-        }
+        // if (!$adminBudget) {
+        //     return response()->json([
+        //         'error' => 'Admin budget not found'
+        //     ], 404);
+        // }
 
         // Get request amount based on type and convert to float for comparison
         $requestAmount = 0;
@@ -412,7 +412,7 @@ class ReportsController extends Controller
 
             // If not found, try to find by request_number
             if (!$requestModel) {
-                $requestModel = SupplyRequest::where('request_number', 'LIKE', "SR-%".$id)->first();
+                $requestModel = SupplyRequest::where('request_number', 'LIKE', "SR-%" . $id)->first();
             }
 
             $requestAmount = $requestModel ? floatval($requestModel->total_amount) : 0;
@@ -421,7 +421,7 @@ class ReportsController extends Controller
 
             // If not found, try to find by request_number
             if (!$requestModel) {
-                $requestModel = ReimbursementRequest::where('request_number', 'LIKE', "RR-%".$id)->first();
+                $requestModel = ReimbursementRequest::where('request_number', 'LIKE', "RR-%" . $id)->first();
             }
 
             $requestAmount = $requestModel ? floatval($requestModel->amount) : 0;
@@ -430,7 +430,7 @@ class ReportsController extends Controller
 
             // If not found, try to find by request_number
             if (!$requestModel) {
-                $requestModel = HrExpense::where('request_number', 'LIKE', "HR-%".$id)->first();
+                $requestModel = HrExpense::where('request_number', 'LIKE', "HR-%" . $id)->first();
             }
 
             $requestAmount = $requestModel ? floatval($requestModel->total_amount_requested) : 0;
@@ -439,7 +439,7 @@ class ReportsController extends Controller
 
             // If not found, try to find by request_number
             if (!$requestModel) {
-                $requestModel = OperatingExpense::where('request_number', 'LIKE', "OP-%".$id)->first();
+                $requestModel = OperatingExpense::where('request_number', 'LIKE', "OP-%" . $id)->first();
             }
 
             $requestAmount = $requestModel ? floatval($requestModel->total_amount) : 0;
@@ -448,7 +448,7 @@ class ReportsController extends Controller
 
             // If not found, try to find by request_number
             if (!$requestModel) {
-                $requestModel = Liquidation::where('request_number', 'LIKE', "LIQ-%".$id)->first();
+                $requestModel = Liquidation::where('request_number', 'LIKE', "LIQ-%" . $id)->first();
             }
 
             $requestAmount = $requestModel ? floatval($requestModel->total_amount) : 0;
@@ -479,16 +479,16 @@ class ReportsController extends Controller
 
         // Strict budget check for approvals
         if ($request->status === 'approved') {
-            if (floatval($adminBudget->remaining_budget) < $requestAmount) {
-                return back()->with('error', [
-                    'title' => 'Insufficient Budget',
-                    'message' => sprintf(
-                        'Unable to approve this request. Your remaining budget is ₱%s, but this request requires ₱%s.',
-                        $this->formatNumber($adminBudget->remaining_budget),
-                        $this->formatNumber($requestAmount)
-                    )
-                ]);
-            }
+            // if (floatval($adminBudget->remaining_budget) < $requestAmount) {
+            //     return back()->with('error', [
+            //         'title' => 'Insufficient Budget',
+            //         'message' => sprintf(
+            //             'Unable to approve this request. Your remaining budget is ₱%s, but this request requires ₱%s.',
+            //             $this->formatNumber($adminBudget->remaining_budget),
+            //             $this->formatNumber($requestAmount)
+            //         )
+            //     ]);
+            // }
 
             DB::beginTransaction();
             try {
