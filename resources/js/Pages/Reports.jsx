@@ -653,7 +653,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                             <div className="grid grid-cols-2 gap-4">
                         <div>
                                     <p className="text-sm text-gray-600">Requested By</p>
-                                    <p className="font-medium">{selectedRequest?.user?.name || 'N/A'}</p>
+                                    <p className="font-medium">{selectedRequest?.user_name || 'N/A'}</p>
                         </div>
 
                         <div>

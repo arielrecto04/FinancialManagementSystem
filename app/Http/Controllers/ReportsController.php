@@ -498,14 +498,16 @@ class ReportsController extends Controller
                     'remarks' => $request->remarks ?? ''
                 ]);
 
-                // Update admin budget
-                $newRemainingBudget = floatval($adminBudget->remaining_budget) - $requestAmount;
-                $newUsedBudget = floatval($adminBudget->used_budget) + $requestAmount;
+                // Update admin budget only if it exists
+                if ($adminBudget) {
+                    $newRemainingBudget = floatval($adminBudget->remaining_budget) - $requestAmount;
+                    $newUsedBudget = floatval($adminBudget->used_budget) + $requestAmount;
 
-                $adminBudget->update([
-                    'remaining_budget' => $newRemainingBudget,
-                    'used_budget' => $newUsedBudget
-                ]);
+                    $adminBudget->update([
+                        'remaining_budget' => $newRemainingBudget,
+                        'used_budget' => $newUsedBudget
+                    ]);
+                }
 
                 // Get the authenticated user
                 $user = auth()->user();
