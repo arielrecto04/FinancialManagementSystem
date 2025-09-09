@@ -472,9 +472,9 @@ class ReportsController extends Controller
             'type' => $request->type,
             'normalized_type' => $type,
             'model_found' => $requestModel ? get_class($requestModel) : 'None',
-            'remaining_budget' => $adminBudget->remaining_budget,
+            'remaining_budget' => $adminBudget ? $adminBudget->remaining_budget : 0,
             'request_amount' => $requestAmount,
-            'comparison' => floatval($adminBudget->remaining_budget) < $requestAmount
+            'comparison' => $adminBudget ? floatval($adminBudget->remaining_budget) < $requestAmount : false
         ]);
 
         // Strict budget check for approvals
