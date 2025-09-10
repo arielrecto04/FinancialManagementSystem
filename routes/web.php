@@ -1,25 +1,29 @@
 <?php
 
-use App\Http\Controllers\ExpenseController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\StatisticsController;
-use App\Http\Controllers\ReportsController;
-use App\Http\Controllers\SupplyRequestController;
-use App\Http\Controllers\ReimbursementRequestController;
-use App\Http\Controllers\LiquidationController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\HrExpenseController;
-use App\Http\Controllers\OperatingExpenseController;
-use App\Http\Controllers\PettyCashController;
-use App\Http\Controllers\PettyCashRequestController;
-use App\Http\Controllers\AdminBudgetController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\AuditLogController;
-use App\Http\Controllers\SSOController;
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Application;
+use App\Http\Controllers\SSOController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\JournalController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HrExpenseController;
+use App\Http\Controllers\PettyCashController;
+use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\StatisticsController;
+use App\Http\Controllers\AdminBudgetController;
+use App\Http\Controllers\LiquidationController;
+use App\Http\Controllers\JournalEntryController;
+use App\Http\Controllers\SupplyRequestController;
+use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\OperatingExpenseController;
+use App\Http\Controllers\PettyCashRequestController;
+use App\Http\Controllers\ReimbursementRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -132,6 +136,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Add this new route for updating supply request items
     Route::put('/supply-requests/{requestNumber}/items', [SupplyRequestController::class, 'updateItems'])
         ->name('supply-requests.update-items');
+
+
+       Route::prefix('accounting')->as('accounting.')->group(function () {
+        Route::get('/dashboard', [AccountingController::class, 'index'])->name('dashboard');
+        Route::resource('journal', JournalController::class);
+        Route::resource('journal-entry', JournalEntryController::class);
+        Route::resource('chart-of-accounts', ChartOfAccountController::class);
+       });
 });
 
 // SSO Callback route
