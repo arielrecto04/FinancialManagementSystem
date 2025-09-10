@@ -15,13 +15,13 @@ const BudgetSummary = ({ adminBudget }) => {
     if (!adminBudget) return null;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200 p-6">
-                <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
+            <div className="p-6 bg-white rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md border-gray-200/70 hover:border-gray-300">
+                <div className="flex justify-between items-center">
                     <div>
                         <p className="text-sm text-gray-600">Total Budget</p>
-                        <h3 className="text-2xl font-semibold mt-2">
-                            {formatCurrency(adminBudget?.total_budget)}
+                        <h3 className="mt-2 text-2xl font-semibold">
+                            {formatCurrency(adminBudget?.total_budget || 0)}
                         </h3>
                     </div>
                     <div className="p-3 bg-blue-100 rounded-lg ring-1 ring-blue-100/50">
@@ -32,12 +32,12 @@ const BudgetSummary = ({ adminBudget }) => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200 p-6">
-                <div className="flex items-center justify-between">
+            <div className="p-6 bg-white rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md border-gray-200/70 hover:border-gray-300">
+                <div className="flex justify-between items-center">
                     <div>
                         <p className="text-sm text-gray-600">Remaining Budget</p>
-                        <h3 className="text-2xl font-semibold mt-2">
-                            {formatCurrency(adminBudget?.remaining_budget)}
+                        <h3 className="mt-2 text-2xl font-semibold">
+                            {formatCurrency(adminBudget?.remaining_budget || 0)}
                         </h3>
                     </div>
                     <div className="p-3 bg-green-100 rounded-lg ring-1 ring-green-100/50">
@@ -48,12 +48,12 @@ const BudgetSummary = ({ adminBudget }) => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200 p-6">
-                <div className="flex items-center justify-between">
+            <div className="p-6 bg-white rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md border-gray-200/70 hover:border-gray-300">
+                <div className="flex justify-between items-center">
                     <div>
                         <p className="text-sm text-gray-600">Used Budget</p>
-                        <h3 className="text-2xl font-semibold mt-2">
-                            {formatCurrency(adminBudget?.used_budget)}
+                        <h3 className="mt-2 text-2xl font-semibold">
+                            {formatCurrency(adminBudget?.used_budget || 0)}
                         </h3>
                     </div>
                     <div className="p-3 bg-red-100 rounded-lg ring-1 ring-red-100/50">
@@ -92,8 +92,8 @@ const Icons = {
 
 const StatCard = ({ title, value, change, icon, status }) => {
     return (
-        <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200 p-6">
-            <div className="flex items-center justify-between">
+        <div className="p-6 bg-white rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md border-gray-200/70 hover:border-gray-300">
+            <div className="flex justify-between items-center">
                 <div>
                     <p className="text-sm text-gray-600">{title}</p>
                     <div className="flex items-center mt-2">
@@ -130,7 +130,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
                 if (request?.type === 'HR Expense' || request?.type === 'Operating Expense') {
                     const breakdownText = request.breakdown_of_expense || request.breakdown;
                     const breakdownLines = breakdownText?.split('\n').filter(line => line.trim()) || [];
-                    
+
                     const parsedItems = breakdownLines.map(line => {
                         const matches = line.match(/^(.*?):\s*₱(\d+(?:\.\d{2})?)/);
                         if (matches) {
@@ -141,11 +141,11 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
                         }
                         return null;
                     }).filter(item => item !== null);
-                    
+
                     setItems(parsedItems);
                 } else if (request?.items_json) {
-                    const parsedItems = Array.isArray(request.items_json) 
-                        ? request.items_json 
+                    const parsedItems = Array.isArray(request.items_json)
+                        ? request.items_json
                         : JSON.parse(request.items_json);
                     setItems(parsedItems);
                 } else {
@@ -188,7 +188,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         try {
             if (request?.type === 'HR Expense') {
                 const breakdownText = items
@@ -225,19 +225,19 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
     return (
         <Modal show={isOpen} onClose={onClose}>
             <div className="p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">
+                <h2 className="mb-4 text-lg font-medium text-gray-900">
                     {request?.type === 'HR Expense' || request?.type === 'Operating Expense' ? 'Edit Breakdown of Expense' : 'Edit Items'}
                 </h2>
-                
+
                 {error && (
-                    <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
+                    <div className="p-4 mb-4 text-red-600 bg-red-50 rounded-md">
                         {error}
                     </div>
                 )}
 
                 <div className="space-y-4">
                     {Array.isArray(items) && items.map((item, index) => (
-                        <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                        <div key={index} className="flex items-center p-4 space-x-4 bg-gray-50 rounded-lg">
                             {request?.type === 'HR Expense' || request?.type === 'Operating Expense' ? (
                                 <>
                                     <div className="flex-1">
@@ -245,7 +245,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
                                             type="text"
                                             value={item.description || ''}
                                             onChange={(e) => handleUpdateItem(index, 'description', e.target.value)}
-                                            className="w-full px-3 py-2 border rounded-md"
+                                            className="px-3 py-2 w-full rounded-md border"
                                             placeholder="Description"
                                         />
                                     </div>
@@ -254,7 +254,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
                                             type="number"
                                             value={item.amount || ''}
                                             onChange={(e) => handleUpdateItem(index, 'amount', e.target.value)}
-                                            className="w-full px-3 py-2 border rounded-md"
+                                            className="px-3 py-2 w-full rounded-md border"
                                             placeholder="Amount"
                                             step="0.01"
                                         />
@@ -267,7 +267,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
                                             type="text"
                                             value={item.name || ''}
                                             onChange={(e) => handleUpdateItem(index, 'name', e.target.value)}
-                                            className="w-full px-3 py-2 border rounded-md"
+                                            className="px-3 py-2 w-full rounded-md border"
                                             placeholder="Item name"
                                         />
                                     </div>
@@ -276,7 +276,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
                                             type="number"
                                             value={item.quantity || ''}
                                             onChange={(e) => handleUpdateItem(index, 'quantity', e.target.value)}
-                                            className="w-full px-3 py-2 border rounded-md"
+                                            className="px-3 py-2 w-full rounded-md border"
                                             placeholder="Qty"
                                         />
                                     </div>
@@ -285,7 +285,7 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
                                             type="number"
                                             value={item.price || ''}
                                             onChange={(e) => handleUpdateItem(index, 'price', e.target.value)}
-                                            className="w-full px-3 py-2 border rounded-md"
+                                            className="px-3 py-2 w-full rounded-md border"
                                             placeholder="Price"
                                         />
                                     </div>
@@ -305,12 +305,12 @@ const EditItemsModal = ({ isOpen, onClose, request }) => {
 
                 <button
                     onClick={handleAddItem}
-                    className="mt-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                    className="px-4 py-2 mt-4 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
                 >
                     Add Item
                 </button>
 
-                <div className="mt-6 flex justify-between items-center">
+                <div className="flex justify-between items-center mt-6">
                     <div className="text-lg font-semibold">
                         Total: {formatCurrency(calculateTotal())}
                     </div>
@@ -360,15 +360,15 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
         // Get the 'request' parameter from the URL
         const urlParams = new URLSearchParams(window.location.search);
         const requestNumber = urlParams.get('request');
-        
+
         if (requestNumber && requests && requests.length > 0) {
             // Find the request with matching request_number
             const foundRequest = requests.find(req => req.request_number === requestNumber);
-            
+
             // If found, open the modal for this request
             if (foundRequest) {
                 handleRowClick(foundRequest);
-                
+
                 // Optionally, clear the URL parameter to prevent reopening on page refresh
                 const currentUrl = new URL(window.location);
                 currentUrl.searchParams.delete('request');
@@ -385,11 +385,13 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
 
     const handleRowClick = (request) => {
         // Create a copy of the request to avoid modifying the original
+
+        console.log(request, 'handle row click');
         const requestCopy = { ...request };
-        
+
         console.log('Row clicked - Original request:', request);
         console.log('Row clicked - Request ID:', request.id);
-        
+
         // Parse items_json if it exists and is a string
         if (requestCopy.items_json && typeof requestCopy.items_json === 'string') {
             try {
@@ -400,7 +402,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                 // Keep the original string if parsing fails
             }
         }
-        
+
         setSelectedRequest(requestCopy);
         setIsModalOpen(true);
     };
@@ -424,7 +426,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
 
     const handlePageChange = (page) => {
         setCurrentPage(page);
-        
+
         router.get(route('reports.index'), {
             startDate: isDateRangeActive ? dateRange.startDate.toISOString().split('T')[0] : null,
             endDate: isDateRangeActive ? dateRange.endDate.toISOString().split('T')[0] : null,
@@ -443,9 +445,9 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
         // Extract the ID from the request object
         let requestId = null;
         let requestType = request.type ? request.type.toLowerCase().replace(/\s+/g, '') : null;
-        
+
         console.log('Request object:', request);
-        
+
         // Try to find the ID based on the request_number format
         if (request.request_number) {
             // For formats like "SR-00000123", "RR-00000456", "LIQ-00000789", etc.
@@ -453,7 +455,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
             if (parts.length === 2) {
                 // Remove leading zeros
                 requestId = parseInt(parts[1].replace(/^0+/, ''), 10);
-                
+
                 // Determine request type from prefix if not already set
                 if (!requestType) {
                     const prefix = parts[0];
@@ -465,29 +467,29 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                 }
             }
         }
-        
+
         // If we still don't have an ID, try other properties
         if (!requestId) {
             if (request.id) {
                 requestId = request.id;
             }
         }
-        
+
         console.log('Extracted ID:', requestId, 'Type:', requestType);
-        
+
         if (!requestId || !requestType) {
             console.error('Could not extract ID or type from request:', request);
             alert('Error: Could not identify request ID or type. Please try again.');
             return;
         }
-        
+
         // Store the extracted ID and type in the request object
         const requestWithExtractedData = {
             ...request,
             extracted_id: requestId,
             extracted_type: requestType
         };
-        
+
         setSelectedRequest(requestWithExtractedData);
         setActionType(action);
         setIsActionModalOpen(true);
@@ -503,15 +505,15 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
             setIsActionModalOpen(false);
             return;
         }
-        
+
         // Close the action modal first
         setIsActionModalOpen(false);
 
         // Show confirmation dialog
         Swal.fire({
             title: actionType === 'approved' ? 'Approve Request?' : 'Reject Request?',
-            text: actionType === 'approved' 
-                ? 'Are you sure you want to approve this request?' 
+            text: actionType === 'approved'
+                ? 'Are you sure you want to approve this request?'
                 : 'Are you sure you want to reject this request?',
             icon: 'warning',
             showCancelButton: true,
@@ -570,8 +572,8 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
 
                         // Update budget if action is 'approved'
                         if (actionType === 'approved' && adminBudget) {
-                            const requestAmount = selectedRequest.type === 'Reimbursement' 
-                                ? parseFloat(selectedRequest.amount || 0) 
+                            const requestAmount = selectedRequest.type === 'Reimbursement'
+                                ? parseFloat(selectedRequest.amount || 0)
                                 : parseFloat(selectedRequest.total_amount || 0);
 
                             setAdminBudget(prev => ({
@@ -585,8 +587,8 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                         Swal.fire({
                             icon: 'success',
                             title: 'Success!',
-                            text: actionType === 'approved' 
-                                ? 'Request has been approved.' 
+                            text: actionType === 'approved'
+                                ? 'Request has been approved.'
                                 : 'Request has been rejected.',
                             confirmButtonColor: '#10B981'
                         });
@@ -637,14 +639,14 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
         return (
             <Modal show={isActionModalOpen} onClose={() => setIsActionModalOpen(false)}>
                 <div className="p-6">
-                    <h2 className="text-xl font-semibold text-center text-green-600 mb-6">
+                    <h2 className="mb-6 text-xl font-semibold text-center text-green-600">
                         {actionType === 'approved' ? 'Approve Request' : 'Reject Request'}
                     </h2>
 
                     <div className="space-y-4">
                 {/* Request Details */}
                         <div className="space-y-3">
-                            <div className="text-center text-gray-600 mb-4">
+                            <div className="mb-4 text-center text-gray-600">
                                 Request Number: {selectedRequest?.request_number || 'N/A'}
                         </div>
 
@@ -653,7 +655,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                     <p className="text-sm text-gray-600">Requested By</p>
                                     <p className="font-medium">{selectedRequest?.user?.name || 'N/A'}</p>
                         </div>
-                                
+
                         <div>
                                     <p className="text-sm text-gray-600">Department</p>
                                     <p className="font-medium">{selectedRequest?.department || 'N/A'}</p>
@@ -670,7 +672,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                 </div>
                             </div>
 
-                            <div className="border-t pt-4 mt-4">
+                            <div className="pt-4 mt-4 border-t">
                                 <div className="grid grid-cols-2 gap-4">
                                 <div>
                                         <p className="text-sm text-gray-600">Total Amount</p>
@@ -681,7 +683,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                     </div>
                 </div>
 
-                            <div className="grid grid-cols-2 gap-4 border-t pt-4 mt-4">
+                            <div className="grid grid-cols-2 gap-4 pt-4 mt-4 border-t">
                             <div>
                                 <p className="text-sm text-gray-600">Available Budget</p>
                                     <p className="font-medium">
@@ -699,7 +701,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                     </div>
 
                 {/* Action Buttons */}
-                    <div className="flex justify-end gap-3 mt-6">
+                    <div className="flex gap-3 justify-end mt-6">
                     <button
                             onClick={() => setIsActionModalOpen(false)}
                             className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
@@ -709,8 +711,8 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                     <button
                             onClick={submitAction}
                             className={`px-4 py-2 text-white rounded-md ${
-                            actionType === 'approved' 
-                                    ? 'bg-green-600 hover:bg-green-700' 
+                            actionType === 'approved'
+                                    ? 'bg-green-600 hover:bg-green-700'
                                 : 'bg-red-600 hover:bg-red-700'
                         }`}
                     >
@@ -822,7 +824,7 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
     // Add this function to handle request updates
     const handleRequestUpdate = (updatedRequest) => {
         // Update the requests list with the updated request
-        const updatedRequests = requests.map(req => 
+        const updatedRequests = requests.map(req =>
             req.id === updatedRequest.id ? updatedRequest : req
         );
         // You'll need to implement a way to update the parent state here
@@ -834,11 +836,11 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
             <Head title="Reports" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     {auth.user.role === 'admin' && <BudgetSummary adminBudget={adminBudget} />}
 
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
                         <StatCard
                             title="Total Requests"
                             value={localStatistics.totalRequests}
@@ -864,12 +866,12 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                         />
                         </div>
 
-                    <div className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200/70 hover:border-gray-300 transition-all duration-200">
+                    <div className="bg-white rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md border-gray-200/70 hover:border-gray-300">
                         <div className="p-6">
                             {/* Header Actions */}
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-xl font-semibold flex items-center">
-                                    <div className="p-3 bg-indigo-100 rounded-lg ring-1 ring-indigo-100/50 mr-3">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="flex items-center text-xl font-semibold">
+                                    <div className="p-3 mr-3 bg-indigo-100 rounded-lg ring-1 ring-indigo-100/50">
                                         <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                     </svg>
@@ -877,29 +879,29 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                     Reports & Analytics
                                 </h2>
                                 <div className="flex space-x-2">
-                                    <button 
+                                    <button
                                         onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-                                        className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all duration-200"
+                                        className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white rounded-lg border border-gray-200 transition-all duration-200 hover:border-gray-300 hover:bg-gray-50"
                                     >
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                                         </svg>
                                         {isFiltersVisible ? 'Hide Filters' : 'Show Filters'}
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={handleExcelExport}
-                                        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all duration-200"
+                                        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg transition-all duration-200 hover:bg-green-700"
                                     >
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                         </svg>
                                         Export Excel
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={handleExportPDF}
-                                        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-all duration-200"
+                                        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg transition-all duration-200 hover:bg-red-700"
                                     >
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                         </svg>
                                         Export PDF
@@ -909,10 +911,10 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
 
                             {/* Filters Section */}
                                     {isFiltersVisible && (
-                                <div className="bg-gray-50/50 rounded-lg border border-gray-100 p-6 mb-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <div className="p-6 mb-6 rounded-lg border border-gray-100 bg-gray-50/50">
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
                                             <div>
-                                                <div className="flex items-center justify-between mb-2">
+                                                <div className="flex justify-between items-center mb-2">
                                                     <label className="block text-sm font-medium text-gray-700">
                                                         Date Range Filter
                                                     </label>
@@ -941,21 +943,20 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                                         });
                                                     }}
                                                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 ${
-                                                        !isDateRangeActive ? 'opacity-50 cursor-not-allowed' : ''
-                                                    }`}
+                                                        !isDateRangeActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                     placeholderText="Select date range"
                                                     disabled={!isDateRangeActive}
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">
                                                     Request Type
                                                 </label>
                                                 <select
                                                     value={selectedRequestType}
                                                     onChange={(e) => setSelectedRequestType(e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                                className="px-3 py-2 w-full bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                                                 >
                                                     {requestTypeOptions.map((option) => (
                                                         <option key={option.value} value={option.value}>
@@ -966,13 +967,13 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">
                                                     Status
                                                 </label>
                                                 <select
                                                     value={selectedStatus}
                                                     onChange={(e) => setSelectedStatus(e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                                className="px-3 py-2 w-full bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                                                 >
                                                     {statusOptions.map((option) => (
                                                         <option key={option.value} value={option.value}>
@@ -983,14 +984,14 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                             </div>
 
                                             <div>
-                                                <label htmlFor="sortOrder" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="sortOrder" className="block mb-1 text-sm font-medium text-gray-700">
                                                     Sort By Date
                                                 </label>
                                                 <select
                                                     id="sortOrder"
                                                     value={sortOrder}
                                                     onChange={(e) => handleSortOrderChange(e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                                className="px-3 py-2 w-full bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                                                 >
                                                     <option value="newest">Newest First</option>
                                                     <option value="oldest">Oldest First</option>
@@ -1001,8 +1002,8 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                             )}
 
                             {/* Request Table */}
-                            <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
-                                <RequestTable 
+                            <div className="overflow-hidden bg-white rounded-lg border border-gray-100">
+                                <RequestTable
                                     requests={requests}
                                     onRowClick={handleRowClick}
                                     actionRenderer={(request) => <ActionButtons request={request} />}
@@ -1011,25 +1012,25 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
 
                             {/* Pagination */}
                             {pagination && pagination.total > 0 && (
-                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-100 mt-4 rounded-lg">
-                                <div className="flex justify-between flex-1 sm:hidden">
-                                        <button 
+                            <div className="flex justify-between items-center px-4 py-3 mt-4 bg-gray-50 rounded-lg border-t border-gray-100">
+                                <div className="flex flex-1 justify-between sm:hidden">
+                                        <button
                                             onClick={() => pagination.current_page > 1 && handlePageChange(pagination.current_page - 1)}
                                             disabled={pagination.current_page <= 1}
                                             className={`relative inline-flex items-center px-4 py-2 text-sm font-medium ${
-                                                pagination.current_page <= 1 
-                                                ? 'text-gray-400 cursor-not-allowed' 
+                                                pagination.current_page <= 1
+                                                ? 'text-gray-400 cursor-not-allowed'
                                                 : 'text-gray-700 hover:bg-gray-50'
                                             } bg-white border border-gray-300 rounded-md`}
                                         >
                                         Previous
                                     </button>
-                                        <button 
+                                        <button
                                             onClick={() => pagination.current_page < pagination.total_pages && handlePageChange(pagination.current_page + 1)}
                                             disabled={pagination.current_page >= pagination.total_pages}
                                             className={`relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium ${
-                                                pagination.current_page >= pagination.total_pages 
-                                                ? 'text-gray-400 cursor-not-allowed' 
+                                                pagination.current_page >= pagination.total_pages
+                                                ? 'text-gray-400 cursor-not-allowed'
                                                 : 'text-gray-700 hover:bg-gray-50'
                                             } bg-white border border-gray-300 rounded-md`}
                                         >
@@ -1050,24 +1051,24 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                                     onClick={() => pagination.current_page > 1 && handlePageChange(pagination.current_page - 1)}
                                                     disabled={pagination.current_page <= 1}
                                                     className={`relative inline-flex items-center px-2 py-2 rounded-l-md border ${
-                                                        pagination.current_page <= 1 
-                                                        ? 'border-gray-300 bg-white text-gray-300 cursor-not-allowed' 
+                                                        pagination.current_page <= 1
+                                                        ? 'border-gray-300 bg-white text-gray-300 cursor-not-allowed'
                                                         : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
                                                     }`}
                                                 >
                                                 <span className="sr-only">Previous</span>
-                                                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                         <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                                                     </svg>
                                             </button>
-                                                
+
                                                 {/* Page numbers */}
                                                 {[...Array(pagination.total_pages)].map((_, i) => {
                                                     const page = i + 1;
                                                     // Show current page, first page, last page, and pages around current page
                                                     if (
-                                                        page === 1 || 
-                                                        page === pagination.total_pages || 
+                                                        page === 1 ||
+                                                        page === pagination.total_pages ||
                                                         (page >= pagination.current_page - 1 && page <= pagination.current_page + 1)
                                                     ) {
                                                         return (
@@ -1084,11 +1085,11 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                             </button>
                                                         );
                                                     } else if (
-                                                        page === pagination.current_page - 2 || 
+                                                        page === pagination.current_page - 2 ||
                                                         page === pagination.current_page + 2
                                                     ) {
                                                         return (
-                                                            <span key={page} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-gray-700">
+                                                            <span key={page} className="inline-flex relative items-center px-4 py-2 text-gray-700 bg-white border border-gray-300">
                                                                 ...
                                                             </span>
                                                         );
@@ -1100,13 +1101,13 @@ export default function Reports({ auth, requests, statistics, filters, paginatio
                                                     onClick={() => pagination.current_page < pagination.total_pages && handlePageChange(pagination.current_page + 1)}
                                                     disabled={pagination.current_page >= pagination.total_pages}
                                                     className={`relative inline-flex items-center px-2 py-2 rounded-r-md border ${
-                                                        pagination.current_page >= pagination.total_pages 
-                                                        ? 'border-gray-300 bg-white text-gray-300 cursor-not-allowed' 
+                                                        pagination.current_page >= pagination.total_pages
+                                                        ? 'border-gray-300 bg-white text-gray-300 cursor-not-allowed'
                                                         : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
                                                     }`}
                                                 >
                                                 <span className="sr-only">Next</span>
-                                                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                         <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                                                     </svg>
                                             </button>

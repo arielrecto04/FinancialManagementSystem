@@ -1,6 +1,6 @@
-name : Deploy Laravel Project to Hostinger
+name: Deploy Laravel Project to Hostinger
 
-on :
+on:
   push:
     branches:
       - main
@@ -15,18 +15,15 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: "8.2"
           extensions: mbstring, pdo_mysql, xml, curl, zip, bcmath
-          ini-values:
-            display_errors = On
+          ini-values: display_errors = On
             error_reporting = E_ALL
-
 
       - name: "nodejs"
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
+          node-version: "20"
 
       - name: "npm"
         run: npm install
@@ -41,10 +38,8 @@ jobs:
           echo "VITE_SSO_CLIENT_ID=${{ secrets.SSO_CLIENT_ID }}" >> .env
           echo "VITE_SSO_REDIRECT_URI=https://fms.iits.website/sso/callback" >> .env
 
-
       - name: "npm run build"
         run: npm run build
-
 
       - name: Generate Application Key
         run: php artisan key:generate
@@ -58,7 +53,7 @@ jobs:
       - name: Hostinger SSH Deployment
         uses: easingthemes/ssh-deploy@main
         with:
-          SOURCE : "."
+          SOURCE: "."
           SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
           REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -67,17 +62,11 @@ jobs:
           SCRIPT_BEFORE: |
             ls -a
 
-
-
-
           TARGET: ${{ secrets.HOSTINGER_SSH_TARGET_PATH }}
           EXCLUDE: "/node_modules, /storage, /bootstrap/cache, /public/storage, .env"
 
-
-
-
-
-
-
-
-
+          SCRIPT_AFTER: |
+            cd ${{ secrets.HOSTINGER_SSH_TARGET_PATH }}
+            git pull origin main
+            php artisan migrate
+            php artisan optimize:clear

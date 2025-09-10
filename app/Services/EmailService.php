@@ -26,15 +26,15 @@ class EmailService
                 'request_number' => $requestNumber,
                 'requester' => $requesterName
             ]);
-            
+
             // Get all admin and superadmin users
             $adminUsers = User::whereIn('role', ['admin', 'superadmin'])->get();
-            
+
             Log::info('Found admin users', [
                 'count' => $adminUsers->count(),
                 'emails' => $adminUsers->pluck('email')->toArray()
             ]);
-            
+
             if ($adminUsers->isEmpty()) {
                 Log::warning('No admin users found to notify about new request');
                 return;
@@ -45,7 +45,7 @@ class EmailService
                     'admin_name' => $admin->name,
                     'admin_email' => $admin->email
                 ]);
-                
+
                 try {
                     // Using the HTML email template with view()
                     Mail::send('emails.request-notification', [
@@ -58,7 +58,7 @@ class EmailService
                         $message->to($admin->email)
                             ->subject("New {$requestType} Request #{$requestNumber}");
                     });
-                    
+
                     Log::info("New {$requestType} request email sent to admin", [
                         'admin_name' => $admin->name,
                         'admin_email' => $admin->email,
@@ -71,7 +71,7 @@ class EmailService
                     ]);
                 }
             }
-            
+
             Log::info('Email notification process completed', [
                 'request_type' => $requestType,
                 'request_number' => $requestNumber
@@ -85,4 +85,4 @@ class EmailService
             ]);
         }
     }
-} 
+}

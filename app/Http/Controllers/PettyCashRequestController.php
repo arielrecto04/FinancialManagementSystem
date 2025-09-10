@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PettyCashRequest;
-use App\Models\AuditLog;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use App\Models\User;
 use Inertia\Inertia;
+use App\Models\AuditLog;
+use App\Models\AdminBudget;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Models\PettyCashRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Notifications\NewRequestNotification;
 
 class PettyCashRequestController extends Controller
 {
@@ -58,6 +61,27 @@ class PettyCashRequestController extends Controller
         }
 
         $pettyCashRequest->save();
+
+        $superAdmin = User::where('role', 'superadmin')->first();
+
+
+        if ($superAdmin) {
+            $superAdmin->notify(new NewRequestNotification(
+               [
+                "department" => $validated['department'],
+                "purpose" => $validated['purpose'],
+                "description" => $validated['description'] ?? null,
+                "date_requested" => $validated['date_requested'],
+                "date_needed" => $validated['date_needed'],
+                "amount" => $validated['amount'],
+                "category" => $validated['category'],
+               ],
+               'Petty Cash',
+               Auth::user()->name,
+               $pettyCashRequest->request_number
+            ));
+        }
+
 
         // Log the petty cash request creation
         AuditLog::create([
@@ -117,11 +141,11 @@ class PettyCashRequestController extends Controller
     public function destroy(PettyCashRequest $pettyCashRequest)
     {
         $this->authorize('delete', $pettyCashRequest);
-        
+
         // Store info for audit log
         $amount = $pettyCashRequest->amount;
         $purpose = $pettyCashRequest->purpose;
-        
+
         $pettyCashRequest->delete();
 
         // Log the deletion
@@ -146,12 +170,13 @@ class PettyCashRequestController extends Controller
         }
 
         $pettyCashRequest = PettyCashRequest::with('user')->findOrFail($id);
-        
+
         $validated = $request->validate([
             'status' => 'required|in:approved,rejected',
             'remarks' => 'required|string',
             'amount' => 'sometimes|numeric'  // Get the amount from the request
         ]);
+
 
         try {
             DB::beginTransaction();
@@ -165,7 +190,9 @@ class PettyCashRequestController extends Controller
             // If request is approved, replenish the user's budget
             if ($validated['status'] === 'approved') {
                 // Get the user's current budget
-                $userBudget = \App\Models\AdminBudget::where('user_id', $pettyCashRequest->user_id)->first();
+                $userBudget = AdminBudget::where('user_id', $pettyCashRequest->user_id)->latest()->first();
+
+
 
                 if ($userBudget) {
                     // Calculate new budget values
@@ -180,6 +207,14 @@ class PettyCashRequestController extends Controller
                         'replenishment_amount' => $amount
                     ]);
                 }
+
+
+                if (!$userBudget) {
+                    AdminBudget::create([
+                        'user_id' => $pettyCashRequest->user_id,
+                        'total_budget' => $pettyCashRequest->amount,
+                    ]);
+                }
             }
 
             // Create audit log entry with financial information
@@ -189,7 +224,7 @@ class PettyCashRequestController extends Controller
                 'user_role' => auth()->user()->role,
                 'type' => 'budget_' . ($validated['status'] === 'approved' ? 'approve' : 'reject'),
                 'action' => 'PettyCashRequest ' . ($validated['status'] === 'approved' ? 'approve' : 'reject'),
-                'description' => ucfirst($validated['status']) . ' petty cash request #' . $pettyCashRequest->request_number . 
+                'description' => ucfirst($validated['status']) . ' petty cash request #' . $pettyCashRequest->request_number .
                     ($validated['status'] === 'approved' ? ' and replenished budget' : ''),
                 'amount' => $request->has('amount') ? $request->amount : $pettyCashRequest->amount,
                 'ip_address' => $request->ip()
@@ -269,11 +304,11 @@ class PettyCashRequestController extends Controller
         if ($request->has('year') && $request->year) {
             $query->whereYear('created_at', $request->year);
         }
-        
+
         if ($request->has('month') && $request->month) {
             $query->whereMonth('created_at', $request->month);
         }
-        
+
         // Apply category filter if provided
         if ($request->has('category') && $request->category && $request->category !== 'all') {
             $query->where('category', $request->category);
@@ -302,16 +337,16 @@ class PettyCashRequestController extends Controller
 
         // Get monthly trend (for selected year or last 6 months if year not specified)
         $monthlyTrend = [];
-        
+
         if ($request->has('year') && $request->year) {
             // If year is specified, show all months of that year
             for ($i = 1; $i <= 12; $i++) {
                 $monthQuery = clone $query;
                 $monthQuery->whereYear('created_at', $request->year)
                           ->whereMonth('created_at', $i);
-                          
+
                 $monthName = date('M', mktime(0, 0, 0, $i, 10));
-                
+
                 $monthlyTrend[] = [
                     'month' => $monthName . ' ' . $request->year,
                     'count' => $monthQuery->count(),
@@ -325,7 +360,7 @@ class PettyCashRequestController extends Controller
                 $monthQuery = clone $query;
                 $monthQuery->whereYear('created_at', $date->year)
                           ->whereMonth('created_at', $date->month);
-                          
+
                 $monthlyTrend[] = [
                     'month' => $date->format('M Y'),
                     'count' => $monthQuery->count(),
@@ -350,7 +385,7 @@ class PettyCashRequestController extends Controller
             ->selectRaw('AVG(DATEDIFF(updated_at, date_requested)) as avg_days')
             ->first()
             ->avg_days ?? 0;
-            
+
         // Get processing time distribution for histogram
         $processingTimeDistribution = [
             'same_day' => 0, // 0 days
@@ -359,15 +394,15 @@ class PettyCashRequestController extends Controller
             '1_2_weeks' => 0, // 6-14 days
             'more_than_2_weeks' => 0 // 15+ days
         ];
-        
+
         $processingTimeData = (clone $query)->whereIn('status', ['approved', 'rejected'])
             ->whereNotNull('updated_at')
             ->selectRaw('DATEDIFF(updated_at, date_requested) as days')
             ->get();
-            
+
         foreach ($processingTimeData as $item) {
             $days = $item->days;
-            
+
             if ($days == 0) {
                 $processingTimeDistribution['same_day']++;
             } elseif ($days <= 2) {
@@ -380,33 +415,33 @@ class PettyCashRequestController extends Controller
                 $processingTimeDistribution['more_than_2_weeks']++;
             }
         }
-        
+
         // Get this week vs last week data
         $now = now();
         $thisWeekStart = $now->copy()->startOfWeek();
         $thisWeekEnd = $now->copy()->endOfWeek();
         $lastWeekStart = $now->copy()->subWeek()->startOfWeek();
         $lastWeekEnd = $now->copy()->subWeek()->endOfWeek();
-        
+
         $weeklyComparison = [
             'thisWeek' => [],
             'lastWeek' => []
         ];
-        
+
         // Get data for each day of the week
         for ($i = 0; $i < 7; $i++) {
             $thisWeekDay = $thisWeekStart->copy()->addDays($i);
             $lastWeekDay = $lastWeekStart->copy()->addDays($i);
-            
+
             $weeklyComparison['thisWeek'][$i] = (clone $query)
                 ->whereDate('created_at', $thisWeekDay->format('Y-m-d'))
                 ->count();
-                
+
             $weeklyComparison['lastWeek'][$i] = (clone $query)
                 ->whereDate('created_at', $lastWeekDay->format('Y-m-d'))
                 ->count();
         }
-        
+
         // Get basic request data for amount histogram
         $requestsData = (clone $query)->select('id', 'amount', 'status', 'created_at')->get();
 
@@ -429,4 +464,4 @@ class PettyCashRequestController extends Controller
             ]
         ];
     }
-} 
+}

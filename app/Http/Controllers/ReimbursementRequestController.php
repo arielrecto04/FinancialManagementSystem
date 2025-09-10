@@ -20,19 +20,19 @@ class ReimbursementRequestController extends Controller
                 'expense_type' => 'required|string',
                 'amount' => 'required|numeric',
                 'description' => 'required|string',
-                'receipt' => 'required|file|mimes:pdf,jpg,jpeg,png',
                 'remarks' => 'nullable|string',
-                'request_number' => 'required|string|unique:reimbursement_requests'
+                'request_number' => 'required|string|unique:reimbursement_requests',
+                'expense_items' => 'required|json',
             ]);
 
-            $reimbursement = new ReimbursementRequest($request->except('receipt'));
+            $reimbursement = new ReimbursementRequest($request->except(['receipt']));
             $reimbursement->user_id = auth()->id();
             $reimbursement->status = 'pending';
-            
+
             if ($request->hasFile('receipt')) {
                 $reimbursement->receipt_path = $request->file('receipt')->store('receipts', 'public');
             }
-            
+
             $reimbursement->save();
 
             // Log the reimbursement request creation
@@ -46,7 +46,7 @@ class ReimbursementRequestController extends Controller
                 'amount' => $validated['amount'],
                 'ip_address' => $request->ip()
             ]);
-            
+
             // Send email notification to admin and superadmin users
             EmailService::sendNewRequestEmail(
                 [
@@ -79,7 +79,7 @@ class ReimbursementRequestController extends Controller
     public function updateStatus(Request $request, ReimbursementRequest $reimbursement)
     {
         $this->authorize('update', $reimbursement);
-        
+
         $validated = $request->validate([
             'status' => 'required|in:approved,rejected',
             'remarks' => 'required|string'
@@ -108,11 +108,11 @@ class ReimbursementRequestController extends Controller
     public function destroy(ReimbursementRequest $reimbursement)
     {
         $this->authorize('delete', $reimbursement);
-        
+
         // Store info for audit log
         $amount = $reimbursement->amount;
         $type = $reimbursement->expense_type;
-        
+
         $reimbursement->delete();
 
         // Log the deletion
@@ -129,4 +129,4 @@ class ReimbursementRequestController extends Controller
 
         return redirect()->back()->with('success', 'Reimbursement request deleted successfully.');
     }
-} 
+}
