@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Models\User;
 use App\Models\SupplyRequest;
@@ -168,6 +169,36 @@ class DashboardController extends Controller
             // Sort by amount and take top 6
             $highestExpenses = $highestExpenses->sortByDesc('amount')->take(6)->values();
 
+
+            $user = Auth::user();
+            $recentRequests = collect();
+
+            if ($user) {
+                // Assuming 'user_id' is the foreign key on your request tables.
+                $supply = SupplyRequest::where('user_id', $user->id)->get()->map(function ($item) {
+                    $item->type = 'Supply Request';
+                    return $item;
+                });
+
+                $reimbursement = ReimbursementRequest::where('user_id', $user->id)->get()->map(function ($item) {
+                    $item->type = 'Reimbursement';
+                    return $item;
+                });
+
+                $liquidation = Liquidation::where('user_id', $user->id)->get()->map(function ($item) {
+                    $item->type = 'Liquidation';
+                    return $item;
+                });
+
+                // Combine, sort by the most recent, and take the top 5
+                $recentRequests = collect($supply)
+                    ->concat($reimbursement)
+                    ->concat($liquidation)
+                    ->sortByDesc('created_at')
+                    ->take(3)
+                    ->values();
+            }
+
             return Inertia::render('Dashboard', [
                 'auth' => [
                     'user' => auth()->user(),
@@ -175,9 +206,9 @@ class DashboardController extends Controller
                 'userStats' => $userStats,
                 'statistics' => $statistics,
                 'monthlyExpenses' => $monthlyExpenses,
-                'highestExpenses' => $highestExpenses
+                'highestExpenses' => $highestExpenses,
+                'recentRequests' => $recentRequests
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error in Dashboard Controller:', [
                 'message' => $e->getMessage(),
@@ -197,5 +228,50 @@ class DashboardController extends Controller
                 'highestExpenses' => []
             ]);
         }
+    }
+
+    public function showAllRequests()
+    {
+
+        $user = Auth::user();
+
+        $supply = SupplyRequest::where('user_id', $user->id)->get()->map(function ($item) {
+            $item->type = 'Supply Request';
+            return $item;
+        });
+
+        $reimbursement = ReimbursementRequest::where('user_id', $user->id)->get()->map(function ($item) {
+            $item->type = 'Reimbursement';
+            return $item;
+        });
+
+        $liquidation = Liquidation::where('user_id', $user->id)->get()->map(function ($item) {
+            $item->type = 'Liquidation';
+            return $item;
+        });
+
+        // Combine and sort all requests by the most recent date
+        $allUserRequests = collect($supply)
+            ->concat($reimbursement)
+            ->concat($liquidation)
+            ->sortByDesc('created_at');
+
+        // Manually paginate the collection
+        $perPage = 15;
+        $currentPage = request()->input('page', 1);
+        $paginatedItems = $allUserRequests->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedRequests = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedItems,
+            $allUserRequests->count(),
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        return Inertia::render('RequestHistory', [
+            'auth' => ['user' => $user],
+            'requests' => $paginatedRequests,
+        ]);
     }
 }

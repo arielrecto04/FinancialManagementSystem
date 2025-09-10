@@ -266,28 +266,6 @@ export default function RequestForm({ auth, errors = {}, type }) {
         additional_comment: "",
     });
 
-    // Sample request status data
-    const [requests] = useState([
-        {
-            id: 28,
-            status: "Approved",
-            date: "2024-03-20",
-            type: "Supply Request",
-        },
-        {
-            id: 29,
-            status: "Pending",
-            date: "2024-03-21",
-            type: "Reimbursement",
-        },
-        {
-            id: 30,
-            status: "Rejected",
-            date: "2024-03-22",
-            type: "Supply Request",
-        },
-    ]);
-
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -3162,46 +3140,6 @@ export default function RequestForm({ auth, errors = {}, type }) {
                     </div>
 
                     {/* Status Section - Takes up full width on mobile, 1 column on large screens */}
-                    <div className="order-1 lg:col-span-1 lg:order-2">
-                        <div className="p-4 bg-white rounded-lg shadow-sm sm:p-6">
-                            <h3 className="mb-4 text-lg font-medium">
-                                Recent Requests
-                            </h3>
-                            <div className="space-y-3">
-                                {requests.map((request) => (
-                                    <div
-                                        key={request.id}
-                                        className="flex justify-between items-center p-3 bg-gray-50 rounded-md transition-colors cursor-pointer hover:bg-gray-100"
-                                        onClick={() => {
-                                            setSelectedRequest(request);
-                                            setIsModalOpen(true);
-                                        }}
-                                    >
-                                        <div>
-                                            <p className="font-medium">
-                                                Request #{request.id}
-                                            </p>
-                                            <p className="text-sm text-gray-500">
-                                                {request.type}
-                                            </p>
-                                        </div>
-                                        <span
-                                            className={`px-2 py-1 rounded-full text-sm ${
-                                                request.status === "Approved"
-                                                    ? "bg-green-100 text-green-800"
-                                                    : request.status ===
-                                                      "Pending"
-                                                    ? "bg-yellow-100 text-yellow-800"
-                                                    : "bg-red-100 text-red-800"
-                                            }`}
-                                        >
-                                            {request.status}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Modal */}

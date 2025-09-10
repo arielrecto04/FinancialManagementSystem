@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
+import RecentRequestsPanel from '@/Components/RecentRequestPanel';
 
 // Add these component definitions before your Dashboard component
 const ExpenseSummaryCard = ({ title, amount, icon }) => {
@@ -310,25 +311,34 @@ const RequestFormCard = ({ title, description, icon, route }) => (
     </div>
 );
 
+// const userRecentRequests = [
+//     { id: 201, type: 'Supply Request', status: 'Approved', created_at: '2025-09-09T10:00:00.000Z' },
+//     { id: 202, type: 'Reimbursement', status: 'Pending', created_at: '2025-09-10T11:30:00.000Z' },
+//     { id: 203, type: 'Liquidation', status: 'Rejected', created_at: '2025-09-08T15:45:00.000Z' },
+//     { id: 204, type: 'Supply Request', status: 'Pending', created_at: '2025-09-10T14:00:00.000Z' }
+// ];
+
+
 export default function Dashboard({
     auth,
     userStats = {},
     requestStats = {},
     monthlyExpenses = [],
     highestExpenses = [],
+    recentRequests = [],
     statistics
 }) {
     const { user } = auth;
 
     // Debug props
-    console.log('Dashboard Props:', {
-        auth,
-        userStats,
-        requestStats,
-    });
+    // console.log('Dashboard Props:', {
+    //     auth,
+    //     userStats,
+    //     requestStats,
+    // });
 
     // Debug the statistics
-    console.log('Dashboard Statistics:', statistics);
+    // console.log('Dashboard Statistics:', statistics);
 
     // Configure the bar chart
     const barChartOptions = {
@@ -427,7 +437,7 @@ export default function Dashboard({
         rejectedRequests: 0
     };
 
-    console.log('Dashboard props:', { auth, statistics: stats });
+    // console.log('Dashboard props:', { auth, statistics: stats });
 
     return (
         <AuthenticatedLayout
@@ -669,6 +679,8 @@ export default function Dashboard({
                                         </div>
                                     </div>
                                 )}
+
+                                <RecentRequestsPanel requests={recentRequests} />
 
                                 {/* Help & Information Section */}
                                 <div className="grid grid-cols-1 gap-6 mt-8 md:grid-cols-2">
