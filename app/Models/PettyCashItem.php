@@ -24,4 +24,9 @@ class PettyCashItem extends Model
     {
         return $this->belongsTo(PettyCashRequest::class, 'petty_cash_request_id');
     }
-} 
+
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+}
