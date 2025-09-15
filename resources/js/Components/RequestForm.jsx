@@ -2890,6 +2890,9 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                             <option value="Assets">
                                                 Assets
                                             </option>
+                                            <option value="Utilities">
+                                                Utilities
+                                            </option>
                                             <option value="Others">
                                                 Others
                                             </option>
