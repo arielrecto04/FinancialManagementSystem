@@ -1,25 +1,26 @@
 <?php
 
-use App\Http\Controllers\ExpenseController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\StatisticsController;
-use App\Http\Controllers\ReportsController;
-use App\Http\Controllers\SupplyRequestController;
-use App\Http\Controllers\ReimbursementRequestController;
-use App\Http\Controllers\LiquidationController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\HrExpenseController;
-use App\Http\Controllers\OperatingExpenseController;
-use App\Http\Controllers\PettyCashController;
-use App\Http\Controllers\PettyCashRequestController;
-use App\Http\Controllers\AdminBudgetController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\AuditLogController;
-use App\Http\Controllers\SSOController;
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Application;
+use App\Http\Controllers\SSOController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HrExpenseController;
+use App\Http\Controllers\PettyCashController;
+use App\Http\Controllers\StatisticsController;
+use App\Http\Controllers\AdminBudgetController;
+use App\Http\Controllers\LiquidationController;
+use App\Http\Controllers\SupplyRequestController;
+use App\Http\Controllers\OperatingExpenseController;
+use App\Http\Controllers\PettyCashRequestController;
+use App\Http\Controllers\ReimbursementRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -154,6 +155,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/export-excel', [ReportsController::class, 'exportExcel'])->name('reports.export-excel');
     Route::get('/reports/export-pdf', [ReportsController::class, 'exportPDF'])->name('reports.export-pdf');
 });
+
+
+Route::resource('comments', CommentController::class)->only([
+    'store',
+    'update',
+    'destroy',
+]);
 
 // Test route for email sending - accessible only in local environment
 if (app()->environment('local')) {

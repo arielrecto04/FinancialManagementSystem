@@ -235,18 +235,25 @@ class DashboardController extends Controller
 
         $user = Auth::user();
 
-        $supply = SupplyRequest::where('user_id', $user->id)->get()->map(function ($item) {
+        $supply = SupplyRequest::with(['comments' => function ($query) {
+            $query->with(['user', 'replies']);
+        }])->where('user_id', $user->id)->get()->map(function ($item) {
             $item->type = 'Supply Request';
             return $item;
         });
 
-        $reimbursement = ReimbursementRequest::where('user_id', $user->id)->get()->map(function ($item) {
+        $reimbursement = ReimbursementRequest::with(['comments' => function ($query) {
+            $query->with(['user', 'replies']);
+        }])->where('user_id', $user->id)->get()->map(function ($item) {
             $item->type = 'Reimbursement';
             return $item;
         });
 
-        $liquidation = Liquidation::where('user_id', $user->id)->get()->map(function ($item) {
+        $liquidation = Liquidation::with(['comments' => function ($query) {
+            $query->with(['user', 'replies']);
+        }])->where('user_id', $user->id)->get()->map(function ($item) {
             $item->type = 'Liquidation';
+            $item->model = get_class($item);
             return $item;
         });
 

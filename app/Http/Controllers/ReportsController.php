@@ -128,6 +128,7 @@ class ReportsController extends Controller
         // Paginate the results
         $paginatedRequests = collect($allRequests)->forPage($page, $perPage)->values();
 
+
         $totalPages = ceil(count($allRequests) / $perPage);
 
         return Inertia::render('Reports', [
@@ -207,9 +208,13 @@ class ReportsController extends Controller
         // Initialize query builders
         $supplyRequests = SupplyRequest::with('user');
         $reimbursementRequests = ReimbursementRequest::with('user');
-        $liquidationRequests = Liquidation::with('user');
+        $liquidationRequests = Liquidation::with(['user', 'comments' => function ($query) {
+            $query->with(['user', 'replies' ]);
+        }]);
         $hrExpenseRequests = HrExpense::with('user');
         $operatingExpenseRequests = OperatingExpense::with('user');
+
+
 
         // Apply date filters
         if ($isDateRangeActive) {
@@ -256,6 +261,10 @@ class ReportsController extends Controller
             ->concat($hrExpenseRequests)
             ->concat($operatingExpenseRequests);
 
+
+
+
+
         if ($sortOrder === 'newest') {
             $sortedRequests = $sortedRequests->sortByDesc('created_at');
         } else {
@@ -270,6 +279,7 @@ class ReportsController extends Controller
     {
         return function ($request) {
             return [
+                'id' => $request->id,
                 'request_number' => $request->request_number,
                 'type' => 'Supply',
                 'user_name' => $request->user->name,
@@ -278,7 +288,20 @@ class ReportsController extends Controller
                 'total_amount' => $request->total_amount,
                 'created_at' => $request->created_at->format('Y-m-d'),
                 'remarks' => $request->remarks,
-                'items_json' => $request->items_json
+                'items_json' => $request->items_json,
+                'model' => get_class($request),
+                'comments' => collect(
+                    $request->comments
+                )->map(function ($comment) {
+                    return [
+                        'id' => $comment->id,
+                        'content' => $comment->content,
+                        'model_path' => $comment->model_path,
+                        'user' => $comment->user,
+                        'created_at' => $comment->created_at->format('Y-m-d'),
+                        'replies' => $comment->replies,
+                    ];
+                }) ?? [],
             ];
         };
     }
@@ -289,6 +312,7 @@ class ReportsController extends Controller
         return function ($request) {
 
             return [
+                'id' => $request->id,
                 'request_number' => $request->request_number,
                 'type' => 'Reimbursement',
                 'user_name' => $request->user->name,
@@ -301,7 +325,20 @@ class ReportsController extends Controller
                 'expense_type' => $request->expense_type,
                 'description' => $request->description,
                 'expense_items' => $request->expense_items,
-                'receipt_path' => $request->receipt_path
+                'receipt_path' => $request->receipt_path,
+                'model' => get_class($request),
+                'comments' => collect(
+                    $request->comments
+                )->map(function ($comment) {
+                    return [
+                        'id' => $comment->id,
+                        'content' => $comment->content,
+                        'model_path' => $comment->model_path,
+                        'user' => $comment->user,
+                        'created_at' => $comment->created_at->format('Y-m-d'),
+                        'replies' => $comment->replies,
+                    ];
+                }) ?? [],
             ];
         };
     }
@@ -310,6 +347,7 @@ class ReportsController extends Controller
     {
         return function ($request) {
             return [
+                'id' => $request->id,
                 'request_number' => 'LIQ-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
                 'type' => 'Liquidation',
                 'user_name' => $request->user->name,
@@ -324,7 +362,20 @@ class ReportsController extends Controller
                 'amount_to_reimburse' => $request->amount_to_reimburse,
                 'particulars' => $request->particulars,
                 'items' => $request->items,
-                'receipt_path' => $request->receipt_path
+                'receipt_path' => $request->receipt_path,
+                'model' => get_class($request),
+                'comments' => collect(
+                    $request->comments
+                )->map(function ($comment) {
+                    return [
+                        'id' => $comment->id,
+                        'content' => $comment->content,
+                        'model_path' => $comment->model_path,
+                        'user' => $comment->user,
+                        'created_at' => $comment->created_at->format('Y-m-d'),
+                        'replies' => $comment->replies,
+                    ];
+                }) ?? [],
             ];
         };
     }
@@ -333,6 +384,7 @@ class ReportsController extends Controller
     {
         return function ($request) {
             return [
+                'id' => $request->id,
                 'request_number' => 'HR-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
                 'type' => 'HR Expense',
                 'user_name' => $request->user->name,
@@ -344,7 +396,20 @@ class ReportsController extends Controller
                 'expenses_category' => $request->expenses_category,
                 'description' => $request->description_of_expenses,
                 'breakdown' => $request->breakdown_of_expense,
-                'expected_payment_date' => $request->expected_payment_date
+                'expected_payment_date' => $request->expected_payment_date,
+                'model' => get_class($request),
+                'comments' => collect(
+                    $request->comments
+                )->map(function ($comment) {
+                    return [
+                        'id' => $comment->id,
+                        'content' => $comment->content,
+                        'model_path' => $comment->model_path,
+                        'user' => $comment->user,
+                        'created_at' => $comment->created_at->format('Y-m-d'),
+                        'replies' => $comment->replies,
+                    ];
+                }) ?? [],
             ];
         };
     }
@@ -353,6 +418,7 @@ class ReportsController extends Controller
     {
         return function ($request) {
             return [
+                'id' => $request->id,
                 'request_number' => 'OP-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
                 'type' => 'Operating Expense',
                 'user_name' => $request->user->name,
@@ -365,7 +431,20 @@ class ReportsController extends Controller
                 'description' => $request->description,
                 'receipt_path' => $request->receipt_path,
                 'expected_payment_date' => $request->expected_payment_date,
-                'breakdown_of_expense' => $request->breakdown_of_expense
+                'breakdown_of_expense' => $request->breakdown_of_expense,
+                'model' => get_class($request),
+                'comments' => collect(
+                    $request->comments
+                )->map(function ($comment) {
+                    return [
+                        'id' => $comment->id,
+                        'content' => $comment->content,
+                        'created_at' => $comment->created_at->format('Y-m-d'),
+                        'model_path' => $comment->model_path,
+                        'user' => $comment->user,
+                        'replies' => $comment->replies,
+                    ];
+                }) ?? [],
             ];
         };
     }

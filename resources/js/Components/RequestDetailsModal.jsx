@@ -9,6 +9,7 @@ export default function RequestDetailsModal({
     request,
     onEditItems,
     auth,
+    children,
 }) {
     if (!isOpen || !request) return null;
 
@@ -789,6 +790,11 @@ export default function RequestDetailsModal({
                                 </div>
                             )}
                         </div>
+                    </div>
+
+
+                    <div className="py-4 border-t border-gray-200 max-h-[400px] overflow-y-auto">
+                        {children}
                     </div>
 
                     {/* Modal Footer */}
