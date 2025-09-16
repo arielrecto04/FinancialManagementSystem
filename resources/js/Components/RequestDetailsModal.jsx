@@ -134,8 +134,8 @@ export default function RequestDetailsModal({
                                                 <h3 className="text-lg font-medium text-gray-900">
                                                     Items
                                                 </h3>
-                                                {auth?.user?.role ===
-                                                    "superadmin" && (
+                                                {auth?.user?.role !==
+                                                    ("superadmin" || "admin") && (
                                                     <button
                                                         onClick={onEditItems}
                                                         className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
@@ -594,8 +594,8 @@ export default function RequestDetailsModal({
                                                 <p className="text-sm text-gray-500">
                                                     Breakdown of Expense
                                                 </p>
-                                                {auth?.user?.role ===
-                                                    "superadmin" && (
+                                                {auth?.user?.role !==
+                                                    ("superadmin" || "admin") && (
                                                     <button
                                                         onClick={onEditItems}
                                                         className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
@@ -630,10 +630,10 @@ export default function RequestDetailsModal({
                                             </p>
                                             <p className="text-lg font-medium">
                                                 {formatCurrency(
-                                                    
+
                                                     request.total_amount
                                                 )}
-                                                
+
                                             </p>
                                         </div>
                                         <div>
@@ -673,8 +673,8 @@ export default function RequestDetailsModal({
                                                     Breakdown of Expenses
                                                 </p>
 
-                                                {auth?.user?.role ===
-                                                    "superadmin" && (
+                                                {auth?.user?.role !==
+                                                    ("superadmin" || "admin") && (
                                                     <button
                                                         onClick={() =>
                                                             onEditItems(request)
