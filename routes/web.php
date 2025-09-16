@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\SSOController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ExpenseController;
@@ -135,6 +136,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Add this new route for updating supply request items
     Route::put('/supply-requests/{requestNumber}/items', [SupplyRequestController::class, 'updateItems'])
         ->name('supply-requests.update-items');
+
+
+    Route::prefix('chat')->as('chat.')->group(function () {
+        Route::get('/', [ChatController::class, 'index'])->name('index');
+        Route::post('/store-message', [ChatController::class, 'storeMessage'])->name('store-message');
+        Route::get('/search', [ChatController::class, 'search'])->name('search');
+    });
 });
 
 // SSO Callback route
@@ -162,6 +170,8 @@ Route::resource('comments', CommentController::class)->only([
     'update',
     'destroy',
 ]);
+
+
 
 // Test route for email sending - accessible only in local environment
 if (app()->environment('local')) {

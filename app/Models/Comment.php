@@ -18,6 +18,7 @@ class Comment extends Model
 
     protected $appends = [
         'model_path',
+        'total_unread_comments'
     ];
 
     public function user()
@@ -30,6 +31,13 @@ class Comment extends Model
     {
         return $this->morphMany(Comment::class, 'commentable')->with(['user', 'replies']);
     }
+
+
+    public function getTotalUnreadCommentsAttribute()
+    {
+        return $this->replies()->where('is_viewed', false)->count();
+    }
+
 
     public function getModelPathAttribute(): string
     {
