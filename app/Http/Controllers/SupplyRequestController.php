@@ -16,6 +16,7 @@ class SupplyRequestController extends Controller
 
     public function store(Request $request)
     {
+
         try {
             $validated = $request->validate([
                 'department' => 'required|string',
@@ -24,7 +25,8 @@ class SupplyRequestController extends Controller
                 'items_json' => 'required|json',
                 'total_amount' => 'required|numeric',
                 'remarks' => 'nullable|string',
-                'request_number' => 'required|string|unique:supply_requests'
+                'request_number' => 'required|string|unique:supply_requests',
+                'location' => 'required|string',
             ]);
 
             $supplyRequest = new SupplyRequest($validated);
@@ -43,7 +45,24 @@ class SupplyRequestController extends Controller
                 'amount' => $validated['total_amount'],
                 'ip_address' => $request->ip()
             ]);
-            
+
+
+
+            if($request->hasFile('attachments')) {
+                $attachments = $request->file('attachments');
+
+                foreach ($attachments as $attachment) {
+                    $path = $attachment->storeAs('attachments', $attachment->getClientOriginalName(), 'public');
+                    $supplyRequest->attachments()->create([
+                        'file_path' => asset('storage/' . $path),
+                        'file_name' => $attachment->getClientOriginalName(),
+                        'file_type' => $attachment->getClientMimeType(),
+                        'file_size' => $attachment->getSize(),
+                        'file_extension' => $attachment->getClientOriginalExtension()
+                    ]);
+                }
+            }
+
             // Send email notification to admin and superadmin users
             EmailService::sendNewRequestEmail(
                 $validated,
@@ -51,6 +70,7 @@ class SupplyRequestController extends Controller
                 auth()->user()->name,
                 $validated['request_number']
             );
+
 
             return redirect()->back()->with('success', 'Supply request submitted successfully!');
 
@@ -69,7 +89,7 @@ class SupplyRequestController extends Controller
     public function updateStatus(Request $request, SupplyRequest $supplyRequest)
     {
         $this->authorize('update', $supplyRequest);
-        
+
         $validated = $request->validate([
             'status' => 'required|in:approved,rejected',
             'remarks' => 'required|string'
@@ -101,11 +121,11 @@ class SupplyRequestController extends Controller
     public function destroy(SupplyRequest $supplyRequest)
     {
         $this->authorize('delete', $supplyRequest);
-        
+
         // Store info for audit log
         $amount = $supplyRequest->total_amount;
         $department = $supplyRequest->department;
-        
+
         $supplyRequest->delete();
 
         // Log the deletion
@@ -127,7 +147,7 @@ class SupplyRequestController extends Controller
     {
         // Find the supply request by request_number
         $supplyRequest = SupplyRequest::where('request_number', $requestNumber)->firstOrFail();
-        
+
         // Check if user is authorized to update this request
         if (!auth()->user()->role === 'superadmin' && $supplyRequest->status !== 'pending') {
             return response()->json([
@@ -169,4 +189,4 @@ class SupplyRequestController extends Controller
             'request' => $supplyRequest->load('user')
         ]);
     }
-} 
+}

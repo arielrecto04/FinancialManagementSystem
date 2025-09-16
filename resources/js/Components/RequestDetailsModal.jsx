@@ -122,6 +122,15 @@ export default function RequestDetailsModal({
                                 </div>
                             </div>
 
+                            <div className="flex flex-col gap-2 py-2 mt-2 w-full">
+                                <p className="text-sm text-gray-600">
+                                    Location
+                                </p>
+                                <p className="font-medium">
+                                    {request.location}
+                                </p>
+                            </div>
+
                             {/* Request Details */}
                             <div className="col-span-2">
                                 <h4 className="mb-2 font-medium text-gray-900">
@@ -135,7 +144,8 @@ export default function RequestDetailsModal({
                                                     Items
                                                 </h3>
                                                 {auth?.user?.role !==
-                                                    ("superadmin" || "admin") && (
+                                                    ("superadmin" ||
+                                                        "admin") && (
                                                     <button
                                                         onClick={onEditItems}
                                                         className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
@@ -200,6 +210,64 @@ export default function RequestDetailsModal({
                                                     </p>
                                                 )}
                                             </div>
+
+                                            <div className="flex flex-col mt-4 mb-6">
+                                                <h1 className="text-lg font-medium text-gray-900">
+                                                    Attachments
+                                                </h1>
+
+                                                <div className="flex-1 gap-2 mt-2">
+                                                    {request.attachments.map(
+                                                        (attachment, index) => (
+                                                            <div
+                                                                className="flex space-x-2"
+                                                                key={index}
+                                                            >
+                                                                <button
+                                                                    onClick={() =>
+                                                                        window.open(
+                                                                            `${attachment.file_path}`,
+                                                                            "_blank"
+                                                                        )
+                                                                    }
+                                                                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md border border-transparent shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                                                >
+                                                                    <svg
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                        className="mr-2 w-5 h-5"
+                                                                        viewBox="0 0 20 20"
+                                                                        fill="currentColor"
+                                                                    >
+                                                                        <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                                                                        <path d="M10 7a1 1 0 011 1v4a1 1 0 11-2 0V8a1 1 0 011-1zm-1 8a1 1 0 100 2h2a1 1 0 100-2h-2z" />
+                                                                    </svg>
+                                                                    View Receipt
+                                                                </button>
+                                                                <a
+                                                                    href={`${attachment.file_path}`}
+                                                                    download
+                                                                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                                                >
+                                                                    <svg
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                        className="mr-2 w-5 h-5"
+                                                                        viewBox="0 0 20 20"
+                                                                        fill="currentColor"
+                                                                    >
+                                                                        <path
+                                                                            fillRule="evenodd"
+                                                                            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                                                            clipRule="evenodd"
+                                                                        />
+                                                                    </svg>
+                                                                    Download
+                                                                </a>
+                                                            </div>
+                                                        )
+                                                    )}
+                                                </div>
+                                            </div>
+
                                             <div className="flex justify-end mt-6">
                                                 <div className="text-right">
                                                     <p className="text-sm text-gray-600">
@@ -280,7 +348,9 @@ export default function RequestDetailsModal({
                                                                             <td className="p-2">
                                                                                 {
                                                                                     item.quantity
-                                                                                }x
+                                                                                }
+
+                                                                                x
                                                                             </td>
                                                                             <td className="p-2">
                                                                                 ₱
@@ -595,7 +665,8 @@ export default function RequestDetailsModal({
                                                     Breakdown of Expense
                                                 </p>
                                                 {auth?.user?.role !==
-                                                    ("superadmin" || "admin") && (
+                                                    ("superadmin" ||
+                                                        "admin") && (
                                                     <button
                                                         onClick={onEditItems}
                                                         className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
@@ -630,10 +701,8 @@ export default function RequestDetailsModal({
                                             </p>
                                             <p className="text-lg font-medium">
                                                 {formatCurrency(
-
                                                     request.total_amount
                                                 )}
-
                                             </p>
                                         </div>
                                         <div>
@@ -674,7 +743,8 @@ export default function RequestDetailsModal({
                                                 </p>
 
                                                 {auth?.user?.role !==
-                                                    ("superadmin" || "admin") && (
+                                                    ("superadmin" ||
+                                                        "admin") && (
                                                     <button
                                                         onClick={() =>
                                                             onEditItems(request)
@@ -792,7 +862,6 @@ export default function RequestDetailsModal({
                             )}
                         </div>
                     </div>
-
 
                     <div className="py-4 border-t border-gray-200 max-h-[400px] overflow-y-auto">
                         {children}

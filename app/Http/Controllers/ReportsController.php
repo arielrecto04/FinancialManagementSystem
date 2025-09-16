@@ -290,6 +290,8 @@ class ReportsController extends Controller
                 'remarks' => $request->remarks,
                 'items_json' => $request->items_json,
                 'model' => get_class($request),
+                'attachments' => $request->attachments,
+                'location' => $request->location,
                 'comments' => collect(
                     $request->comments
                 )->map(function ($comment) {

@@ -19,6 +19,7 @@ class SupplyRequest extends Model
         'date_needed',
         'items_json',
         'total_amount',
+        'location',
         'remarks'
     ];
 
@@ -36,5 +37,10 @@ class SupplyRequest extends Model
     public function comments()
     {
         return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 }

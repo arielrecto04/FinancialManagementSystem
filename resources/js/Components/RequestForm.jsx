@@ -226,6 +226,8 @@ export default function RequestForm({ auth, errors = {}, type }) {
         items: items,
         total_amount: 0,
         remarks: "",
+        attachments: [],
+        location: "",
     });
 
     // Reimbursement Form State
@@ -237,7 +239,9 @@ export default function RequestForm({ auth, errors = {}, type }) {
         department: "",
         expense_date: "",
         expense_type: "",
-        expense_items: [{ description: "", amount: "", quantity: "", total: "" }],
+        expense_items: [
+            { description: "", amount: "", quantity: "", total: "" },
+        ],
         amount: "",
         description: "",
         receipt: null,
@@ -376,10 +380,12 @@ export default function RequestForm({ auth, errors = {}, type }) {
 
         // Generate request number with SR prefix and timestamp
         const timestamp = new Date().getTime();
-        const requestNumber = `SR-${timestamp}`;
+        const requestNumber = `SUP-${timestamp}`;
 
         try {
             // Submit the form
+
+            console.log(data, "handle supply request");
             router.post(
                 route("request.supply.store"),
                 {
@@ -813,7 +819,8 @@ export default function RequestForm({ auth, errors = {}, type }) {
         const total = items.reduce(
             (acc, item) =>
                 acc +
-             (item.total = parseFloat(item.amount) * parseFloat(item.quantity) || 0),
+                (item.total =
+                    parseFloat(item.amount) * parseFloat(item.quantity) || 0),
             0
         );
         setReimbursementData("amount", total.toFixed(2));
@@ -923,15 +930,16 @@ export default function RequestForm({ auth, errors = {}, type }) {
         try {
             const formData = new FormData();
             for (let key in reimbursementData) {
-
-
                 if (key === "expense_items") {
-                    formData.append(key, JSON.stringify(reimbursementData[key]));
+                    formData.append(
+                        key,
+                        JSON.stringify(reimbursementData[key])
+                    );
                 } else {
                     formData.append(key, reimbursementData[key]);
                 }
             }
-            formData.append("request_number", `RR-${new Date().getTime()}`);
+            formData.append("request_number", `REM-${new Date().getTime()}`);
 
             router.post(route("request.reimbursement.store"), formData, {
                 onSuccess: () => {
@@ -953,11 +961,13 @@ export default function RequestForm({ auth, errors = {}, type }) {
                         expense_type: "",
                         amount: "",
                         description: "",
-                        expense_items: [{
-                            description: "",
-                            amount: "",
-                            quantity: "",
-                        }],
+                        expense_items: [
+                            {
+                                description: "",
+                                amount: "",
+                                quantity: "",
+                            },
+                        ],
                         receipt: null,
                         remarks: "",
                     });
@@ -1350,6 +1360,13 @@ export default function RequestForm({ auth, errors = {}, type }) {
         });
     };
 
+    const handleAttachmentChangeSupply = (e) => {
+        setData({
+            ...data,
+            attachments: [...data.attachments, ...e.target.files],
+        });
+    };
+
     //#endregion
 
     return (
@@ -1393,6 +1410,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                 <form
                                     onSubmit={handleSubmit}
                                     className="space-y-4"
+                                    encType="multipart/form-data"
                                 >
                                     <div className="mb-4">
                                         <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
@@ -1425,6 +1443,43 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                         {errors?.department && (
                                             <p className="mt-1 text-sm text-red-600">
                                                 {errors.department}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
+                                            {/* {icons.department} */}
+                                            location
+                                        </label>
+                                        <select
+                                            value={data.location}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "location",
+                                                    e.target.value
+                                                )
+                                            }
+                                            className="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            required
+                                        >
+                                            <option value="">
+                                                Select Location
+                                            </option>
+                                            <option value="Parañaque">
+                                                Parañaque
+                                            </option>
+                                            <option value="Laguna">
+                                                Laguna
+                                            </option>
+                                            <option value="Cagayan de Oro">
+                                                Cagayan de Oro
+                                            </option>
+                                            <option value="Cebu">Cebu</option>
+                                        </select>
+                                        {errors?.location && (
+                                            <p className="mt-1 text-sm text-red-600">
+                                                {errors.location}
                                             </p>
                                         )}
                                     </div>
@@ -1563,6 +1618,20 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                                 {errors.items}
                                             </div>
                                         )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                                            Attachments
+                                        </label>
+                                        <input
+                                            type="file"
+                                            multiple
+                                            onChange={
+                                                handleAttachmentChangeSupply
+                                            }
+                                            className="px-3 py-2 w-full rounded-md border border-gray-300"
+                                        />
                                     </div>
 
                                     <div>
@@ -1872,7 +1941,6 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                             }
                                             className="px-3 py-2 w-full rounded-md border border-gray-300"
                                             accept=".pdf,.jpg,.jpeg,.png"
-
                                         />
                                         {errors?.receipt && (
                                             <div className="mt-1 text-sm text-red-500">
