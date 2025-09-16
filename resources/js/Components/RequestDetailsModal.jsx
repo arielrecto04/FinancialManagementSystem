@@ -10,6 +10,7 @@ export default function RequestDetailsModal({
     onEditItems,
     auth,
     children,
+    otherActionButtons,
 }) {
     if (!isOpen || !request) return null;
 
@@ -797,7 +798,8 @@ export default function RequestDetailsModal({
 
                     {/* Modal Footer */}
                     <div className="px-6 py-4 bg-gray-50 border-t">
-                        <div className="flex justify-end">
+                        <div className="flex gap-2 justify-end">
+                            {otherActionButtons && otherActionButtons(request)}
                             <button
                                 onClick={onClose}
                                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
