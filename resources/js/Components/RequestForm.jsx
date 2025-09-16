@@ -1469,6 +1469,9 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                             <option value="Parañaque">
                                                 Parañaque
                                             </option>
+                                            <option value="Pampanga">
+                                                Pampanga
+                                            </option>
                                             <option value="Laguna">
                                                 Laguna
                                             </option>
