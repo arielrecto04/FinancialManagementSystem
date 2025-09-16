@@ -630,8 +630,10 @@ export default function RequestDetailsModal({
                                             </p>
                                             <p className="text-lg font-medium">
                                                 {formatCurrency(
-                                                    request.total_amount_requested
+                                                    
+                                                    request.total_amount
                                                 )}
+                                                
                                             </p>
                                         </div>
                                         <div>
