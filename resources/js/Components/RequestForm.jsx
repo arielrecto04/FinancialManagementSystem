@@ -1466,8 +1466,11 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                             <option value="">
                                                 Select Location
                                             </option>
-                                            <option value="Parañaque">
-                                                Parañaque
+                                            <option value="Parañaque - Atlantica">
+                                                Parañaque - Atlantica
+                                            </option>
+                                            <option value="Parañaque - Velasco">
+                                                Parañaque - Velasco
                                             </option>
                                             <option value="Pampanga">
                                                 Pampanga
