@@ -46,4 +46,9 @@ class Liquidation extends Model
     {
         return $this->morphMany(Comment::class, 'commentable');
     }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
 }
