@@ -561,7 +561,7 @@ export default function Reports({
             if (comment.id === newReply.commentable_id) {
                 return {
                     ...comment,
-                    replies: [...comment.replies || [], newReply],
+                    replies: [...(comment.replies || []), newReply],
                 };
             }
             if (comment.replies && comment.replies.length > 0) {
@@ -598,16 +598,18 @@ export default function Reports({
     };
 
     const deleteReplyToComment = (comments, replyId) => {
-        const filteredComments = comments.filter(comment => comment.id !== replyId);
+        const filteredComments = comments.filter(
+            (comment) => comment.id !== replyId
+        );
 
-        return filteredComments.map(comment => {
-          if (comment.replies && comment.replies.length > 0) {
-            return {
-              ...comment,
-              replies: deleteReplyToComment(comment.replies, replyId)
-            };
-          }
-          return comment;
+        return filteredComments.map((comment) => {
+            if (comment.replies && comment.replies.length > 0) {
+                return {
+                    ...comment,
+                    replies: deleteReplyToComment(comment.replies, replyId),
+                };
+            }
+            return comment;
         });
     };
 
@@ -745,8 +747,8 @@ export default function Reports({
                 // Determine request type from prefix if not already set
                 if (!requestType) {
                     const prefix = parts[0];
-                    if (prefix === "SR") requestType = "supply";
-                    else if (prefix === "RR") requestType = "reimbursement";
+                    if (prefix === "SUP") requestType = "supply";
+                    else if (prefix === "REM") requestType = "reimbursement";
                     else if (prefix === "LIQ") requestType = "liquidation";
                     else if (prefix === "HR") requestType = "hrexpense";
                     else if (prefix === "OP") requestType = "operatingexpense";
@@ -907,6 +909,9 @@ export default function Reports({
                                         : "Request has been rejected.",
                                 confirmButtonColor: "#10B981",
                             });
+
+
+                            setIsModalOpen(false);
 
                             router.reload({ only: ["requests"] });
                         },
@@ -1272,8 +1277,7 @@ export default function Reports({
                 comments: deleteReplyToComment(prev.comments, _comment.id),
             }));
 
-
-            console.log(selectedRequest.comments, "selectedRequest.comments")
+            console.log(selectedRequest.comments, "selectedRequest.comments");
         } catch (error) {
             Swal.fire({
                 icon: "error",
@@ -1848,6 +1852,9 @@ export default function Reports({
                     setIsModalOpen(false);
                     setIsEditItemsModalOpen(true);
                 }}
+                otherActionButtons={(selectedRequest) => (
+                    <ActionButtons request={selectedRequest} />
+                )}
             >
                 <div className="flex flex-col gap-4 p-2">
                     <div className="p-2 space-y-6">

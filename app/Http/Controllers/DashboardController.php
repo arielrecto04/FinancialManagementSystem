@@ -236,22 +236,22 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         $supply = SupplyRequest::with(['comments' => function ($query) {
-            $query->with(['user', 'replies']);
-        }])->where('user_id', $user->id)->get()->map(function ($item) {
+            $query->with(['user', 'replies', ]);
+        }, 'attachments'])->where('user_id', $user->id)->get()->map(function ($item) {
             $item->type = 'Supply Request';
             return $item;
         });
 
         $reimbursement = ReimbursementRequest::with(['comments' => function ($query) {
             $query->with(['user', 'replies']);
-        }])->where('user_id', $user->id)->get()->map(function ($item) {
+        }, 'attachments'])->where('user_id', $user->id)->get()->map(function ($item) {
             $item->type = 'Reimbursement';
             return $item;
         });
 
         $liquidation = Liquidation::with(['comments' => function ($query) {
             $query->with(['user', 'replies']);
-        }])->where('user_id', $user->id)->get()->map(function ($item) {
+        }, 'attachments'])->where('user_id', $user->id)->get()->map(function ($item) {
             $item->type = 'Liquidation';
             $item->model = get_class($item);
             return $item;
@@ -262,6 +262,8 @@ class DashboardController extends Controller
             ->concat($reimbursement)
             ->concat($liquidation)
             ->sortByDesc('created_at');
+
+
 
         // Manually paginate the collection
         $perPage = 15;
