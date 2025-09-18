@@ -747,8 +747,8 @@ export default function Reports({
                 // Determine request type from prefix if not already set
                 if (!requestType) {
                     const prefix = parts[0];
-                    if (prefix === "SR") requestType = "supply";
-                    else if (prefix === "RR") requestType = "reimbursement";
+                    if (prefix === "SUP") requestType = "supply";
+                    else if (prefix === "REM") requestType = "reimbursement";
                     else if (prefix === "LIQ") requestType = "liquidation";
                     else if (prefix === "HR") requestType = "hrexpense";
                     else if (prefix === "OP") requestType = "operatingexpense";

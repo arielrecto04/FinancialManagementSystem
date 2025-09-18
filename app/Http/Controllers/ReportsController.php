@@ -493,7 +493,8 @@ class ReportsController extends Controller
 
             // If not found, try to find by request_number
             if (!$requestModel) {
-                $requestModel = SupplyRequest::where('request_number', 'LIKE', "SR-%" . $id)->first();
+                $requestModel = SupplyRequest::where('request_number', 'LIKE', "SUP-%" . $id)
+                ->orWhere('request_number', 'LIKE', "SR-%" . $id)->first();
             }
 
             $requestAmount = $requestModel ? floatval($requestModel->total_amount) : 0;
@@ -502,7 +503,8 @@ class ReportsController extends Controller
 
             // If not found, try to find by request_number
             if (!$requestModel) {
-                $requestModel = ReimbursementRequest::where('request_number', 'LIKE', "RR-%" . $id)->first();
+                $requestModel = ReimbursementRequest::where('request_number', 'LIKE', "REM-%" . $id)
+                ->orWhere('request_number', 'LIKE', "RR-%" . $id)->first();
             }
 
             $requestAmount = $requestModel ? floatval($requestModel->amount) : 0;
