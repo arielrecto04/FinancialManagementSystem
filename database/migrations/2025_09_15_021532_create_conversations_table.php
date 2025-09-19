@@ -15,8 +15,8 @@ return new class extends Migration
         Schema::create('conversations', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(User::class, 'owner_id')->constrained('users')->cascadeOnDelete();
-            $table->string('name');
-            $table->string('slug');
+            $table->string('name')->nullable();
+            $table->string('slug')->nullable();
             $table->string('image')->nullable();
             $table->string('status')->default('active');
             $table->timestamps();

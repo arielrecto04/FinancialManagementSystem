@@ -142,6 +142,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [ChatController::class, 'index'])->name('index');
         Route::post('/store-message', [ChatController::class, 'storeMessage'])->name('store-message');
         Route::get('/search', [ChatController::class, 'search'])->name('search');
+        Route::get('/get-conversation/{id}', [ChatController::class, 'getConversation'])->name('get-conversation');
+        Route::get('/search-user', [ChatController::class, 'searchUser'])->name('search-user');
+        Route::post('/create-conversation', [ChatController::class, 'createConversation'])->name('create-conversation');
     });
 });
 

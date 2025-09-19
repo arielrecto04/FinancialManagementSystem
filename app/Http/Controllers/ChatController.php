@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Inertia\Inertia;
+use App\Events\NewMessage;
 use Illuminate\Support\Str;
 use App\Models\Conversation;
-use App\Models\ConversationParticipant;
 use Illuminate\Http\Request;
+use PhpParser\Node\Stmt\TryCatch;
 use Illuminate\Support\Facades\Auth;
+use App\Models\ConversationParticipant;
 
 class ChatController extends Controller
 {
@@ -26,28 +28,19 @@ class ChatController extends Controller
     {
 
 
-        $conversation = Conversation::where('id', $request->conversation_id)->orWhere('owner_id', auth()->id())->orWhereHas('participants', function ($query) use ($request) {
-            $query->where('user_id', $request->user_id);
-        })->firstOrCreate([
-            'owner_id' => auth()->id(),
-            'name' => User::find(auth()->id())->name,
-            'slug' => Str::slug(User::find(auth()->id())->name),
-        ]);
-
-
-
-        if ($conversation->participants()->where('user_id', $request->user_id)->count() == 0) {
-            ConversationParticipant::create([
-                'conversation_id' => $conversation->id,
-                'user_id' => $request->participant_id,
-            ]);
-        }
+        $conversation = Conversation::findOrFail($request->conversation_id);
 
         $message = $conversation->messages()->create([
             'user_id' => auth()->id(),
             'message' => $request->message,
         ]);
 
+
+        $message->load('user');
+
+
+
+        NewMessage::dispatch($message);
 
 
         return response()->json([
@@ -58,39 +51,76 @@ class ChatController extends Controller
 
     public function search(Request $request)
     {
-        $conversations = Conversation::where('name', 'like', '%' . $request->search . '%')
+        $conversations = Conversation::with(['participants', 'messages.user', 'owner'])->where('name', 'like', '%' . $request->search . '%')
             ->orWhere('slug', 'like', '%' . $request->search . '%')
             ->orWhereHas('participants', function ($query) use ($request) {
                 $query->where('name', 'like', '%' . $request->search . '%');
             })
+            ->where('owner_id', auth()->id())
+            ->orWhereHas('participants', function ($query) use ($request) {
+                $query->where('user_id', auth()->id());
+            })
             ->get();
 
-        $user = User::where('name', 'like', '%' . $request->search . '%')->get();
+
+        return response()->json([
+            'data' => $conversations,
+        ]);
+    }
+
+    public function getConversation($id)
+    {
+        $conversation = Conversation::with(['participants', 'messages.user', 'owner'])->where('id', $id)
+            ->orWhere('owner_id', $id)
+            ->orWhereHas('participants', function ($query) use ($id) {
+                $query->where('user_id', $id);
+            })->latest()->first();
 
 
-        $data = collect($conversations)->merge($user)
-            ->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'name' => $item->name,
-                    'slug' => $item->slug ??  Str::slug($item->name),
-                    'image' => $item->image ??  'https://ui-avatars.com/api/?name=' . str_replace(' ', '+', $item->name) . '&background=6b7280&color=fff',
-                    'status' => $item->status ?? 'online',
-                    'model' => $item instanceof Conversation ? 'conversation' : 'user',
-                    'user' => $item instanceof Conversation ? $item->participants()->first()->user : [
-                        'id' => $item->id,
-                        'name' => $item->name,
-                        'slug' => $item->slug ??  Str::slug($item->name),
-                        'image' => $item->image ??  'https://ui-avatars.com/api/?name=' . str_replace(' ', '+', $item->name) . '&background=6b7280&color=fff',
-                        'status' => $item->status ?? 'online',
-                    ],
-                ];
-            });
+        $conversation = $conversation->with(['participants', 'messages.user', 'owner'])->latest()->first();
 
 
 
         return response()->json([
-            'data' => $data,
+            'conversation' => $conversation,
         ]);
+    }
+
+
+    public function searchUser(Request $request)
+    {
+        $users = User::where('name', 'like', '%' . $request->search . '%')
+            ->orWhere('email', 'like', '%' . $request->search . '%')
+            ->get();
+
+        return response()->json([
+            'data' => $users,
+        ]);
+    }
+
+    public function createConversation(Request $request)
+    {
+        try {
+            $conversation = Conversation::create([
+                'owner_id' => auth()->id(),
+                'name' => $request->name,
+                'slug' => Str::slug($request->name),
+            ]);
+
+            foreach ($request->participants as $participant) {
+                ConversationParticipant::create([
+                    'conversation_id' => $conversation->id,
+                    'user_id' => $participant['id'],
+                ]);
+            }
+
+            return response()->json([
+                'conversation' => $conversation->with(['participants', 'messages.user', 'owner'])->latest()->first(),
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error' => $th->getMessage(),
+            ], 500);
+        }
     }
 }
