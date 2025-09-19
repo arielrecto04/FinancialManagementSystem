@@ -1407,7 +1407,7 @@ export default function Reports({
                     <div className="bg-white rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md border-gray-200/70 hover:border-gray-300">
                         <div className="p-6">
                             {/* Header Actions */}
-                            <div className="flex justify-between items-center mb-6">
+                            <div className="flex flex-col justify-between items-center mb-6 md:flex-row">
                                 <h2 className="flex items-center text-xl font-semibold">
                                     <div className="p-3 mr-3 bg-indigo-100 rounded-lg ring-1 ring-indigo-100/50">
                                         <svg
@@ -1426,7 +1426,7 @@ export default function Reports({
                                     </div>
                                     Reports & Analytics
                                 </h2>
-                                <div className="flex space-x-2">
+                                <div className="flex mt-10 space-x-2 md:mt-0">
                                     <button
                                         onClick={() =>
                                             setIsFiltersVisible(
@@ -1625,7 +1625,7 @@ export default function Reports({
                             )}
 
                             {/* Request Table */}
-                            <div className="overflow-hidden bg-white rounded-lg border border-gray-100">
+                            <div className="overflow-auto bg-white rounded-lg border border-gray-100">
                                 <RequestTable
                                     requests={requests}
                                     onRowClick={handleRowClick}
