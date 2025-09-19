@@ -151,7 +151,7 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
             if (selectedRequest.model === response.data.commentable_type) {
                 setSelectedRequest({
                     ...selectedRequest,
-                    comments: [...selectedRequest.comments, response.data],
+                    comments: [...(selectedRequest.comments || []), response.data],
                 });
 
                 return;
@@ -159,7 +159,7 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
 
             setSelectedRequest((prev) => ({
                 ...prev,
-                comments: addReplyToComment(prev.comments, response.data),
+                comments: addReplyToComment(prev.comments || [], response.data),
             }));
         } catch (error) {
             Swal.fire({
@@ -323,6 +323,7 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
                                             requests.data.map((request) => (
                                                 <tr
                                                     onClick={() => {
+                                                        console.log("Inspecting the request object:", request);
                                                         setSelectedRequest(
                                                             request
                                                         );
