@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Modal from "@/Components/Modal";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import Swal from "sweetalert2";
+import TypingCardIndicator from "@/Components/TypingCardIndicator";
 
 // Mock data for conversations
 const mockConversations = [
@@ -114,14 +115,14 @@ export default function ChatIndex({ auth, conversations }) {
     const [open, setOpen] = useState(false);
     const [searchUser, setSearchUser] = useState("");
     const [searchUserResults, setSearchUserResults] = useState([]);
-
     const [conversationForm, setConversationForm] = useState({
         name: "",
         slug: "",
         participants: [],
     });
-
+    const [typingUser, setTypingUser] = useState(null);
     const audio = new Audio("/messenger.mp3");
+    const [editMessage, setEditMessage] = useState(null);
 
     console.log(conversationData, auth);
     //#endregion
@@ -160,30 +161,31 @@ export default function ChatIndex({ auth, conversations }) {
     }, [searchUser]);
 
 
-    useEffect(()=> {
+    useEffect(() => {
         conversationData.forEach((conversation) => {
-            if(conversation.id === selectedConversation?.id){
+            if (conversation.id === selectedConversation?.id) {
                 setSelectedConversation(conversation);
             }
         })
     }, [conversationData])
 
-    // useEffect(() => {
-    //     if (!selectedConversation) return;
-    //     window.Echo.private("conversation." + selectedConversation.id).listen(
-    //         ".new-message",
-    //         (e) => {
-    //            setSelectedConversation((prev) => ({
-    //                ...prev,
-    //                messages: [...prev.messages, e.message],
-    //            }));
-    //            audio.play();
-    //            scrollToBottom();
-    //         }
-    //     );
-    // }, [selectedConversation]);
+    useEffect(() => {
+        if (!selectedConversation) return;
+        window.Echo.private("conversation." + selectedConversation.id).listenForWhisper("typing", (e) => {
+            setTypingUser(e.user);
+            console.log(e.user, "e.user", 'typing');
+            setTimeout(() => {
+                setTypingUser(null);
+            }, 2000);
+        });
+        return () => {
+            window.Echo.leave("conversation." + selectedConversation.id);
+        };
+    }, [selectedConversation]);
 
     useEffect(() => {
+
+
         window.Echo.private("user." + auth.user.id).listen(
             ".new-message",
             (e) => {
@@ -202,7 +204,14 @@ export default function ChatIndex({ auth, conversations }) {
                 audio.play();
             }
         );
+
+        return () => {
+            window.Echo.leave("user." + auth.user.id);
+        };
     }, []);
+
+
+
 
     //#endregion
 
@@ -241,6 +250,62 @@ export default function ChatIndex({ auth, conversations }) {
             console.log("error");
         }
     };
+
+
+    const handleEditMessage = async ()=> {
+        try {
+            const response = await axios.put("/chat/edit-message/" + editMessage.id, {
+                message: editMessage.message,
+            });
+
+            setConversationData((prev) => {
+                return prev.map((conversation) => {
+                    if (conversation.id === selectedConversation.id) {
+                        return {
+                            ...conversation,
+                            messages: [
+                                ...conversation.messages.map((message) => {
+                                    if (message.id === editMessage.id) {
+                                        return response.data.message;
+                                    }
+                                    return message;
+                                }),
+                            ],
+                        };
+                    }
+                    return conversation;
+                });
+            });
+            setEditMessage(null);
+            scrollToBottom();
+        } catch (error) {
+            console.log("error");
+        }
+    }
+
+    const handleDeleteMessage = async (_message)=> {
+        try {
+            const response = await axios.delete("/chat/delete-message/" + _message.id);
+
+            setConversationData((prev) => {
+                return prev.map((conversation) => {
+                    if (conversation.id === selectedConversation.id) {
+                        return {
+                            ...conversation,
+                            messages: [
+                                ...conversation.messages.filter((msg) => msg.id !== _message.id),
+                            ],
+                        };
+                    }
+                    return conversation;
+                });
+            });
+            setEditMessage(null);
+            scrollToBottom();
+        } catch (error) {
+            console.log("error");
+        }
+    }
 
     const handleSearch = async (searchUser) => {
         try {
@@ -352,6 +417,9 @@ export default function ChatIndex({ auth, conversations }) {
         setOpen(false);
     };
 
+
+
+
     //#endregion
 
     //#region Render
@@ -368,7 +436,7 @@ export default function ChatIndex({ auth, conversations }) {
                                 src={
                                     participant.avatar ??
                                     "https://ui-avatars.com/api/?name=" +
-                                        participant.name
+                                    participant.name
                                 }
                             />
                         </>
@@ -383,7 +451,7 @@ export default function ChatIndex({ auth, conversations }) {
                     src={
                         selectedConversation?.owner?.avatar ??
                         "https://ui-avatars.com/api/?name=" +
-                            selectedConversation?.owner?.name
+                        selectedConversation?.owner?.name
                     }
                 />
             );
@@ -410,14 +478,15 @@ export default function ChatIndex({ auth, conversations }) {
                     src={
                         result.user.avatar ??
                         "https://ui-avatars.com/api/?name=" +
-                            result.participants.find(
-                                (participant) => participant.name == search
-                            ).name
+                        result.participants.find(
+                            (participant) => participant.name == search
+                        ).name
                     }
                 />
             );
         }
     };
+
 
     const displayImageConversation = () => {
         if (selectedConversation?.owner_id != auth.id) {
@@ -431,7 +500,7 @@ export default function ChatIndex({ auth, conversations }) {
                                 src={
                                     participant.avatar ??
                                     "https://ui-avatars.com/api/?name=" +
-                                        participant.name
+                                    participant.name
                                 }
                             />
                         </>
@@ -446,13 +515,61 @@ export default function ChatIndex({ auth, conversations }) {
                     src={
                         selectedConversation?.owner?.avatar ??
                         "https://ui-avatars.com/api/?name=" +
-                            selectedConversation?.owner?.name
+                        selectedConversation?.owner?.name
                     }
                 />
             );
         }
     };
 
+
+    const MessageOptions = ({ onEdit, onDelete }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const dropdownRef = useRef(null);
+
+        // This effect handles closing the dropdown if you click outside of it
+        useEffect(() => {
+            function handleClickOutside(event) {
+                if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                    setIsOpen(false);
+                }
+            }
+            document.addEventListener("mousedown", handleClickOutside);
+            return () => document.removeEventListener("mousedown", handleClickOutside);
+        }, [dropdownRef]);
+
+        return (
+            <div className="relative" ref={dropdownRef}>
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="p-1 text-gray-400 rounded-full hover:bg-gray-200 hover:text-gray-600 focus:outline-none"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                        <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM11.5 15.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0z" />
+                    </svg>
+                </button>
+
+                {isOpen && (
+                    <div className="absolute right-0 z-10 mt-2 w-32 bg-white rounded-md border border-gray-200 shadow-lg origin-top-right">
+                        <div className="py-1">
+                            <button
+                                onClick={() => { onEdit(); setIsOpen(false); }}
+                                className="block px-4 py-2 w-full text-sm text-left text-gray-700 hover:bg-gray-100"
+                            >
+                                Edit
+                            </button>
+                            <button
+                                onClick={() => { onDelete(); setIsOpen(false); }}
+                                className="block px-4 py-2 w-full text-sm text-left text-red-700 hover:bg-red-50"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
     //#endregion
 
     return (
@@ -525,9 +642,9 @@ export default function ChatIndex({ auth, conversations }) {
                                                                             result
                                                                                 .user
                                                                                 ?.name ||
-                                                                                displayImageSearchResult(
-                                                                                    result
-                                                                                )
+                                                                            displayImageSearchResult(
+                                                                                result
+                                                                            )
                                                                         )}&background=6b7280&color=fff`
                                                                     }
                                                                     alt={
@@ -547,14 +664,14 @@ export default function ChatIndex({ auth, conversations }) {
                                                                     </p>
                                                                     {result.user
                                                                         ?.email && (
-                                                                        <p className="text-xs text-gray-500">
-                                                                            {
-                                                                                result
-                                                                                    .user
-                                                                                    .email
-                                                                            }
-                                                                        </p>
-                                                                    )}
+                                                                            <p className="text-xs text-gray-500">
+                                                                                {
+                                                                                    result
+                                                                                        .user
+                                                                                        .email
+                                                                                }
+                                                                            </p>
+                                                                        )}
                                                                 </div>
                                                             </div>
                                                         )
@@ -590,12 +707,11 @@ export default function ChatIndex({ auth, conversations }) {
                                 {conversationData.map((conversation) => (
                                     <div
                                         key={conversation.id}
-                                        className={`flex items-center p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 ${
-                                            selectedConversation?.id ===
+                                        className={`flex items-center p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 ${selectedConversation?.id ===
                                             conversation.id
-                                                ? "bg-blue-50"
-                                                : ""
-                                        }`}
+                                            ? "bg-blue-50"
+                                            : ""
+                                            }`}
                                         onClick={() => {
                                             setSelectedConversation(
                                                 conversation
@@ -612,7 +728,7 @@ export default function ChatIndex({ auth, conversations }) {
                                         <div className="flex-1 ml-4 min-w-0">
                                             <div className="flex justify-between items-center">
                                                 {conversation.owner_id !==
-                                                auth.id ? (
+                                                    auth.id ? (
                                                     <h3 className="text-sm font-medium text-gray-900 truncate">
                                                         {conversation?.participants
                                                             .map(
@@ -660,7 +776,7 @@ export default function ChatIndex({ auth, conversations }) {
                                     </div>
                                     <div className="ml-4">
                                         {selectedConversation?.owner_id !=
-                                        auth.id ? (
+                                            auth.id ? (
                                             <h3 className="text-sm font-medium text-gray-900">
                                                 {selectedConversation?.participants
                                                     .map(
@@ -749,7 +865,7 @@ export default function ChatIndex({ auth, conversations }) {
                                 <div className="overflow-y-auto flex-1 p-4 bg-gray-50">
                                     <div className="space-y-4">
                                         {messages == null ||
-                                        messages.length === 0 ? (
+                                            messages.length === 0 ? (
                                             <div className="flex justify-center items-center h-full">
                                                 <p className="text-gray-500">
                                                     No messages yet.
@@ -757,61 +873,135 @@ export default function ChatIndex({ auth, conversations }) {
                                             </div>
                                         ) : (
                                             messages.map((msg) => (
-                                                <div
-                                                    key={msg.id}
-                                                    className={`flex ${
-                                                        msg.user_id ===
-                                                        auth.user.id
+                                                <> {
+                                                    editMessage && msg.id == editMessage?.id ? (<>
+                                                        <div className={`flex ${auth.user.id == msg.user_id ? " justify-end " : "justify-start"}`}>
+                                                            <div className="flex flex-col gap-2">
+                                                                <div className="flex gap-2 items-center">
+                                                                    {!msg.user_id !==
+                                                                        auth.user.id && (
+                                                                            <img
+                                                                                className="self-end mr-2 w-8 h-8 rounded-full"
+                                                                                src={
+                                                                                    msg?.user
+                                                                                        ?.avatar ||
+                                                                                    "https://ui-avatars.com/api/?name=" +
+                                                                                    msg?.user
+                                                                                        ?.name
+                                                                                }
+                                                                                alt={
+                                                                                    msg?.user?.name
+                                                                                }
+                                                                            />
+                                                                        )}
+
+                                                                    <textarea
+                                                                        value={editMessage?.message}
+                                                                        onChange={(e) =>
+                                                                            setEditMessage(
+                                                                                prev => ({
+                                                                                    ...prev,
+                                                                                    message: e.target.value
+                                                                                })
+                                                                            )
+                                                                        }
+                                                                        className="p-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                    />
+                                                                </div>
+
+                                                                <div className="flex gap-2 justify-end items-center">
+                                                                    <button
+                                                                        onClick={handleEditMessage}
+                                                                        type="submit"
+                                                                        className="p-2 text-xs text-blue-500 hover:text-blue-600"
+                                                                    >
+                                                                        Save
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setEditMessage(null);
+                                                                        }}
+                                                                        className="p-2 text-xs text-gray-500 hover:text-gray-600"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </>) : (<div
+                                                        key={msg.id}
+                                                        className={`flex ${msg.user_id ===
+                                                            auth.user.id
                                                             ? "justify-end"
                                                             : "justify-start"
-                                                    }`}
-                                                >
-                                                    {!msg.user_id !==
-                                                        auth.user.id && (
-                                                        <img
-                                                            className="self-end mr-2 w-8 h-8 rounded-full"
-                                                            src={
-                                                                msg?.user
-                                                                    ?.avatar ||
-                                                                "https://ui-avatars.com/api/?name=" +
-                                                                    msg?.user
-                                                                        ?.name
-                                                            }
-                                                            alt={
-                                                                msg?.user?.name
-                                                            }
-                                                        />
-                                                    )}
+                                                            }`}
+                                                    >
+                                                        {!msg.user_id !==
+                                                            auth.user.id && (
+                                                                <img
+                                                                    className="self-end mr-2 w-8 h-8 rounded-full"
+                                                                    src={
+                                                                        msg?.user
+                                                                            ?.avatar ||
+                                                                        "https://ui-avatars.com/api/?name=" +
+                                                                        msg?.user
+                                                                            ?.name
+                                                                    }
+                                                                    alt={
+                                                                        msg?.user?.name
+                                                                    }
+                                                                />
+                                                            )}
 
-                                                    <div
-                                                        className={`max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-lg ${
-                                                            msg.user_id ==
-                                                            auth.user.id
+                                                        <div
+                                                            className={`max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-lg ${msg.user_id ==
+                                                                auth.user.id
                                                                 ? "bg-blue-600 text-white rounded-br-none"
                                                                 : "bg-white border border-gray-200 rounded-bl-none"
-                                                        }`}
-                                                    >
-                                                        {!msg.user_id ===
-                                                            auth.user.id && (
-                                                            <p className="text-xs font-medium text-gray-900">
-                                                                {
-                                                                    msg?.user
-                                                                        ?.name
-                                                                }
+                                                                }`}
+                                                        >
+                                                            {!msg.user_id ===
+                                                                auth.user.id && (
+                                                                    <p className="text-xs font-medium text-gray-900">
+                                                                        {
+                                                                            msg?.user
+                                                                                ?.name
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                            <p className="text-sm">
+                                                                {msg?.message}
                                                             </p>
-                                                        )}
-                                                        <p className="text-sm">
-                                                            {msg?.message}
-                                                        </p>
-                                                        <p className="mt-1 text-xs text-right opacity-70">
-                                                            {msg?.created_at}
-                                                        </p>
-                                                    </div>
-                                                </div>
+                                                            <p className="mt-1 text-xs text-right opacity-70">
+                                                                {msg?.created_at}
+                                                            </p>
+                                                        </div>
+
+
+                                                        {auth.user.id == msg.user_id && (
+                                                            <MessageOptions
+                                                                onEdit={() => {
+                                                                    setEditMessage(msg);
+                                                                }}
+                                                                onDelete={() => {
+                                                                    handleDeleteMessage(msg);
+                                                                }}
+                                                            />)}
+                                                    </div>)
+                                                }
+                                                </>
                                             ))
                                         )}
                                         <div ref={messagesEndRef} />
                                     </div>
+                                    {typingUser && (
+                                        <TypingCardIndicator user={typingUser} />
+                                    )}
                                 </div>
 
                                 {/* Message Input */}
@@ -859,6 +1049,12 @@ export default function ChatIndex({ auth, conversations }) {
                                         <input
                                             type="text"
                                             value={message}
+                                            onKeyDown={(e) =>
+                                                window.Echo.private("conversation." + selectedConversation.id).whisper("typing", {
+                                                    user: auth.user,
+                                                    typing: true
+                                                })
+                                            }
                                             onChange={(e) =>
                                                 setMessage(e.target.value)
                                             }

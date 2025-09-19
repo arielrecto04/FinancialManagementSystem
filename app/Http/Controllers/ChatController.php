@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Events\NewMessage;
 use Illuminate\Support\Str;
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use Illuminate\Http\Request;
 use PhpParser\Node\Stmt\TryCatch;
 use Illuminate\Support\Facades\Auth;
@@ -48,6 +49,29 @@ class ChatController extends Controller
         ]);
     }
 
+    public function editMessage(Request $request, $id)
+    {
+        $message = ConversationMessage::findOrFail($id);
+
+        $message->update([
+            'message' => $request->message,
+        ]);
+
+        return response()->json([
+            'message' => $message,
+        ]);
+    }
+
+    public function deleteMessage($id)
+    {
+        $message = ConversationMessage::findOrFail($id);
+
+        $message->delete();
+
+        return response()->json([
+            'message' => $message,
+        ]);
+    }
 
     public function search(Request $request)
     {
