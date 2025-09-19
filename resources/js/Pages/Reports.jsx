@@ -164,9 +164,13 @@ const Icons = {
     ),
 };
 
-const StatCard = ({ title, value, change, icon, status }) => {
+const StatCard = ({ title, value, change, icon, status, handleClick, isClickable }) => {
+
+    const handleRowClick = () => {
+        handleClick();
+    };
     return (
-        <div className="p-6 bg-white rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md border-gray-200/70 hover:border-gray-300">
+        <div onClick={isClickable ? handleRowClick : null} className="p-6 bg-white rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md border-gray-200/70 hover:border-gray-300" style={{ cursor: isClickable ? "pointer" : "default" }}>
             <div className="flex justify-between items-center">
                 <div>
                     <p className="text-sm text-gray-600">{title}</p>
@@ -1346,6 +1350,10 @@ export default function Reports({
                         <StatCard
                             title="Total Requests"
                             value={localStatistics.totalRequests}
+                            isClickable={true}
+                            handleClick={() => {
+                                setSelectedStatus("all");
+                            }}
                             icon={
                                 <Icons.Document
                                     className={`w-6 h-6 text-gray-600`}
@@ -1355,6 +1363,10 @@ export default function Reports({
                         <StatCard
                             title="Pending Requests"
                             value={localStatistics.pendingRequests}
+                            isClickable={true}
+                            handleClick={() => {
+                                setSelectedStatus("pending");
+                            }}
                             icon={
                                 <Icons.Clock
                                     className={`w-6 h-6 text-blue-600`}
@@ -1365,6 +1377,10 @@ export default function Reports({
                         <StatCard
                             title="Approved Requests"
                             value={localStatistics.approvedRequests}
+                            isClickable={true}
+                            handleClick={() => {
+                                setSelectedStatus("approved");
+                            }}
                             icon={
                                 <Icons.CheckCircle
                                     className={`w-6 h-6 text-green-600`}
@@ -1373,6 +1389,10 @@ export default function Reports({
                             status="approved"
                         />
                         <StatCard
+                            isClickable={true}
+                            handleClick={() => {
+                                setSelectedStatus("rejected");
+                            }}
                             title="Rejected Requests"
                             value={localStatistics.rejectedRequests}
                             icon={
