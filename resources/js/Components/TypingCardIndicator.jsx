@@ -13,10 +13,10 @@ export default function TypingIndicator({ user }) {
             />
             <span>{user.name} is typing...</span>
             {/* Optional: Add a pulsing dot animation */}
-            <span className="flex w-2 h-2">
+            {/* <span className="flex w-2 h-2">
                 <span className="inline-flex absolute w-full h-full bg-blue-400 rounded-full opacity-75 animate-ping"></span>
                 <span className="inline-flex relative w-2 h-2 bg-blue-500 rounded-full"></span>
-            </span>
+            </span> */}
         </div>
     );
 }
