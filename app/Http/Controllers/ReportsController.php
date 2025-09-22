@@ -126,7 +126,8 @@ class ReportsController extends Controller
         // }
 
         // Paginate the results
-        $paginatedRequests = collect($allRequests)->forPage($page, $perPage)->values();
+        $paginatedRequests = collect($allRequests)
+        ->sortByDesc('created_at')->forPage($page, $perPage)->values();
 
 
         $totalPages = ceil(count($allRequests) / $perPage);
