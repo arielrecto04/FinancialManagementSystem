@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SupplyRequest;
-use App\Models\AuditLog;
-use App\Services\EmailService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use App\Models\User;
 use Inertia\Inertia;
+use App\Models\AuditLog;
+use Illuminate\Support\Str;
+use App\Models\Notification;
+use Illuminate\Http\Request;
+use App\Models\SupplyRequest;
+use App\Services\EmailService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class SupplyRequestController extends Controller
@@ -16,6 +18,7 @@ class SupplyRequestController extends Controller
 
     public function store(Request $request)
     {
+
 
         try {
             $validated = $request->validate([
@@ -63,6 +66,23 @@ class SupplyRequestController extends Controller
                 }
             }
 
+
+            $notifyUsers = User::whereIn('role', ['admin', 'superadmin'])->get();
+
+
+
+
+            collect($notifyUsers)->each(function ($user) {
+                Notification::create([
+                    'user_id' => auth()->id(),
+                    'notify_to' => $user->id,
+                    'type' => 'new_supply_request',
+                    'title' => 'New Supply Request',
+                    'message' => 'A new supply request has been submitted',
+                    'url' => route('reports.index')
+                ]);
+            });
+
             // Send email notification to admin and superadmin users
             EmailService::sendNewRequestEmail(
                 $validated,
@@ -77,11 +97,6 @@ class SupplyRequestController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()
                 ->withErrors($e->errors())
-                ->withInput();
-        } catch (\Exception $e) {
-            \Log::error('Supply request submission error: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'Failed to submit supply request')
                 ->withInput();
         }
     }
