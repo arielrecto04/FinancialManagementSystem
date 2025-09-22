@@ -850,7 +850,7 @@ export default function ChatIndex({ auth, conversations }) {
                                 </div>
 
                                 {/* Messages */}
-                                <div className="overflow-y-auto flex-1 p-4 bg-gray-50">
+                                <div className="overflow-y-auto flex-row-reverse flex-1 p-4 bg-gray-50">
                                     <div className="space-y-4">
                                         {messages == null ||
                                             messages.length === 0 ? (
