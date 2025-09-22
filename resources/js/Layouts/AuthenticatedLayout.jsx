@@ -220,7 +220,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
                 <main className="min-h-screen">{children}</main>
             </div>
-            <ChatFloating />
+            {/* <ChatFloating /> */}
         </div>
     );
 }
