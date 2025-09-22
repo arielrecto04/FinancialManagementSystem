@@ -8,9 +8,14 @@ use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use App\Actions\GenerateRequestNumber;
 
 class ReimbursementRequestController extends Controller
 {
+
+    public function __construct(public GenerateRequestNumber $generateRequestNumber){}
+
+
     public function store(Request $request)
     {
         try {
@@ -21,12 +26,13 @@ class ReimbursementRequestController extends Controller
                 'amount' => 'required|numeric',
                 'description' => 'required|string',
                 'remarks' => 'nullable|string',
-                'request_number' => 'required|string|unique:reimbursement_requests',
+                // 'request_number' => 'required|string|unique:reimbursement_requests',
                 'expense_items' => 'required|json',
             ]);
 
             $reimbursement = new ReimbursementRequest($request->except(['receipt']));
             $reimbursement->user_id = auth()->id();
+            $reimbursement->request_number = $this->generateRequestNumber->handle('reimbursement_request', $reimbursement);
             $reimbursement->status = 'pending';
 
             if ($request->hasFile('receipt')) {

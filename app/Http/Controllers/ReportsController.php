@@ -350,7 +350,7 @@ class ReportsController extends Controller
         return function ($request) {
             return [
                 'id' => $request->id,
-                'request_number' => 'LIQ-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
+                'request_number' => $request->request_number,
                 'type' => 'Liquidation',
                 'user_name' => $request->user->name,
                 'department' => $request->department,
@@ -387,7 +387,7 @@ class ReportsController extends Controller
         return function ($request) {
             return [
                 'id' => $request->id,
-                'request_number' => 'HR-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
+                'request_number' => $request->request_number,
                 'type' => 'HR Expense',
                 'user_name' => $request->user->name,
                 'department' => 'HR',
@@ -421,7 +421,7 @@ class ReportsController extends Controller
         return function ($request) {
             return [
                 'id' => $request->id,
-                'request_number' => 'OP-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
+                'request_number' => $request->request_number,
                 'type' => 'Operating Expense',
                 'user_name' => $request->user->name,
                 'department' => $request->department,

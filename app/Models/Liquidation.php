@@ -21,6 +21,7 @@ class Liquidation extends Model
         'cash_advance_amount',
         'amount_to_refund',
         'amount_to_reimburse',
+        'request_number',
         'status',
     ];
 

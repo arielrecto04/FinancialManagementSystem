@@ -11,10 +11,14 @@ use Illuminate\Http\Request;
 use App\Models\PettyCashRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Actions\GenerateRequestNumber;
 use App\Notifications\NewRequestNotification;
 
 class PettyCashRequestController extends Controller
 {
+
+    public function __construct(public GenerateRequestNumber $generateRequestNumber){}
+
     public function index()
     {
         $requests = PettyCashRequest::with(['user', 'approver'])
@@ -44,7 +48,6 @@ class PettyCashRequestController extends Controller
 
         $pettyCashRequest = new PettyCashRequest([
             'user_id' => Auth::id(),
-            'request_number' => 'PCR-' . date('Y') . '-' . Str::random(8),
             'date_requested' => $validated['date_requested'],
             'date_needed' => $validated['date_needed'],
             'amount' => $validated['amount'],
@@ -54,6 +57,9 @@ class PettyCashRequestController extends Controller
             'category' => $validated['category'],
             'status' => 'pending',
         ]);
+
+
+        $pettyCashRequest->request_number = $this->generateRequestNumber->handle('petty_cash_request', $pettyCashRequest);
 
         if ($request->hasFile('receipt')) {
             $path = $request->file('receipt')->store('receipts', 'public');

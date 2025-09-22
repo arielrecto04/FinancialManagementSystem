@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Liquidation;
-use App\Models\LiquidationItem;
 use App\Models\AuditLog;
-use App\Services\EmailService;
+use App\Models\Liquidation;
 use Illuminate\Http\Request;
+use App\Services\EmailService;
+use App\Models\LiquidationItem;
 use Illuminate\Support\Facades\DB;
+use App\Actions\GenerateRequestNumber;
 
 class LiquidationController extends Controller
 {
+
+    public function __construct(
+        private GenerateRequestNumber $generateRequestNumber,
+    ) {}
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -33,6 +39,7 @@ class LiquidationController extends Controller
 
             $liquidation = Liquidation::create([
                 'user_id' => auth()->id(),
+                'request_number' => $this->generateRequestNumber->handle('liquidation', new Liquidation()),
                 'department' => $validated['department'],
                 'date' => $validated['date'],
                 'expense_type' => $validated['expense_type'],
@@ -63,7 +70,7 @@ class LiquidationController extends Controller
                 'amount' => $validated['total_amount'],
                 'ip_address' => $request->ip()
             ]);
-            
+
             // Send email notification to admin and superadmin users
             EmailService::sendNewRequestEmail(
                 [
@@ -116,7 +123,7 @@ class LiquidationController extends Controller
 
         try {
             $liquidation->update($validated);
-            
+
             // Log the status change
             AuditLog::create([
                 'user_id' => auth()->id(),
@@ -128,7 +135,7 @@ class LiquidationController extends Controller
                 'amount' => $liquidation->total_amount,
                 'ip_address' => $request->ip()
             ]);
-            
+
             return redirect()->back()->with('success', 'Liquidation request updated successfully.');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -140,11 +147,11 @@ class LiquidationController extends Controller
     public function destroy(Liquidation $liquidation)
     {
         $this->authorize('delete', $liquidation);
-        
+
         // Store info for audit log
         $amount = $liquidation->total_amount;
         $type = $liquidation->expense_type;
-        
+
         $liquidation->delete();
 
         // Log the deletion
@@ -161,4 +168,4 @@ class LiquidationController extends Controller
 
         return redirect()->back()->with('success', 'Liquidation request deleted successfully.');
     }
-} 
+}

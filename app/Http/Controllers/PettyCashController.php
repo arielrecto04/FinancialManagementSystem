@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PettyCashRequest;
-use App\Services\EmailService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Services\EmailService;
+use App\Models\PettyCashRequest;
+use Illuminate\Support\Facades\DB;
+use App\Actions\GenerateRequestNumber;
 
 class PettyCashController extends Controller
 {
+
+    public function __construct(public GenerateRequestNumber $generateRequestNumber){}
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -24,7 +28,7 @@ class PettyCashController extends Controller
 
         try {
             // Generate request number
-            $requestNumber = 'PC-' . Str::random(8);
+            $requestNumber = $this->generateRequestNumber->handle('petty_cash_request', new PettyCashRequest());
 
             // Create petty cash request
             $pettyCashRequest = PettyCashRequest::create([
@@ -39,7 +43,7 @@ class PettyCashController extends Controller
                 'description' => $validated['description'],
                 'status' => 'pending'
             ]);
-            
+
             // Send email notification to admin and superadmin users
             EmailService::sendNewRequestEmail(
                 [
@@ -63,4 +67,4 @@ class PettyCashController extends Controller
                 ->with('error', 'Failed to create petty cash request: ' . $e->getMessage());
         }
     }
-} 
+}
