@@ -51,7 +51,7 @@ class SupplyRequestController extends Controller
 
 
 
-            if($request->hasFile('attachments')) {
+            if ($request->hasFile('attachments')) {
                 $attachments = $request->file('attachments');
 
                 foreach ($attachments as $attachment) {
@@ -93,7 +93,6 @@ class SupplyRequestController extends Controller
 
 
             return redirect()->back()->with('success', 'Supply request submitted successfully!');
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()
                 ->withErrors($e->errors())
@@ -126,6 +125,18 @@ class SupplyRequestController extends Controller
             'amount' => $supplyRequest->total_amount,
             'ip_address' => $request->ip()
         ]);
+
+
+
+        Notification::create([
+            'user_id' => auth()->id(),
+            'notify_to' => $supplyRequest->user_id,
+            'type' => 'update_supply_request',
+            'title' => 'Supply Request Updated',
+            'message' => 'A supply request has been updated ' . $supplyRequest->request_number . ' by ' . auth()->user()->name,
+            'url' => route('requests.history')
+        ]);
+
 
         return response()->json([
             'message' => 'Status updated successfully',
