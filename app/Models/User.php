@@ -81,4 +81,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Comment::class);
     }
+
+    public function conversations()
+    {
+        return $this->hasMany(Conversation::class);
+    }
+
+    public function participants()
+    {
+        return $this->belongsToMany(ConversationParticipant::class)->withPivot('role');
+    }
 }

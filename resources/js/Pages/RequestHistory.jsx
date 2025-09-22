@@ -108,7 +108,6 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
         });
     };
 
-
     const updateReplyToComment = (comments, updatedReply) => {
         return comments.map((comment) => {
             if (comment.id === updatedReply.commentable_id) {
@@ -123,12 +122,27 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
             if (comment.replies && comment.replies.length > 0) {
                 return {
                     ...comment,
-                    replies: updateReplyToComment(comment.replies, updatedReply),
+                    replies: updateReplyToComment(
+                        comment.replies,
+                        updatedReply
+                    ),
                 };
             }
 
             return comment;
         });
+    };
+
+    const countTotalUnreadComments = (comments) => {
+        let count = 0;
+        comments.forEach((comment) => {
+            count += comment.replies.filter((reply) => !reply.is_viewed).length;
+
+            if (comment.replies && comment.replies.length > 0) {
+                count += countTotalUnreadComments(comment.replies);
+            }
+        });
+        return count;
     };
 
     //#endregion
@@ -173,8 +187,10 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
 
     const updateComment = async (comment) => {
         try {
-
-            const response = await axios.put(route("comments.update", comment.id), comment);
+            const response = await axios.put(
+                route("comments.update", comment.id),
+                comment
+            );
 
             setComment(null);
 
@@ -188,9 +204,10 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
             if (selectedRequest.model === response.data.commentable_type) {
                 setSelectedRequest({
                     ...selectedRequest,
-                    comments: selectedRequest.comments.map(
-                        (comment) =>
-                            comment.id === response.data.id ? response.data : comment
+                    comments: selectedRequest.comments.map((comment) =>
+                        comment.id === response.data.id
+                            ? response.data
+                            : comment
                     ),
                 });
 
@@ -333,7 +350,14 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
                                                     className="transition-colors duration-150 cursor-pointer hover:bg-gray-50"
                                                 >
                                                     <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-                                                        #{request.id}
+                                                        <span className="relative">
+                                                            #{request.id}
+                                                            <div class="inline-flex absolute -top-2 justify-center items-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full border-2 border-white -end-2 dark:border-gray-900">
+                                                                {countTotalUnreadComments(
+                                                                    request.comments
+                                                                )}
+                                                            </div>
+                                                        </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                                         {request.type}

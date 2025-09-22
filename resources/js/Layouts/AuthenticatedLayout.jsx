@@ -4,6 +4,8 @@ import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import ChatFloating from '@/Components/ChatFloating';
+
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
@@ -14,7 +16,7 @@ export default function AuthenticatedLayout({ header, children }) {
             <NavLink href={route('dashboard')} active={route().current('dashboard')}>
                 Dashboard
             </NavLink>
-            
+
             {user.role === 'admin' && (
                 <>
                     <NavLink href={route('statistics.index')} active={route().current('statistics.index')}>
@@ -31,7 +33,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     </NavLink>
                 </>
             )}
-            
+
             {user.role === 'superadmin' && (
                 <>
                     <NavLink href={route('petty-cash-requests.approvals')} active={route().current('petty-cash-requests.approvals')}>
@@ -51,9 +53,13 @@ export default function AuthenticatedLayout({ header, children }) {
                     </NavLink>
                 </>
             )}
-            
+
             <NavLink href={route('request.form')} active={route().current('request.form')}>
                 Request Forms
+            </NavLink>
+
+            <NavLink href={route('chat.index')} active={route().current('chat.index')}>
+                Chat
             </NavLink>
         </>
     );
@@ -63,7 +69,7 @@ export default function AuthenticatedLayout({ header, children }) {
             <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
                 Dashboard
             </ResponsiveNavLink>
-            
+
             {user.role === 'admin' && (
                 <div className="space-y-1">
                     <ResponsiveNavLink href={route('statistics.index')} active={route().current('statistics.index')}>
@@ -80,7 +86,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     </ResponsiveNavLink>
                 </div>
             )}
-            
+
             {user.role === 'superadmin' && (
                 <div className="space-y-1">
                     <ResponsiveNavLink href={route('petty-cash-requests.approvals')} active={route().current('petty-cash-requests.approvals')}>
@@ -100,29 +106,31 @@ export default function AuthenticatedLayout({ header, children }) {
                     </ResponsiveNavLink>
                 </div>
             )}
-            
+
             <ResponsiveNavLink href={route('request.form')} active={route().current('request.form')}>
                 Request Forms
             </ResponsiveNavLink>
         </>
     );
 
+
+
     return (
         <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white border-b border-gray-100 fixed w-full top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="fixed top-0 z-50 w-full bg-white border-b border-gray-100">
+                <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         {/* Logo and Desktop Navigation */}
                         <div className="flex">
                             <div className="flex items-center shrink-0">
                                 <Link href="/" className="flex items-center">
-                                    <img 
-                                        src="/images/innovatologo.png" 
-                                        alt="Innovato Logo" 
-                                        className="h-10 w-auto" 
+                                    <img
+                                        src="/images/innovatologo.png"
+                                        alt="Innovato Logo"
+                                        className="w-auto h-10"
                                     />
                                 </Link>
-                            </div>  
+                            </div>
 
                             <div className="hidden sm:flex sm:items-center sm:ms-8 sm:space-x-4">
                                 {navigationLinks()}
@@ -133,9 +141,9 @@ export default function AuthenticatedLayout({ header, children }) {
                         <div className="hidden sm:flex sm:items-center">
                             <Dropdown>
                                 <Dropdown.Trigger>
-                                    <button className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-800 transition duration-150 ease-in-out">
+                                    <button className="flex items-center text-sm font-medium text-gray-600 transition duration-150 ease-in-out hover:text-gray-800">
                                         <span>{user.name}</span>
-                                        <svg className="ms-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <svg className="w-4 h-4 ms-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                                         </svg>
                                     </button>
@@ -154,9 +162,9 @@ export default function AuthenticatedLayout({ header, children }) {
                         <div className="flex items-center sm:hidden">
                             <button
                                 onClick={() => setShowingNavigationDropdown((previousState) => !previousState)}
-                                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out"
+                                className="inline-flex justify-center items-center p-2 text-gray-400 rounded-md transition duration-150 ease-in-out hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500"
                             >
-                                <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                                <svg className="w-6 h-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                     <path
                                         className={!showingNavigationDropdown ? 'inline-flex' : 'hidden'}
                                         strokeLinecap="round"
@@ -186,8 +194,8 @@ export default function AuthenticatedLayout({ header, children }) {
                     {/* Mobile User Info */}
                     <div className="pt-4 pb-1 border-t border-gray-200">
                         <div className="px-4">
-                            <div className="font-medium text-base text-gray-800">{user.name}</div>
-                            <div className="font-medium text-sm text-gray-500">{user.email}</div>
+                            <div className="text-base font-medium text-gray-800">{user.name}</div>
+                            <div className="text-sm font-medium text-gray-500">{user.email}</div>
                         </div>
 
                         <div className="mt-3 space-y-1">
@@ -204,7 +212,7 @@ export default function AuthenticatedLayout({ header, children }) {
             <div className="pt-16">
                 {header && (
                     <header className="bg-white shadow-sm">
-                        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                        <div className="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
                             {header}
                         </div>
                     </header>
@@ -212,6 +220,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
                 <main className="min-h-screen">{children}</main>
             </div>
+            <ChatFloating />
         </div>
     );
 }
