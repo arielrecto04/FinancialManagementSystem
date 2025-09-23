@@ -10,11 +10,16 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Models\SupplyRequest;
 use App\Services\EmailService;
+use App\Actions\GenerateRequestNumber;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class SupplyRequestController extends Controller
 {
     use AuthorizesRequests;
+
+    public function __construct(public GenerateRequestNumber $generateRequestNumber)
+    {
+    }
 
     public function store(Request $request)
     {
@@ -28,13 +33,14 @@ class SupplyRequestController extends Controller
                 'items_json' => 'required|json',
                 'total_amount' => 'required|numeric',
                 'remarks' => 'nullable|string',
-                'request_number' => 'required|string|unique:supply_requests',
+                // 'request_number' => 'required|string|unique:supply_requests',
                 'location' => 'required|string',
             ]);
 
             $supplyRequest = new SupplyRequest($validated);
             $supplyRequest->user_id = auth()->id();
             $supplyRequest->status = 'pending';
+            $supplyRequest->request_number = $this->generateRequestNumber->handle('supply_request', new SupplyRequest());
             $supplyRequest->save();
 
             // Log the supply request creation
@@ -88,7 +94,7 @@ class SupplyRequestController extends Controller
                 $validated,
                 'Supply',
                 auth()->user()->name,
-                $validated['request_number']
+                $supplyRequest->request_number
             );
 
 

@@ -2,27 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\OperatingExpense;
-use App\Models\AuditLog;
-use App\Services\EmailService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use App\Models\AuditLog;
+use Illuminate\Http\Request;
+use App\Services\EmailService;
+use App\Models\OperatingExpense;
+use Illuminate\Support\Facades\Auth;
+use App\Actions\GenerateRequestNumber;
 
 class OperatingExpenseController extends Controller
 {
+
+    public function __construct(public GenerateRequestNumber $generateRequestNumber)
+    {
+    }
     /**
      * Display a listing of the operating expense requests.
      */
     public function index()
     {
         $user = Auth::user();
-        
+
         // Admin can see all requests, others can see their own
-        $operatingExpenses = $user->role === 'admin' 
+        $operatingExpenses = $user->role === 'admin'
             ? OperatingExpense::with('user')->latest()->paginate(10)
             : OperatingExpense::where('user_id', $user->id)->latest()->paginate(10);
-        
+
         return Inertia::render('OperatingExpenses/Index', [
             'operatingExpenses' => $operatingExpenses
         ]);
@@ -45,16 +50,16 @@ class OperatingExpenseController extends Controller
             ]);
 
             // Generate request number
-            $latestRequest = OperatingExpense::latest()->first();
-            $latestNumber = $latestRequest ? intval(substr($latestRequest->request_number, 3)) : 0;
-            $newNumber = str_pad($latestNumber + 1, 8, '0', STR_PAD_LEFT);
-            $requestNumber = 'OP-' . $newNumber;
+            // $latestRequest = OperatingExpense::latest()->first();
+            // $latestNumber = $latestRequest ? intval(substr($latestRequest->request_number, 3)) : 0;
+            // $newNumber = str_pad($latestNumber + 1, 8, '0', STR_PAD_LEFT);
+            // $requestNumber = 'OP-' . $newNumber;
 
             $operatingExpense = new OperatingExpense($validated);
             $operatingExpense->requestor_name = auth()->user()->name;
             $operatingExpense->user_id = auth()->id();
             $operatingExpense->status = 'pending';
-            $operatingExpense->request_number = $requestNumber;
+            $operatingExpense->request_number = $this->generateRequestNumber->handle('operating_expense', new OperatingExpense());
             $operatingExpense->save();
 
             // Log the operating expense request creation
@@ -68,7 +73,7 @@ class OperatingExpenseController extends Controller
                 'amount' => $validated['total_amount'],
                 'ip_address' => $request->ip()
             ]);
-            
+
             // Send email notification to admin and superadmin users
             EmailService::sendNewRequestEmail(
                 [
@@ -81,7 +86,7 @@ class OperatingExpenseController extends Controller
                 ],
                 'Operating Expenses',
                 auth()->user()->name,
-                $requestNumber
+                $operatingExpense->request_number
             );
 
             return redirect()->back()->with('success', 'Operating expense request submitted successfully.');
@@ -98,7 +103,7 @@ class OperatingExpenseController extends Controller
     public function show(OperatingExpense $operatingExpense)
     {
         $this->authorize('view', $operatingExpense);
-        
+
         return Inertia::render('OperatingExpenses/Show', [
             'operatingExpense' => $operatingExpense->load('user')
         ]);
@@ -110,7 +115,7 @@ class OperatingExpenseController extends Controller
     public function updateStatus(Request $request, OperatingExpense $operatingExpense)
     {
         $this->authorize('update', $operatingExpense);
-        
+
         $validated = $request->validate([
             'status' => 'required|in:pending,approved,rejected',
             'rejection_reason' => 'required_if:status,rejected|nullable|string',
@@ -139,11 +144,11 @@ class OperatingExpenseController extends Controller
     public function destroy(OperatingExpense $operatingExpense)
     {
         $this->authorize('delete', $operatingExpense);
-        
+
         // Store info for audit log
         $amount = $operatingExpense->total_amount;
         $category = $operatingExpense->expense_category;
-        
+
         $operatingExpense->delete();
 
         // Log the deletion
@@ -167,13 +172,13 @@ class OperatingExpenseController extends Controller
     public function updateItems(Request $request, $requestNumber)
     {
         $operatingExpense = OperatingExpense::where('request_number', $requestNumber)->firstOrFail();
-        
+
         $user = auth()->user();
-        $canEdit = 
-            $user->role === 'superadmin' || 
+        $canEdit =
+            $user->role === 'superadmin' ||
             $user->role === 'admin' ||
             ($user->id === $operatingExpense->user_id && $operatingExpense->status === 'pending');
-            
+
         if (!$canEdit) {
             return response()->json([
                 'message' => 'You are not authorized to edit this request'

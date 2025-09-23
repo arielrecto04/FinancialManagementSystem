@@ -239,6 +239,7 @@ class DashboardController extends Controller
             $query->with(['user', 'replies', ]);
         }, 'attachments'])->where('user_id', $user->id)->get()->map(function ($item) {
             $item->type = 'Supply Request';
+            $item->model = get_class($item);
             return $item;
         });
 
@@ -246,6 +247,7 @@ class DashboardController extends Controller
             $query->with(['user', 'replies']);
         }, 'attachments'])->where('user_id', $user->id)->get()->map(function ($item) {
             $item->type = 'Reimbursement';
+            $item->model = get_class($item);
             return $item;
         });
 
