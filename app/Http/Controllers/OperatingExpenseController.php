@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Inertia\Inertia;
 use App\Models\AuditLog;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
 use App\Models\OperatingExpense;
@@ -61,6 +63,21 @@ class OperatingExpenseController extends Controller
             $operatingExpense->status = 'pending';
             $operatingExpense->request_number = $this->generateRequestNumber->handle('operating_expense', new OperatingExpense());
             $operatingExpense->save();
+
+
+
+            $notifyUsers = User::where('role', 'admin')->orWhere('role', 'superadmin')->get();
+
+            foreach ($notifyUsers as $user) {
+                Notification::create([
+                    'user_id' => auth()->id(),
+                    'notify_to' => $user->id,
+                    'type' => 'new_operating_expense_request',
+                    'title' => 'New Operating Expense Request',
+                    'message' => 'A new operating expense request has been submitted',
+                    'url' => route('reports.index')
+                ]);
+            }
 
             // Log the operating expense request creation
             AuditLog::create([

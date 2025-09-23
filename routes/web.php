@@ -18,6 +18,7 @@ use App\Http\Controllers\PettyCashController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\AdminBudgetController;
 use App\Http\Controllers\LiquidationController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SupplyRequestController;
 use App\Http\Controllers\OperatingExpenseController;
 use App\Http\Controllers\PettyCashRequestController;
@@ -175,6 +176,14 @@ Route::resource('comments', CommentController::class)->only([
     'update',
     'destroy',
 ]);
+
+
+Route::prefix('notifications')->as('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'userNotifications'])->name('user-notifications');
+    Route::get('/list', [NotificationController::class, 'listNotifications'])->name('list-notifications');
+    Route::post('/mark-as-read/{id}', [NotificationController::class, 'markAsRead'])->name('mark-as-read');
+    Route::post('/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-as-read');
+});
 
 
 

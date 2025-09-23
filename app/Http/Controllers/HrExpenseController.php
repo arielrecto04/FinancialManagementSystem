@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\GenerateRequestNumber;
-use App\Models\HrExpense;
-use App\Models\AuditLog;
-use App\Services\EmailService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use Inertia\Inertia;
+use App\Models\AuditLog;
+use App\Models\HrExpense;
+use App\Models\Notification;
+use Illuminate\Http\Request;
+use App\Services\EmailService;
+use Illuminate\Support\Facades\Auth;
+use App\Actions\GenerateRequestNumber;
 
 class HrExpenseController extends Controller
 {
@@ -39,6 +41,9 @@ class HrExpenseController extends Controller
      */
     public function store(Request $request)
     {
+
+
+
         $validated = $request->validate([
             'date_of_request' => 'required|date',
             'expenses_category' => 'required|string|max:255',
@@ -66,6 +71,22 @@ class HrExpenseController extends Controller
             $hrExpense->save();
 
             // Log the HR expense request creation
+
+
+            $notifyUsers = User::where('role', 'admin')->orWhere('role', 'superadmin')->get();
+
+            foreach ($notifyUsers as $user) {
+                Notification::create([
+                    'user_id' => auth()->id(),
+                    'notify_to' => $user->id,
+                    'type' => 'new_hr_expense_request',
+                    'title' => 'New HR Expense Request',
+                    'message' => 'A new HR expense request has been submitted',
+                    'url' => route('reports.index')
+                ]);
+            }
+
+
             AuditLog::create([
                 'user_id' => auth()->id(),
                 'user_name' => auth()->user()->name,

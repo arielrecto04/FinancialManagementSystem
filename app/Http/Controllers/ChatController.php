@@ -7,9 +7,10 @@ use Inertia\Inertia;
 use App\Events\NewMessage;
 use Illuminate\Support\Str;
 use App\Models\Conversation;
-use App\Models\ConversationMessage;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use PhpParser\Node\Stmt\TryCatch;
+use App\Models\ConversationMessage;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ConversationParticipant;
 
@@ -38,6 +39,23 @@ class ChatController extends Controller
 
 
         $message->load('user');
+
+
+
+        $notifyUsers = $conversation->participants()->where('user_id', '!=', auth()->id())
+            ->orWhere('user_id', '!=', $conversation->owner_id)->get();
+
+
+        foreach ($notifyUsers as $user) {
+            Notification::create([
+                'user_id' => auth()->id(),
+                'notify_to' => $user->id,
+                'type' => 'new_message',
+                'title' => 'New Message',
+                'message' => "New message {$request->message}",
+                'url' => route('chat.index')
+            ]);
+        }
 
 
 

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\AuditLog;
 use App\Models\Liquidation;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
 use App\Models\LiquidationItem;
@@ -19,6 +21,9 @@ class LiquidationController extends Controller
 
     public function store(Request $request)
     {
+
+
+
         $validated = $request->validate([
             'department' => 'required|string',
             'date' => 'required|date',
@@ -56,6 +61,23 @@ class LiquidationController extends Controller
                     'category' => $item['category'],
                     'description' => $item['description'],
                     'amount' => $item['amount'],
+                ]);
+            }
+
+
+
+            $notifyUsers = User::where('role', 'admin')->orWhere('role', 'superadmin')->get();
+
+
+
+            foreach ($notifyUsers as $user) {
+                Notification::create([
+                    'user_id' => auth()->id(),
+                    'notify_to' => $user->id,
+                    'type' => 'new_liquidation_request',
+                    'title' => 'New Liquidation Request',
+                    'message' => 'A new liquidation request has been submitted',
+                    'url' => route('reports.index')
                 ]);
             }
 
