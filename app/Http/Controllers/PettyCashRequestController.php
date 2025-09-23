@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Models\AuditLog;
 use App\Models\AdminBudget;
 use Illuminate\Support\Str;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Models\PettyCashRequest;
 use Illuminate\Support\Facades\DB;
@@ -86,6 +87,16 @@ class PettyCashRequestController extends Controller
                Auth::user()->name,
                $pettyCashRequest->request_number
             ));
+
+
+            Notification::create([
+                'user_id' => auth()->id(),
+                'notify_to' => $superAdmin->id,
+                'type' => 'new_petty_cash_request',
+                'title' => 'New Petty Cash Request',
+                'message' => 'A new petty cash request has been submitted',
+                'url' => route('petty-cash-requests.approvals')
+            ]);
         }
 
 

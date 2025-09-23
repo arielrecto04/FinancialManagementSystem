@@ -1,6 +1,7 @@
 import { BellIcon, CheckIcon } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { Link } from "@inertiajs/react";
+import axios from "axios";
 
 export default function Notification() {
     const [isOpen, setIsOpen] = useState(false);
@@ -38,17 +39,29 @@ export default function Notification() {
         fetchNotifications();
     }, []);
 
-    const markAsRead = (id) => {
-        setNotifications(notifications.map(notification =>
-            notification.id === id ? { ...notification, read: true } : notification
-        ));
+    const markAsRead = async (id) => {
+        try {
+            const response = await axios.post(`/notifications/mark-as-read/${id}`);
+
+            const data = response.data;
+            setNotifications((prev) => prev.map((notification) => notification.id === id ? data.notification : notification));
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+        }
     };
 
-    const markAllAsRead = () => {
-        setNotifications(notifications.map(notification =>
-            ({ ...notification, read: true })
-        ));
+
+    const markAllAsRead = async () => {
+        try {
+            const response = await axios.post('/notifications/mark-all-as-read');
+            const data = response.data;
+            setNotifications([...data.notifications]);
+        } catch (error) {
+            console.error('Error marking notifications as read:', error);
+        }
     };
+
+
 
     const unreadCount = notifications.filter(n => !n.read).length;
 

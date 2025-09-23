@@ -181,6 +181,8 @@ Route::resource('comments', CommentController::class)->only([
 Route::prefix('notifications')->as('notifications.')->group(function () {
     Route::get('/', [NotificationController::class, 'userNotifications'])->name('user-notifications');
     Route::get('/list', [NotificationController::class, 'listNotifications'])->name('list-notifications');
+    Route::post('/mark-as-read/{id}', [NotificationController::class, 'markAsRead'])->name('mark-as-read');
+    Route::post('/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-as-read');
 });
 
 

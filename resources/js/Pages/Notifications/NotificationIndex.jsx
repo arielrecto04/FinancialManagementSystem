@@ -1,6 +1,8 @@
 import { BellIcon, CheckIcon, ClockIcon, ExclamationTriangleIcon, CheckCircleIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import axios from "axios";
+import { useState } from "react";
 
 // Helper function to get icon based on notification type
 const getNotificationIcon = (type) => {
@@ -98,14 +100,28 @@ const formatRelativeTime = (dateString) => {
 export default function NotificationIndex({ notifications }) {
 
 
-    const markAsRead = (id) => {
-        // In a real app, this would be an API call
-        console.log(`Marking notification ${id} as read`);
+
+
+    const [notificationsData, setNotificationsData] = useState(notifications);
+
+    const markAsRead = async (id) => {
+        try {
+            const response = await axios.post(`/notifications/mark-as-read/${id}`);
+            const data = response.data;
+            setNotificationsData((prev) => prev.map((notification) => notification.id === id ? data.notification : notification));
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+        }
     };
 
-    const markAllAsRead = () => {
-        // In a real app, this would be an API call
-        console.log('Marking all notifications as read');
+    const markAllAsRead = async () => {
+        try {
+            const response = await axios.post('/notifications/mark-all-as-read');
+            const data = response.data;
+            setNotificationsData([...data.notifications]);
+        } catch (error) {
+            console.error('Error marking notifications as read:', error);
+        }
     };
 
     const unreadCount = notifications.filter(n => !n.read).length;
@@ -135,7 +151,7 @@ export default function NotificationIndex({ notifications }) {
 
                 <div className="overflow-hidden bg-white shadow sm:rounded-md">
                     <ul className="divide-y divide-gray-200">
-                        {notifications.map((notification) => (
+                        {notificationsData.map((notification) => (
                             <li key={notification.id} className={!notification.read ? 'bg-blue-50' : 'bg-white'}>
                                 <Link
                                     href={notification.url}
