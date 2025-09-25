@@ -91,4 +91,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(ConversationParticipant::class)->withPivot('role');
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
 }

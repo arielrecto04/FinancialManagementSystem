@@ -2,27 +2,35 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\HrExpense;
-use App\Models\AuditLog;
-use App\Services\EmailService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use Inertia\Inertia;
+use App\Models\AuditLog;
+use App\Models\HrExpense;
+use App\Models\Notification;
+use Illuminate\Http\Request;
+use App\Services\EmailService;
+use Illuminate\Support\Facades\Auth;
+use App\Actions\GenerateRequestNumber;
 
 class HrExpenseController extends Controller
 {
     /**
      * Display a listing of the HR expense requests.
      */
+
+    public function __construct(public GenerateRequestNumber $generateRequestNumber)
+    {
+
+    }
     public function index()
     {
         $user = Auth::user();
-        
+
         // Admin can see all requests, HR users can see their own
-        $hrExpenses = $user->role === 'admin' 
+        $hrExpenses = $user->role === 'admin'
             ? HrExpense::with('user')->latest()->paginate(10)
             : HrExpense::where('user_id', $user->id)->latest()->paginate(10);
-        
+
         return Inertia::render('HrExpenses/Index', [
             'hrExpenses' => $hrExpenses
         ]);
@@ -33,6 +41,9 @@ class HrExpenseController extends Controller
      */
     public function store(Request $request)
     {
+
+
+
         $validated = $request->validate([
             'date_of_request' => 'required|date',
             'expenses_category' => 'required|string|max:255',
@@ -43,23 +54,39 @@ class HrExpenseController extends Controller
             'additional_comment' => 'nullable|string',
         ]);
 
+
+
+
+
         try {
             $user = Auth::user();
-            
-            // Generate request number
-            $latestRequest = HrExpense::latest()->first();
-            $latestNumber = $latestRequest ? intval(substr($latestRequest->request_number, 3)) : 0;
-            $newNumber = str_pad($latestNumber + 1, 8, '0', STR_PAD_LEFT);
-            $requestNumber = 'HR-' . $newNumber;
-            
+
+
+
             $hrExpense = new HrExpense($validated);
             $hrExpense->user_id = $user->id;
             $hrExpense->requestor_name = $user->name;
-            $hrExpense->request_number = $requestNumber;
+            $hrExpense->request_number = $this->generateRequestNumber->handle('hr_expense',new HrExpense());
             $hrExpense->status = 'pending';
             $hrExpense->save();
 
             // Log the HR expense request creation
+
+
+            $notifyUsers = User::where('role', 'admin')->orWhere('role', 'superadmin')->get();
+
+            foreach ($notifyUsers as $user) {
+                Notification::create([
+                    'user_id' => auth()->id(),
+                    'notify_to' => $user->id,
+                    'type' => 'new_hr_expense_request',
+                    'title' => 'New HR Expense Request',
+                    'message' => 'A new HR expense request has been submitted',
+                    'url' => route('reports.index')
+                ]);
+            }
+
+
             AuditLog::create([
                 'user_id' => auth()->id(),
                 'user_name' => auth()->user()->name,
@@ -70,7 +97,7 @@ class HrExpenseController extends Controller
                 'amount' => $validated['total_amount_requested'],
                 'ip_address' => $request->ip()
             ]);
-            
+
             // Send email notification to admin and superadmin users
             EmailService::sendNewRequestEmail(
                 [
@@ -83,7 +110,7 @@ class HrExpenseController extends Controller
                 ],
                 'HR Expenses',
                 $user->name,
-                $requestNumber
+                $hrExpense->request_number
             );
 
             return redirect()->back()->with('success', 'HR expense request submitted successfully.');
@@ -100,7 +127,7 @@ class HrExpenseController extends Controller
     public function show(HrExpense $hrExpense)
     {
         $this->authorize('view', $hrExpense);
-        
+
         return Inertia::render('HrExpenses/Show', [
             'hrExpense' => $hrExpense->load('user')
         ]);
@@ -112,7 +139,7 @@ class HrExpenseController extends Controller
     public function updateStatus(Request $request, HrExpense $hrExpense)
     {
         $this->authorize('update', $hrExpense);
-        
+
         $validated = $request->validate([
             'status' => 'required|in:pending,approved,rejected',
             'rejection_reason' => 'required_if:status,rejected|nullable|string',
@@ -141,11 +168,11 @@ class HrExpenseController extends Controller
     public function destroy(HrExpense $hrExpense)
     {
         $this->authorize('delete', $hrExpense);
-        
+
         // Store info for audit log
         $amount = $hrExpense->total_amount_requested;
         $category = $hrExpense->expenses_category;
-        
+
         $hrExpense->delete();
 
         // Log the deletion
@@ -170,17 +197,17 @@ class HrExpenseController extends Controller
     {
         // Find the HR expense request by request_number
         $hrExpense = HrExpense::where('request_number', $requestNumber)->firstOrFail();
-        
+
         // Allow updates if:
         // 1. User is a superadmin
         // 2. User owns the request and it's pending
         // 3. User is an admin
         $user = auth()->user();
-        $canEdit = 
-            $user->role === 'superadmin' || 
+        $canEdit =
+            $user->role === 'superadmin' ||
             $user->role === 'admin' ||
             ($user->id === $hrExpense->user_id && $hrExpense->status === 'pending');
-            
+
         if (!$canEdit) {
             return response()->json([
                 'message' => 'You are not authorized to edit this request'

@@ -252,7 +252,7 @@ export default function ChatIndex({ auth, conversations }) {
     };
 
 
-    const handleEditMessage = async ()=> {
+    const handleEditMessage = async () => {
         try {
             const response = await axios.put("/chat/edit-message/" + editMessage.id, {
                 message: editMessage.message,
@@ -283,7 +283,7 @@ export default function ChatIndex({ auth, conversations }) {
         }
     }
 
-    const handleDeleteMessage = async (_message)=> {
+    const handleDeleteMessage = async (_message) => {
         try {
             const response = await axios.delete("/chat/delete-message/" + _message.id);
 
@@ -424,39 +424,41 @@ export default function ChatIndex({ auth, conversations }) {
 
     //#region Render
 
-    const displayImage = () => {
-        if (selectedConversation.owner_id != auth.id) {
-            return (
-                <>
-                    {selectedConversation.participants.map((participant) => (
-                        <>
-                            <img
-                                key={participant.id}
-                                className="w-10 h-10 rounded-full"
-                                src={
-                                    participant.avatar ??
-                                    "https://ui-avatars.com/api/?name=" +
-                                    participant.name
-                                }
-                            />
-                        </>
-                    ))}
-                </>
-            );
-        } else {
-            return (
-                <img
-                    key={selectedConversation?.owner?.id}
-                    className="w-10 h-10 rounded-full"
-                    src={
-                        selectedConversation?.owner?.avatar ??
-                        "https://ui-avatars.com/api/?name=" +
-                        selectedConversation?.owner?.name
-                    }
-                />
-            );
-        }
+    const displayImage = (conversation) => {
+
+
+        // if (conversation.owner_id != auth.id) {
+        //     return (
+        //         <img
+        //             key={conversation?.owner?.id}
+        //             className="w-10 h-10 rounded-full"
+        //             src={
+        //                 conversation?.owner?.avatar ??
+        //                 "https://ui-avatars.com/api/?name=" +
+        //                 conversation?.owner?.name
+        //             }
+        //         />
+        //     );
+        // } else {
+        //     conversation.participants.find((participant) => {
+        //         if (participant.id != auth.id) {
+        //             return (
+        //                 <img
+        //                     key={participant.id}
+        //                     className="w-10 h-10 rounded-full"
+        //                     src={
+        //                         participant.avatar ??
+        //                         "https://ui-avatars.com/api/?name=" +
+        //                         participant.name
+        //                     }
+        //                 />
+        //             );
+        //         }
+        //     })
+        // }
     };
+
+
 
     const displayImageSearchResult = (result) => {
         if (result.owner_id != auth.id) {
@@ -488,38 +490,51 @@ export default function ChatIndex({ auth, conversations }) {
     };
 
 
-    const displayImageConversation = () => {
-        if (selectedConversation?.owner_id != auth.id) {
+    const displayImageConversation = (conversation, auth) => {
+        // --- 1. HANDLE GROUP CHATS ---
+        // A group chat has more than 2 participants.
+        if (conversation.participants.length > 2) {
+            // Get the first two participants to create a stacked avatar look.
+            const participantsToShow = conversation.participants.slice(0, 2);
+
             return (
-                <>
-                    {selectedConversation.participants.map((participant) => (
-                        <>
-                            <img
-                                key={participant.id}
-                                className="w-10 h-10 rounded-full"
-                                src={
-                                    participant.avatar ??
-                                    "https://ui-avatars.com/api/?name=" +
-                                    participant.name
-                                }
-                            />
-                        </>
+                <div className="flex relative items-center w-10 h-10">
+                    {participantsToShow.map((participant, index) => (
+                        <img
+                            key={participant.id}
+                            className={`absolute h-7 w-7 rounded-full ring-2 ring-white ${index === 0 ? 'top-0 left-0' : 'bottom-0 right-0'}`}
+                            src={
+                                participant.avatar ??
+                                `https://ui-avatars.com/api/?name=${participant.name}&background=random&color=fff`
+                            }
+                            alt={participant.name}
+                        />
                     ))}
-                </>
-            );
-        } else {
-            return (
-                <img
-                    key={selectedConversation?.owner?.id}
-                    className="w-10 h-10 rounded-full"
-                    src={
-                        selectedConversation?.owner?.avatar ??
-                        "https://ui-avatars.com/api/?name=" +
-                        selectedConversation?.owner?.name
-                    }
-                />
+                </div>
             );
         }
+
+        // --- 2. HANDLE ONE-ON-ONE CHATS ---
+        // Find the other person in the chat who is not the authenticated user.
+        const otherParticipant = conversation.participants.find(
+            (p) => p.id !== auth.user.id
+        );
+
+        // If for some reason the other participant isn't found,
+        // fall back to the conversation owner or the current user.
+        const userToShow = otherParticipant || conversation.owner || auth;
+
+        return (
+            <img
+                key={userToShow.id}
+                className="w-10 h-10 rounded-full"
+                src={
+                    userToShow.avatar ??
+                    `https://ui-avatars.com/api/?name=${userToShow.name}&background=random&color=fff`
+                }
+                alt={userToShow.name}
+            />
+        );
     };
 
 
@@ -569,6 +584,19 @@ export default function ChatIndex({ auth, conversations }) {
                 )}
             </div>
         );
+    }
+
+
+    const displayName = (conversation) => {
+        if (conversation.owner.id == auth.user.id) {
+            if (conversation.participants.length > 1) {
+                return conversation.participants.join(', ');
+            } else {
+                return conversation.participants[0].name;
+            }
+        }
+
+        return conversation.owner.name;
     }
     //#endregion
 
@@ -720,31 +748,18 @@ export default function ChatIndex({ auth, conversations }) {
                                         }}
                                     >
                                         <div className="relative">
-                                            {displayImageConversation()}
+                                            {displayImageConversation(conversation, auth)}
                                             {conversation?.isOnline && (
                                                 <span className="block absolute right-0 bottom-0 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white"></span>
                                             )}
                                         </div>
                                         <div className="flex-1 ml-4 min-w-0">
                                             <div className="flex justify-between items-center">
-                                                {conversation.owner_id !==
-                                                    auth.id ? (
-                                                    <h3 className="text-sm font-medium text-gray-900 truncate">
-                                                        {conversation?.participants
-                                                            .map(
-                                                                (participant) =>
-                                                                    participant.name
-                                                            )
-                                                            .join(", ")}
-                                                    </h3>
-                                                ) : (
-                                                    <h3 className="text-sm font-medium text-gray-900 truncate">
-                                                        {
-                                                            conversation?.owner
-                                                                ?.name
-                                                        }
-                                                    </h3>
-                                                )}
+
+                                                <h3 className="text-sm font-medium text-gray-900 capitalize truncate">
+                                                    {displayName(conversation)}
+                                                </h3>
+
                                                 <span className="text-xs text-gray-500">
                                                     {conversation?.time}
                                                 </span>
@@ -775,37 +790,10 @@ export default function ChatIndex({ auth, conversations }) {
                                         )}
                                     </div>
                                     <div className="ml-4">
-                                        {selectedConversation?.owner_id !=
-                                            auth.id ? (
-                                            <h3 className="text-sm font-medium text-gray-900">
-                                                {selectedConversation?.participants
-                                                    .map(
-                                                        (participant) =>
-                                                            participant.name
-                                                    )
-                                                    .join(", ")}
-                                            </h3>
-                                        ) : (
-                                            <h3 className="text-sm font-medium text-gray-900">
-                                                {
-                                                    selectedConversation?.owner
-                                                        ?.name
-                                                }
-                                            </h3>
-                                        )}
-                                        {/* <h3 className="text-sm font-medium text-gray-900">
-                                            {selectedConversation?.owner_id ==
-                                            auth.id ?
-                                                    {selectedConversation?.participants
-                                                        .map(
-                                                            (participant) =>
-                                                                participant.name
-                                                        )},
-                                            : (
-                                                selectedConversation?.owner
-                                                    ?.name
-                                            )}
-                                        </h3> */}
+                                        <h3 className="text-sm font-medium text-gray-900 capitalize">
+                                            {displayName(selectedConversation)}
+                                        </h3>
+
                                         <p className="text-xs text-gray-500">
                                             {selectedConversation.isOnline
                                                 ? "Online"
@@ -862,7 +850,7 @@ export default function ChatIndex({ auth, conversations }) {
                                 </div>
 
                                 {/* Messages */}
-                                <div className="overflow-y-auto flex-1 p-4 bg-gray-50">
+                                <div className="overflow-y-auto flex-row-reverse flex-1 p-4 bg-gray-50">
                                     <div className="space-y-4">
                                         {messages == null ||
                                             messages.length === 0 ? (

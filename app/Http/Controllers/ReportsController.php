@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SupplyRequest;
-use App\Models\ReimbursementRequest;
-use App\Models\Liquidation;
-use App\Models\AdminBudget;
-use App\Models\HrExpense;
-use App\Models\OperatingExpense;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Carbon\Carbon;
-use Maatwebsite\Excel\Facades\Excel;
+use Inertia\Inertia;
+use App\Models\AuditLog;
+use App\Models\HrExpense;
+use App\Models\AdminBudget;
+use App\Models\Liquidation;
+use App\Models\Notification;
+use Illuminate\Http\Request;
+use App\Models\SupplyRequest;
 use App\Exports\RequestsExport;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\OperatingExpense;
 use Illuminate\Support\Facades\DB;
-use App\Models\AuditLog;
+use App\Models\ReimbursementRequest;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Redirect;
 
 class ReportsController extends Controller
@@ -127,7 +128,8 @@ class ReportsController extends Controller
         // }
 
         // Paginate the results
-        $paginatedRequests = collect($allRequests)->forPage($page, $perPage)->values();
+        $paginatedRequests = collect($allRequests)
+        ->sortByDesc('created_at')->forPage($page, $perPage)->values();
 
 
         $totalPages = ceil(count($allRequests) / $perPage);
@@ -351,7 +353,7 @@ class ReportsController extends Controller
         return function ($request) {
             return [
                 'id' => $request->id,
-                'request_number' => 'LIQ-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
+                'request_number' => $request->request_number,
                 'type' => 'Liquidation',
                 'user_name' => $request->user->name,
                 'department' => $request->department,
@@ -388,7 +390,7 @@ class ReportsController extends Controller
         return function ($request) {
             return [
                 'id' => $request->id,
-                'request_number' => 'HR-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
+                'request_number' => $request->request_number,
                 'type' => 'HR Expense',
                 'user_name' => $request->user->name,
                 'department' => 'HR',
@@ -422,7 +424,7 @@ class ReportsController extends Controller
         return function ($request) {
             return [
                 'id' => $request->id,
-                'request_number' => 'OP-' . str_pad($request->id, 8, '0', STR_PAD_LEFT),
+                'request_number' => $request->request_number,
                 'type' => 'Operating Expense',
                 'user_name' => $request->user->name,
                 'department' => $request->department,
@@ -606,6 +608,15 @@ class ReportsController extends Controller
                     'description' => 'Approved ' . $requestModel->getTable() . ' #' . $id,
                     'amount' => $requestAmount,
                     'ip_address' => request()->ip()
+                ]);
+
+                Notification::create([
+                    'user_id' => $user->id,
+                    'notify_to' => $requestModel->user_id,
+                    'type' => 'update_request',
+                    'title' => 'Request Updated',
+                    'message' => 'A request has been updated ' . $requestModel->request_number . ' by ' . auth()->user()->name,
+                    'url' => route('requests.history')
                 ]);
 
                 DB::commit();

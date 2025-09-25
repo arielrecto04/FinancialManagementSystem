@@ -2,15 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ReimbursementRequest;
+use App\Models\User;
 use App\Models\AuditLog;
-use App\Services\EmailService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Services\EmailService;
+use App\Models\ReimbursementRequest;
+use App\Actions\GenerateRequestNumber;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Notification;
 
 class ReimbursementRequestController extends Controller
 {
+
+    public function __construct(public GenerateRequestNumber $generateRequestNumber){}
+
+
     public function store(Request $request)
     {
         try {
@@ -21,12 +28,13 @@ class ReimbursementRequestController extends Controller
                 'amount' => 'required|numeric',
                 'description' => 'required|string',
                 'remarks' => 'nullable|string',
-                'request_number' => 'required|string|unique:reimbursement_requests',
+                // 'request_number' => 'required|string|unique:reimbursement_requests',
                 'expense_items' => 'required|json',
             ]);
 
             $reimbursement = new ReimbursementRequest($request->except(['receipt']));
             $reimbursement->user_id = auth()->id();
+            $reimbursement->request_number = $this->generateRequestNumber->handle('reimbursement_request', $reimbursement);
             $reimbursement->status = 'pending';
 
             if ($request->hasFile('receipt')) {
@@ -46,6 +54,20 @@ class ReimbursementRequestController extends Controller
                 'amount' => $validated['amount'],
                 'ip_address' => $request->ip()
             ]);
+
+
+            $notifyUsers = User::where('role', 'admin')->orWhere('role', 'superadmin')->get();
+
+            foreach ($notifyUsers as $user) {
+                Notification::create([
+                    'user_id' => auth()->id(),
+                    'notify_to' => $user->id,
+                    'type' => 'new_reimbursement_request',
+                    'title' => 'New Reimbursement Request',
+                    'message' => 'A new reimbursement request has been submitted',
+                    'url' => route('reports.index')
+                ]);
+            }
 
             // Send email notification to admin and superadmin users
             EmailService::sendNewRequestEmail(

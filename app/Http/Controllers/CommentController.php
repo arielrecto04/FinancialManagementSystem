@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Comment;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 
 class CommentController extends Controller
@@ -39,6 +41,18 @@ class CommentController extends Controller
         $comment = Comment::create([
             ...$validated,
             'user_id' => auth()->id(),
+        ]);
+
+
+        $notifyUser = $comment->commentable->user;
+
+
+        Notification::create([
+            'user_id' => auth()->id(),
+            'notify_to' => $notifyUser->id,
+            'type' => 'new_comment',
+            'title' => 'New Comment',
+            'message' => 'A new comment has been added',
         ]);
 
         return response()->json($comment->load('user'));

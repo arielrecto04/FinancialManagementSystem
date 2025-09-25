@@ -2,20 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SupplyRequest;
-use App\Models\AuditLog;
-use App\Services\EmailService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use App\Models\User;
 use Inertia\Inertia;
+use App\Models\AuditLog;
+use Illuminate\Support\Str;
+use App\Models\Notification;
+use Illuminate\Http\Request;
+use App\Models\SupplyRequest;
+use App\Services\EmailService;
+use App\Actions\GenerateRequestNumber;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class SupplyRequestController extends Controller
 {
     use AuthorizesRequests;
 
+    public function __construct(public GenerateRequestNumber $generateRequestNumber)
+    {
+    }
+
     public function store(Request $request)
     {
+
 
         try {
             $validated = $request->validate([
@@ -25,13 +33,14 @@ class SupplyRequestController extends Controller
                 'items_json' => 'required|json',
                 'total_amount' => 'required|numeric',
                 'remarks' => 'nullable|string',
-                'request_number' => 'required|string|unique:supply_requests',
+                // 'request_number' => 'required|string|unique:supply_requests',
                 'location' => 'required|string',
             ]);
 
             $supplyRequest = new SupplyRequest($validated);
             $supplyRequest->user_id = auth()->id();
             $supplyRequest->status = 'pending';
+            $supplyRequest->request_number = $this->generateRequestNumber->handle('supply_request', new SupplyRequest());
             $supplyRequest->save();
 
             // Log the supply request creation
@@ -48,7 +57,7 @@ class SupplyRequestController extends Controller
 
 
 
-            if($request->hasFile('attachments')) {
+            if ($request->hasFile('attachments')) {
                 $attachments = $request->file('attachments');
 
                 foreach ($attachments as $attachment) {
@@ -63,25 +72,36 @@ class SupplyRequestController extends Controller
                 }
             }
 
+
+            $notifyUsers = User::whereIn('role', ['admin', 'superadmin'])->get();
+
+
+
+
+            collect($notifyUsers)->each(function ($user) {
+                Notification::create([
+                    'user_id' => auth()->id(),
+                    'notify_to' => $user->id,
+                    'type' => 'new_supply_request',
+                    'title' => 'New Supply Request',
+                    'message' => 'A new supply request has been submitted',
+                    'url' => route('reports.index')
+                ]);
+            });
+
             // Send email notification to admin and superadmin users
             EmailService::sendNewRequestEmail(
                 $validated,
                 'Supply',
                 auth()->user()->name,
-                $validated['request_number']
+                $supplyRequest->request_number
             );
 
 
             return redirect()->back()->with('success', 'Supply request submitted successfully!');
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()
                 ->withErrors($e->errors())
-                ->withInput();
-        } catch (\Exception $e) {
-            \Log::error('Supply request submission error: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'Failed to submit supply request')
                 ->withInput();
         }
     }
@@ -111,6 +131,18 @@ class SupplyRequestController extends Controller
             'amount' => $supplyRequest->total_amount,
             'ip_address' => $request->ip()
         ]);
+
+
+
+        Notification::create([
+            'user_id' => auth()->id(),
+            'notify_to' => $supplyRequest->user_id,
+            'type' => 'update_supply_request',
+            'title' => 'Supply Request Updated',
+            'message' => 'A supply request has been updated ' . $supplyRequest->request_number . ' by ' . auth()->user()->name,
+            'url' => route('requests.history')
+        ]);
+
 
         return response()->json([
             'message' => 'Status updated successfully',

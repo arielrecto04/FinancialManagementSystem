@@ -5,6 +5,8 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import ChatFloating from '@/Components/ChatFloating';
+import { BellIcon } from '@heroicons/react/24/outline'
+import Notification from "@/Components/Notification"
 
 
 export default function AuthenticatedLayout({ header, children }) {
@@ -137,26 +139,36 @@ export default function AuthenticatedLayout({ header, children }) {
                             </div>
                         </div>
 
-                        {/* User Dropdown - Desktop */}
-                        <div className="hidden sm:flex sm:items-center">
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <button className="flex items-center text-sm font-medium text-gray-600 transition duration-150 ease-in-out hover:text-gray-800">
-                                        <span>{user.name}</span>
-                                        <svg className="w-4 h-4 ms-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                        </svg>
-                                    </button>
-                                </Dropdown.Trigger>
 
-                                <Dropdown.Content>
-                                    <Dropdown.Link href={route('profile.edit')}>Profile</Dropdown.Link>
-                                    <Dropdown.Link href={route('logout')} method="post" as="button">
-                                        Log Out
-                                    </Dropdown.Link>
-                                </Dropdown.Content>
-                            </Dropdown>
+                        <div className='flex gap-2 items-center'>
+                            {/* Notifications */}
+                            <Notification />
+                            {/* User Dropdown - Desktop */}
+                            <div className="hidden sm:flex sm:items-center">
+                                <Dropdown>
+                                    <Dropdown.Trigger>
+                                        <button className="flex items-center text-sm font-medium text-gray-600 transition duration-150 ease-in-out hover:text-gray-800">
+                                            <span>{user.name}</span>
+                                            <svg className="w-4 h-4 ms-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        </button>
+                                    </Dropdown.Trigger>
+
+                                    <Dropdown.Content>
+                                        <Dropdown.Link href={route('profile.edit')}>Profile</Dropdown.Link>
+                                        <Dropdown.Link href={route('logout')} method="post" as="button">
+                                            Log Out
+                                        </Dropdown.Link>
+                                    </Dropdown.Content>
+                                </Dropdown>
+                            </div>
+
                         </div>
+
+
+
+
 
                         {/* Hamburger Menu Button */}
                         <div className="flex items-center sm:hidden">
