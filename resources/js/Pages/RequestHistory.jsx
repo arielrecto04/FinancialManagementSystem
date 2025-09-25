@@ -133,18 +133,17 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
         });
     };
 
-    const countTotalUnreadComments = (comments) => {
-        let count = 0;
-        comments.forEach((comment) => {
-            count += comment.replies.filter((reply) => !reply.is_viewed).length;
+    const countTotalUnreadComments = (comments = []) => {
+        return comments.reduce((total, comment) => {
+            const isCurrentCommentUnread = !comment.is_viewed ? 1 : 0;
 
-            if (comment.replies && comment.replies.length > 0) {
-                count += countTotalUnreadComments(comment.replies);
-            }
-        });
-        return count;
+            const unreadRepliesCount = countTotalUnreadComments(
+                comment.replies || []
+            );
+
+            return total + isCurrentCommentUnread + unreadRepliesCount;
+        }, 0);
     };
-
     //#endregion
 
     //#region Functions
@@ -165,7 +164,10 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
             if (selectedRequest.model === response.data.commentable_type) {
                 setSelectedRequest({
                     ...selectedRequest,
-                    comments: [...(selectedRequest.comments || []), response.data],
+                    comments: [
+                        ...(selectedRequest.comments || []),
+                        response.data,
+                    ],
                 });
 
                 return;
@@ -323,40 +325,77 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
                                             <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                                 Status
                                             </th>
+                                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                                                Actions
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {requests.data.length === 0 ? (
+                                        {/* Handle the "No Requests" case first for clarity */}
+                                        {requests.data.length === 0 && (
                                             <tr>
                                                 <td
-                                                    colSpan="4"
+                                                    colSpan="5"
                                                     className="py-16 text-center text-gray-500"
                                                 >
                                                     No requests found for your
                                                     selected filters.
                                                 </td>
                                             </tr>
-                                        ) : (
-                                            requests.data.map((request) => (
+                                        )}
+
+                                        {/* Map over the requests to render each row */}
+                                        {requests.data.map((request) => {
+                                            // Calculate the unread count once and reuse it
+                                            const unreadCount =
+                                                countTotalUnreadComments(
+                                                    request.comments
+                                                );
+                                            return (
                                                 <tr
+                                                    key={`${request.type}-${request.id}`}
                                                     onClick={() => {
-                                                        console.log("Inspecting the request object:", request);
                                                         setSelectedRequest(
                                                             request
                                                         );
+                                                        
                                                         setIsModalOpen(true);
+
+                                                        if (unreadCount > 0) {
+                                                            const type = request.type.toLowerCase().replace(" ","");
+                                                            axios.post(route("comments.markAsRead",{type,  id: request.id,}))
+                                                                .then(() => {
+                                                                    // 4. On success, refresh the data to hide the badge
+                                                                    router.reload({
+                                                                            only: ["requests",],
+                                                                            preserveState: true,
+                                                                            preserveScroll: true,
+                                                                        }
+                                                                    );
+                                                                })
+                                                                .catch((error) => {console.error("Failed to mark comments as read:", error);
+                                                                    }
+                                                                );
+                                                        }
                                                     }}
-                                                    key={`${request.type}-${request.id}`}
-                                                    className="transition-colors duration-150 cursor-pointer hover:bg-gray-50"
+                                                       className={`transition-colors duration-150 cursor-pointer hover:bg-gray-50
+                                                                ${unreadCount > 0 ? 'font-bold text-gray-900' : 'text-gray-500'}`}
                                                 >
-                                                    <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-                                                        <span className="relative">
-                                                            #{request.id}
-                                                            <div class="inline-flex absolute -top-2 justify-center items-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full border-2 border-white -end-2 dark:border-gray-900">
-                                                                {countTotalUnreadComments(
-                                                                    request.comments
-                                                                )}
-                                                            </div>
+                                                    <td className="px-6 py-4 text-sm font-medium text-gray-800 whitespace-nowrap">
+                                                        <span className="flex items-center gap-2">
+                                                            {
+                                                                request.request_number
+                                                            }
+
+                                                            {/* Conditionally render the badge if count > 0 */}
+                                                            {unreadCount >
+                                                                0 && (
+                                                                <div className="inline-flex justify-center items-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full border-2 border-white dark:border-gray-900">
+                                                                    {
+                                                                        unreadCount
+                                                                    }
+                                                                </div>
+                                                            )}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
@@ -376,9 +415,22 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
                                                             {request.status}
                                                         </span>
                                                     </td>
+                                                    <td className="px-6 py-4 text-sm font-medium text-left whitespace-nowrap">
+                                                        {request.status === "pending" && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const type = request.type.toLowerCase().replace(' ', '');
+                                                                    router.get(route("requests.edit", {type, id: request.id}));
+                                                                }}
+                                                                className="text-indigo-600 hover:text-indigo-900">
+                                                                Edit
+                                                            </button>
+                                                        )}
+                                                    </td>
                                                 </tr>
-                                            ))
-                                        )}
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
