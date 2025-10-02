@@ -17,6 +17,7 @@ use App\Models\OperatingExpense;
 use Illuminate\Support\Facades\DB;
 use App\Models\ReimbursementRequest;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Redirect;
 
 class ReportsController extends Controller
 {
@@ -707,4 +708,68 @@ class ReportsController extends Controller
             'used_budget' => $this->formatNumber($adminBudget->used_budget)
         ]);
     }
+
+    public function edit($type, $id){
+
+        $modelMap = [
+            'supplyrequest' => SupplyRequest::class,
+            'reimbursement' => ReimbursementRequest::class,
+            'liquidation' => Liquidation::class,
+            'hrexpense' => HrExpense::class,
+            'operatingexpense' => OperatingExpense::class,
+        ];
+
+        $modelClass = $modelMap[$type];
+        $request = $modelClass::findOrFail($id);
+
+        if ($request->status !== 'pending') {
+            return Redirect::route('requests.history')
+                ->with('error', 'Only pending requests can be edited.');
+        }
+
+        return Inertia::render('Requests/Edit', [
+            'request' => $request,
+            'requestType' => $type,
+        ]);
+    }
+
+    public function update(Request $fmsRequest, $type, $id)
+    {
+
+        $modelMap = [
+            'supply' => SupplyRequest::class,
+            'reimbursement' => ReimbursementRequest::class,
+            'liquidation' => Liquidation::class,
+            'hrexpense' => HrExpense::class,
+            'operatingexpense' => OperatingExpense::class,
+        ];
+
+
+        $modelClass = $modelMap[$type];
+        $requestToUpdate = $modelClass::findOrFail($id);
+
+
+        if ($requestToUpdate->status !== 'pending') {
+            return Redirect::route('requests.history')
+                ->with('error', 'Only pending requests can be edited.');
+        }
+
+
+        $validatedData = $fmsRequest->validate([
+            'purpose' => 'sometimes|required|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'particulars' => 'sometimes|required|string|max:255',
+            'department' => 'sometimes|required|string|max:255',
+            'expense_type' => 'sometimes|required|string|max:255',
+            'expense_date' => 'sometimes|required|date',
+
+        ]);
+
+
+        $requestToUpdate->update($validatedData);
+
+
+        return Redirect::route('requests.history')->with('success', 'Request updated successfully!');
+    }
+
 }
