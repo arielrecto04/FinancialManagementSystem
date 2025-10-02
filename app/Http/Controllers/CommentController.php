@@ -103,4 +103,40 @@ class CommentController extends Controller
         ]);
     }
 
+    public function markAsRead(Request $request, $type, $id){
+
+        $modelMap = [
+            'supplyrequest' => \App\Models\SupplyRequest::class,
+            'liquidation' => \App\Models\Liquidation::class,
+            'reimbursement' => \App\Models\ReimbursementRequest::class,
+            'hrexpense' => \App\Models\HrExpense::class,
+            'operatingexpense' => \App\Models\OperatingExpense::class,
+        ];
+        $modelClass = $modelMap[$type] ?? null;
+
+        if (!$modelClass) {
+            return response()->json(['message' => 'Invalid request type.'], 400);
+        }
+
+        $comments = Comment::where('commentable_type', $modelClass)
+            ->where('commentable_id', $id)
+            ->get();
+
+        function updateNestedComments($comments)
+        {
+            foreach ($comments as $comment) {
+                $comment->update(['is_viewed' => true]);
+                if ($comment->replies()->exists()) {
+                    updateNestedComments($comment->replies);
+                }
+            }
+        }
+
+        // Start the recursive update.
+        updateNestedComments($comments);
+
+        return response()->json(['message' => 'Comments marked as read.']);
+    
+    }
+
 }

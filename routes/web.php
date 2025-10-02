@@ -73,6 +73,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reports/export-excel', [ReportsController::class, 'exportExcel'])->name('reports.export-excel');
     Route::get('/reports/export-pdf', [ReportsController::class, 'exportPDF'])->name('reports.export-pdf');
     Route::post('/reports/{id}/update-status', [ReportsController::class, 'updateStatus'])->name('reports.update-status');
+    Route::get('/requests/{type}/{id}/edit', [ReportsController::class, 'edit'])->name('requests.edit');
+    Route::put('/requests/{request}', [ReportsController::class, 'update'])->name('requests.update');
 
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -186,6 +188,8 @@ Route::resource('comments', CommentController::class)->only([
     'update',
     'destroy',
 ]);
+Route::post('/comments/mark-as-read/{type}/{id}', [CommentController::class, 'markAsRead'])
+    ->name('comments.markAsRead');
 
 
 Route::prefix('notifications')->as('notifications.')->group(function () {

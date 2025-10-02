@@ -12,6 +12,7 @@ const departmentOptions = [
     { value: "Development", label: "Development" },
     { value: "AppTech", label: "AppTech" },
     { value: "Human Resource", label: "Human Resource" },
+    { value: "OGM", label: "OGM" },
     { value: "Marketing", label: "Marketing" },
 ];
 
@@ -1910,7 +1911,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                     <div>
                                         <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
                                             {icons.description}
-                                            Description
+                                            Particulars
                                         </label>
                                         <textarea
                                             value={

@@ -740,25 +740,28 @@ export default function Reports({
 
         console.log("Request object:", request);
 
-        // Try to find the ID based on the request_number format
-        if (request.request_number) {
-            // For formats like "SR-00000123", "RR-00000456", "LIQ-00000789", etc.
-            const parts = request.request_number.split("-");
-            if (parts.length === 2) {
-                // Remove leading zeros
-                requestId = parseInt(parts[1].replace(/^0+/, ""), 10);
+        // // Try to find the ID based on the request_number format
+        // if (request.request_number) {
+        //     // For formats like "SR-00000123", "RR-00000456", "LIQ-00000789", etc.
+        //     const parts = request.request_number.split("-");
+        //     if (parts.length === 2) {
+        //         // Remove leading zeros
+        //         requestId = parseInt(parts[1].replace(/^0+/, ""), 10);
 
-                // Determine request type from prefix if not already set
-                if (!requestType) {
-                    const prefix = parts[0];
-                    if (prefix === "SUP") requestType = "supply";
-                    else if (prefix === "REM") requestType = "reimbursement";
-                    else if (prefix === "LIQ") requestType = "liquidation";
-                    else if (prefix === "HR") requestType = "hrexpense";
-                    else if (prefix === "OP") requestType = "operatingexpense";
-                }
-            }
-        }
+        //         // Determine request type from prefix if not already set
+        //         if (!requestType) {
+        //             const prefix = parts[0];
+        //             if (prefix === "SUP") requestType = "supply";
+        //             else if (prefix === "REM") requestType = "reimbursement";
+        //             else if (prefix === "LIQ") requestType = "liquidation";
+        //             else if (prefix === "HR") requestType = "hrexpense";
+        //             else if (prefix === "OP") requestType = "operatingexpense";
+        //         }
+        //     }
+        // }
+
+
+
 
         // If we still don't have an ID, try other properties
         if (!requestId) {
