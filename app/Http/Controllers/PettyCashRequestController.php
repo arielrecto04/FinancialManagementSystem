@@ -69,6 +69,10 @@ class PettyCashRequestController extends Controller
 
         $pettyCashRequest->save();
 
+
+        $pettyCashRequest->entryBudgetType();
+
+
         $superAdmin = User::where('role', 'superadmin')->first();
 
 

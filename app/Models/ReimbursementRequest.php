@@ -42,4 +42,20 @@ class ReimbursementRequest extends Model
     {
         return $this->morphMany(Attachment::class, 'attachable');
     }
+
+
+    public function entryBudgetType(): void
+    {
+        $budgetTypeExpense =   BudgetTypeExpense::where('expense_model', get_class($this))->first();
+
+
+        if ($budgetTypeExpense) {
+            Budget::create([
+                'budget_type_id' => $budgetTypeExpense->budget_type_id,
+                'name' => $this->request_number . ' - ' . $this->expense_type . ' - ' . $this->created_at->format('Y-m-d') . ' - ' . 'Reimbursement',
+                'amount' => $budgetTypeExpense->is_expense ? $this->amount * -1 : $this->amount,
+                'type' => $budgetTypeExpense->is_expense ? 'expense' : 'income',
+            ]);
+        }
+    }
 }

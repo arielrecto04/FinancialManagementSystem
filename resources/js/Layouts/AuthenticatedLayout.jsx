@@ -33,6 +33,10 @@ export default function AuthenticatedLayout({ header, children }) {
                     <NavLink href={route('audit-logs.index')} active={route().current('audit-logs.index')}>
                         Audit Logs
                     </NavLink>
+
+                    <NavLink href={route('budgets.index')} active={route().current('budgets.index')}>
+                        Budget Management
+                    </NavLink>
                 </>
             )}
 
@@ -52,6 +56,10 @@ export default function AuthenticatedLayout({ header, children }) {
                     </NavLink>
                     <NavLink href={route('audit-logs.index')} active={route().current('audit-logs.index')}>
                         Audit Logs
+                    </NavLink>
+
+                    <NavLink href={route('budgets.index')} active={route().current('budgets.index')}>
+                        Budget Management
                     </NavLink>
                 </>
             )}
@@ -86,6 +94,9 @@ export default function AuthenticatedLayout({ header, children }) {
                     <ResponsiveNavLink href={route('audit-logs.index')} active={route().current('audit-logs.index')}>
                         Audit Logs
                     </ResponsiveNavLink>
+                    <ResponsiveNavLink href={route('budgets.index')} active={route().current('budgets.index')}>
+                        Budget Management
+                    </ResponsiveNavLink>
                 </div>
             )}
 
@@ -105,6 +116,9 @@ export default function AuthenticatedLayout({ header, children }) {
                     </ResponsiveNavLink>
                     <ResponsiveNavLink href={route('audit-logs.index')} active={route().current('audit-logs.index')}>
                         Audit Logs
+                    </ResponsiveNavLink>
+                    <ResponsiveNavLink href={route('budgets.index')} active={route().current('budgets.index')}>
+                        Budget Management
                     </ResponsiveNavLink>
                 </div>
             )}

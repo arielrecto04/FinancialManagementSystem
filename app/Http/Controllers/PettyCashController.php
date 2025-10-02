@@ -49,6 +49,9 @@ class PettyCashController extends Controller
             ]);
 
 
+            $pettyCashRequest->entryBudgetType();
+
+
             $superAdmin = User::where('role', 'superadmin')->first();
 
             if ($superAdmin) {

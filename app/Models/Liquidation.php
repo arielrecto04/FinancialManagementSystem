@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Traits\AuditLogTrait;
+use App\Models\Budget;
+use App\Models\BudgetTypeExpense;
 
 class Liquidation extends Model
 {
@@ -51,5 +53,20 @@ class Liquidation extends Model
     public function attachments()
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+
+    public function entryBudgetType(): void
+    {
+        $budgetTypeExpense = BudgetTypeExpense::where('expense_model', get_class($this))->first();
+
+        if ($budgetTypeExpense) {
+            Budget::create([
+                'name' => $this->request_number . ' - ' . $this->expense_type . ' - ' . $this->particulars . ' - ' . $this->department,
+                'amount' => $budgetTypeExpense->is_expense ? $this->total_amount * -1 : $this->total_amount,
+                'budget_type_id' => $budgetTypeExpense->budget_type_id,
+                'type' => $budgetTypeExpense->is_expense ? 'expense' : 'income',
+            ]);
+        }
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Foundation\Application;
 use App\Http\Controllers\SSOController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ProfileController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HrExpenseController;
 use App\Http\Controllers\PettyCashController;
+use App\Http\Controllers\BudgetTypeController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\AdminBudgetController;
 use App\Http\Controllers\LiquidationController;
@@ -158,6 +160,14 @@ Route::prefix('sso')->group(function () {
     Route::post('/logout', [SSOController::class, 'logout'])->name('sso.logout');
 });
 
+
+Route::prefix('budgets')->as('budgets.')->group(function () {
+    Route::get('/', [BudgetController::class, 'index'])->name('index');
+    Route::post('/store', [BudgetController::class, 'store'])->name('store');
+    Route::post('/assign-expense-type', [BudgetController::class, 'assignExpenseType'])->name('assign-expense-type');
+});
+
+Route::resource('budget-types', BudgetTypeController::class);
 
 Route::middleware(['auth'])->group(function () {
     // Statistics routes

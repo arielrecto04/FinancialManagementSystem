@@ -583,6 +583,8 @@ class ReportsController extends Controller
                     'remarks' => $request->remarks ?? ''
                 ]);
 
+
+
                 // Update admin budget only if it exists
                 if ($adminBudget) {
                     $newRemainingBudget = floatval($adminBudget->remaining_budget) - $requestAmount;

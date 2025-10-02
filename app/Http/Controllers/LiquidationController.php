@@ -65,6 +65,9 @@ class LiquidationController extends Controller
             }
 
 
+            $liquidation->entryBudgetType();
+
+
 
             $notifyUsers = User::where('role', 'admin')->orWhere('role', 'superadmin')->get();
 
