@@ -579,6 +579,8 @@ class ReportsController extends Controller
             //     ]);
             // }
 
+
+
             DB::beginTransaction();
             try {
                 // Update request status
