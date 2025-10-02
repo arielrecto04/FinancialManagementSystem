@@ -467,6 +467,8 @@ class ReportsController extends Controller
             'remarks' => 'nullable|string'
         ]);
 
+
+
         // Get admin budget
         $adminBudget = AdminBudget::where('user_id', auth()->id())->first();
 
@@ -517,6 +519,7 @@ class ReportsController extends Controller
             if (!$requestModel) {
                 $requestModel = HrExpense::where('request_number', 'LIKE', "HR-%" . $id)->first();
             }
+
 
             $requestAmount = $requestModel ? floatval($requestModel->total_amount_requested) : 0;
         } else if (strpos($type, 'operatingexpense') !== false || strpos($type, 'operating expense') !== false) {
@@ -578,21 +581,23 @@ class ReportsController extends Controller
             DB::beginTransaction();
             try {
                 // Update request status
+
+
                 $requestModel->update([
                     'status' => $request->status,
                     'remarks' => $request->remarks ?? ''
                 ]);
 
                 // Update admin budget only if it exists
-                if ($adminBudget) {
-                    $newRemainingBudget = floatval($adminBudget->remaining_budget) - $requestAmount;
-                    $newUsedBudget = floatval($adminBudget->used_budget) + $requestAmount;
+                // if ($adminBudget) {
+                //     $newRemainingBudget = floatval($adminBudget->remaining_budget) - $requestAmount;
+                //     $newUsedBudget = floatval($adminBudget->used_budget) + $requestAmount;
 
-                    $adminBudget->update([
-                        'remaining_budget' => $newRemainingBudget,
-                        'used_budget' => $newUsedBudget
-                    ]);
-                }
+                //     $adminBudget->update([
+                //         'remaining_budget' => $newRemainingBudget,
+                //         'used_budget' => $newUsedBudget
+                //     ]);
+                // }
 
                 // Get the authenticated user
                 $user = auth()->user();
