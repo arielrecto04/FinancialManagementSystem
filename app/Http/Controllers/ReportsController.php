@@ -540,6 +540,8 @@ class ReportsController extends Controller
                 $requestModel = Liquidation::where('request_number', 'LIKE', "LIQ-%" . $id)->first();
             }
 
+
+
             $requestAmount = $requestModel ? floatval($requestModel->total_amount) : 0;
         }
 
@@ -590,6 +592,12 @@ class ReportsController extends Controller
                     'status' => $request->status,
                     'remarks' => $request->remarks ?? ''
                 ]);
+
+
+
+                if(method_exists($requestModel, 'entryBudgetType')) {
+                    $requestModel->entryBudgetType();
+                }
 
 
 

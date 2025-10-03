@@ -44,7 +44,7 @@ class ReimbursementRequestController extends Controller
             $reimbursement->save();
 
 
-            $reimbursement->entryBudgetType();
+            // $reimbursement->entryBudgetType();
 
             // Log the reimbursement request creation
             AuditLog::create([

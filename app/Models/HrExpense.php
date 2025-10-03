@@ -53,4 +53,18 @@ class HrExpense extends Model
     {
         return $this->morphMany(Attachment::class, 'attachable');
     }
+
+    public function entryBudgetType(): void
+    {
+        $budgetTypeExpense = BudgetTypeExpense::where('expense_model', get_class($this))->first();
+
+        if ($budgetTypeExpense) {
+            Budget::create([
+                'budget_type_id' => $budgetTypeExpense->budget_type_id,
+                'name' => $this->request_number . ' - ' . $this->expenses_category . ' - ' . $this->created_at->format('Y-m-d') . ' - ' . 'HR Expense',
+                'amount' => $budgetTypeExpense->is_expense ? $this->total_amount_requested * -1 : $this->total_amount_requested,
+                'type' => $budgetTypeExpense->is_expense ? 'expense' : 'income',
+            ]);
+        }
+    }
 }

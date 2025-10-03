@@ -53,4 +53,18 @@ class OperatingExpense extends Model
     {
         return $this->morphMany(Attachment::class, 'attachable');
     }
+
+    public function entryBudgetType(): void
+    {
+        $budgetTypeExpense = BudgetTypeExpense::where('expense_model', get_class($this))->first();
+
+        if ($budgetTypeExpense) {
+            Budget::create([
+                'budget_type_id' => $budgetTypeExpense->budget_type_id,
+                'name' => $this->request_number . ' - ' . $this->expense_category . ' - ' . $this->description . ' - '  . $this->created_at->format('Y-m-d') . ' - ' . 'Operating Expense',
+                'amount' => $budgetTypeExpense->is_expense ? $this->total_amount * -1 : $this->total_amount,
+                'type' => $budgetTypeExpense->is_expense ? 'expense' : 'income',
+            ]);
+        }
+    }
 }

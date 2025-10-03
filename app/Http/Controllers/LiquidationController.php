@@ -65,7 +65,7 @@ class LiquidationController extends Controller
             }
 
 
-            $liquidation->entryBudgetType();
+            // $liquidation->entryBudgetType();
 
 
 

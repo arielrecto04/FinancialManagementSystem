@@ -20,9 +20,9 @@ class BudgetController extends Controller
     {
         $budgetTypes = BudgetType::with(['budgets'])->get();
 
-        $expenseModels = $this->getExpenseModel();
 
-        return Inertia::render('Budget/BudgetIndex', compact('budgetTypes', 'expenseModels'));
+
+        return Inertia::render('Budget/BudgetIndex', compact('budgetTypes'));
     }
 
     public function store(Request $request)
@@ -57,38 +57,5 @@ class BudgetController extends Controller
         return response()->json([
             'budgetTypeExpense' => $budgetTypeExpense,
         ]);
-    }
-
-
-    private function getExpenseModel()
-    {
-        $options = [
-            [
-                'expense_model' => get_class(new ReimbursementRequest()),
-                'name' => 'Reimbursement',
-            ],
-            [
-                'expense_model' => get_class(new PettyCashRequest()),
-                'name' => 'Petty Cash',
-            ],
-            [
-                'expense_model' => get_class(new Liquidation()),
-                'name' => 'Liquidation',
-            ],
-            [
-                'expense_model' => get_class(new HRExpense()),
-                'name' => 'HR Expense',
-            ],
-            [
-                'expense_model' => get_class(new  SupplyRequest()),
-                'name' => 'Supply Request',
-            ],
-            [
-                'expense_model' => get_class(new  OperatingExpense()),
-                'name' => 'Operating Expense',
-            ]
-        ];
-
-        return $options;
     }
 }

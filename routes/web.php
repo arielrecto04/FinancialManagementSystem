@@ -24,6 +24,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SupplyRequestController;
 use App\Http\Controllers\OperatingExpenseController;
 use App\Http\Controllers\PettyCashRequestController;
+use App\Http\Controllers\BudgetTypeExpenseController;
 use App\Http\Controllers\ReimbursementRequestController;
 
 /*
@@ -169,7 +170,14 @@ Route::prefix('budgets')->as('budgets.')->group(function () {
     Route::post('/assign-expense-type', [BudgetController::class, 'assignExpenseType'])->name('assign-expense-type');
 });
 
+
+
+
 Route::resource('budget-types', BudgetTypeController::class);
+
+Route::resource('budget-type-expenses', BudgetTypeExpenseController::class);
+
+
 
 Route::middleware(['auth'])->group(function () {
     // Statistics routes

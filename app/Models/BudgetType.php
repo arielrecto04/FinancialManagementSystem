@@ -17,6 +17,6 @@ class BudgetType extends Model
 
     public function BudgetTypeExpenses()
     {
-        return $this->morphMany(BudgetTypeExpense::class, 'expenseable');
+        return $this->hasMany(BudgetTypeExpense::class);
     }
 }
