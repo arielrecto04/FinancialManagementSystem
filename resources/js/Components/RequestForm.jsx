@@ -258,6 +258,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
         category: "",
         description: "",
         department: auth?.user?.department || "",
+        receipt: null,
     });
 
     // Add this near the top with other state declarations
@@ -269,6 +270,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
         total_amount: "0",
         expected_payment_date: "",
         additional_comment: "",
+        receipt: null,
     });
 
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
@@ -290,6 +292,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
         total_amount: "0.00",
         amount_to_refund: "0.00",
         amount_to_reimburse: "0.00",
+        receipt: null,
     });
 
     // Add this near the top with other state declarations
@@ -310,6 +313,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
         total_amount_requested: "0",
         expected_payment_date: "",
         additional_comment: "",
+        receipt: null,
     });
 
     //#endregion
@@ -325,31 +329,31 @@ export default function RequestForm({ auth, errors = {}, type }) {
         { id: "liquidation", label: "Liquidation", icon: icons.liquidation },
         ...(auth.user.role === "admin" || auth.user.role === "superadmin"
             ? [
-                  {
-                      id: "pettycash",
-                      label: "Petty Cash Request",
-                      icon: icons.pettyCash,
-                  },
-                  {
-                      id: "hrExpenses",
-                      label: "HR Expenses Request",
-                      icon: icons.hrExpenses,
-                  },
-                  {
-                      id: "operatingExpenses",
-                      label: "Operating Expenses Request",
-                      icon: icons.operatingExpenses,
-                  },
-              ]
+                {
+                    id: "pettycash",
+                    label: "Petty Cash Request",
+                    icon: icons.pettyCash,
+                },
+                {
+                    id: "hrExpenses",
+                    label: "HR Expenses Request",
+                    icon: icons.hrExpenses,
+                },
+                {
+                    id: "operatingExpenses",
+                    label: "Operating Expenses Request",
+                    icon: icons.operatingExpenses,
+                },
+            ]
             : []),
         ...(auth.user.role === "hr"
             ? [
-                  {
-                      id: "hrExpenses",
-                      label: "HR Expenses Request",
-                      icon: icons.hrExpenses,
-                  },
-              ]
+                {
+                    id: "hrExpenses",
+                    label: "HR Expenses Request",
+                    icon: icons.hrExpenses,
+                },
+            ]
             : []),
     ];
 
@@ -685,11 +689,10 @@ export default function RequestForm({ auth, errors = {}, type }) {
     // Helper components for buttons
     const PeriodButton = ({ icon, label, active }) => (
         <button
-            className={`flex items-center px-4 py-2 rounded-md transition-colors ${
-                active
-                    ? "text-white bg-blue-500"
-                    : "text-gray-700 bg-gray-100 hover:bg-gray-200"
-            }`}
+            className={`flex items-center px-4 py-2 rounded-md transition-colors ${active
+                ? "text-white bg-blue-500"
+                : "text-gray-700 bg-gray-100 hover:bg-gray-200"
+                }`}
         >
             <PeriodIcon icon={icon} />
             <span className="ml-2">{label}</span>
@@ -698,11 +701,10 @@ export default function RequestForm({ auth, errors = {}, type }) {
 
     const MobileMenuItem = ({ icon, label, active }) => (
         <button
-            className={`w-full flex items-center px-4 py-2 text-left ${
-                active
-                    ? "text-blue-500 bg-blue-50"
-                    : "text-gray-700 hover:bg-gray-50"
-            }`}
+            className={`w-full flex items-center px-4 py-2 text-left ${active
+                ? "text-blue-500 bg-blue-50"
+                : "text-gray-700 hover:bg-gray-50"
+                }`}
         >
             <PeriodIcon icon={icon} />
             <span className="ml-2">{label}</span>
@@ -1047,6 +1049,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                 total_amount_requested: hrExpensesData.total_amount_requested,
                 expected_payment_date: hrExpensesData.expected_payment_date,
                 additional_comment: hrExpensesData.additional_comment,
+                receipt: hrExpensesData.receipt,
             };
 
             // Use the correct route name from web.php
@@ -1149,6 +1152,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                 expected_payment_date:
                     operatingExpensesData.expected_payment_date,
                 additional_comment: operatingExpensesData.additional_comment,
+                receipt: operatingExpensesData.receipt,
             };
 
             // Use Inertia post with the correct route name
@@ -1226,6 +1230,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                 category: pettyCashData.category,
                 description: pettyCashData.description,
                 department: pettyCashData.department || auth.user.department,
+                receipt: pettyCashData.receipt,
             };
 
             // Use Inertia post
@@ -1381,11 +1386,10 @@ export default function RequestForm({ auth, errors = {}, type }) {
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
-                                className={`flex items-center justify-center px-4 py-3 rounded-lg transition-all w-full sm:w-auto ${
-                                    formType === tab.id
-                                        ? "bg-blue-500 text-white shadow-lg"
-                                        : "bg-gray-100 hover:bg-gray-200"
-                                }`}
+                                className={`flex items-center justify-center px-4 py-3 rounded-lg transition-all w-full sm:w-auto ${formType === tab.id
+                                    ? "bg-blue-500 text-white shadow-lg"
+                                    : "bg-gray-100 hover:bg-gray-200"
+                                    }`}
                                 onClick={() => setFormType(tab.id)}
                             >
                                 <svg
@@ -2168,13 +2172,13 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                                             Math.max(
                                                                 0,
                                                                 cashAdvance -
-                                                                    totalAmount
+                                                                totalAmount
                                                             ).toFixed(2),
                                                         amount_to_reimburse:
                                                             Math.max(
                                                                 0,
                                                                 totalAmount -
-                                                                    cashAdvance
+                                                                cashAdvance
                                                             ).toFixed(2),
                                                     })
                                                 );
@@ -2320,7 +2324,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                                 type="number"
                                                 value={parseFloat(
                                                     liquidationData.total_amount ||
-                                                        0
+                                                    0
                                                 ).toFixed(2)}
                                                 className="block mt-1 w-full bg-gray-100 rounded-md border-gray-300"
                                                 readOnly
@@ -2334,7 +2338,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                                 type="number"
                                                 value={parseFloat(
                                                     liquidationData.amount_to_refund ||
-                                                        0
+                                                    0
                                                 ).toFixed(2)}
                                                 className="block mt-1 w-full bg-gray-100 rounded-md border-gray-300"
                                                 readOnly
@@ -2348,13 +2352,39 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                                 type="number"
                                                 value={parseFloat(
                                                     liquidationData.amount_to_reimburse ||
-                                                        0
+                                                    0
                                                 ).toFixed(2)}
                                                 className="block mt-1 w-full bg-gray-100 rounded-md border-gray-300"
                                                 readOnly
                                             />
                                         </div>
                                     </div>
+
+
+                                    <div>
+                                        <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
+                                            {icons.receipt}
+                                            Receipt
+                                        </label>
+                                        <input
+                                            type="file"
+                                            onChange={(e) =>
+                                                setLiquidationData({
+                                                    ...liquidationData,
+                                                    "receipt": e.target.files[0]
+                                                })
+                                            }
+                                            className="px-3 py-2 w-full rounded-md border border-gray-300"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                        />
+                                        {errors?.receipt && (
+                                            <div className="mt-1 text-sm text-red-500">
+                                                {errors.receipt}
+                                            </div>
+                                        )}
+                                    </div>
+
+
 
                                     {/* Submit Button */}
                                     <div className="mt-6">
@@ -2562,6 +2592,29 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                                 rows="3"
                                                 required
                                             />
+                                        </div>
+
+                                        <div>
+                                            <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
+                                                {icons.receipt}
+                                                Receipt
+                                            </label>
+                                            <input
+                                                type="file"
+                                                onChange={(e) =>
+                                                    setPettyCashData({
+                                                        ...pettyCashData,
+                                                        "receipt": e.target.files[0]
+                                                    })
+                                                }
+                                                className="px-3 py-2 w-full rounded-md border border-gray-300"
+                                                accept=".pdf,.jpg,.jpeg,.png"
+                                            />
+                                            {errors?.receipt && (
+                                                <div className="mt-1 text-sm text-red-500">
+                                                    {errors.receipt}
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="flex justify-end">
@@ -2864,6 +2917,30 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                             className="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             rows="3"
                                         />
+                                    </div>
+
+
+                                    <div>
+                                        <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
+                                            {icons.receipt}
+                                            Receipt
+                                        </label>
+                                        <input
+                                            type="file"
+                                            onChange={(e) =>
+                                                setHrExpensesData({
+                                                    ...hrExpensesData,
+                                                    "receipt": e.target.files[0]
+                                                })
+                                            }
+                                            className="px-3 py-2 w-full rounded-md border border-gray-300"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                        />
+                                        {errors?.receipt && (
+                                            <div className="mt-1 text-sm text-red-500">
+                                                {errors.receipt}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="flex flex-col space-y-2">
@@ -3186,6 +3263,30 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                             className="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             rows="3"
                                         />
+                                    </div>
+
+
+                                    <div>
+                                        <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
+                                            {icons.receipt}
+                                            Receipt
+                                        </label>
+                                        <input
+                                            type="file"
+                                            onChange={(e) =>
+                                                setOperatingExpensesData({
+                                                    ...operatingExpensesData,
+                                                    "receipt": e.target.files[0]
+                                                })
+                                            }
+                                            className="px-3 py-2 w-full rounded-md border border-gray-300"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                        />
+                                        {errors?.receipt && (
+                                            <div className="mt-1 text-sm text-red-500">
+                                                {errors.receipt}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="flex flex-col space-y-2">

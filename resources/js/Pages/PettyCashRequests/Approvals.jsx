@@ -5,6 +5,7 @@ import Pagination from '@/Components/Pagination';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 import Chart from 'react-apexcharts';
+import { PaperClipIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid';
 
 export default function Approvals({ auth, requests, filters }) {
     const [processingId, setProcessingId] = useState(null);
@@ -19,9 +20,13 @@ export default function Approvals({ auth, requests, filters }) {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [categories, setCategories] = useState([]);
 
+
+
+    console.log(requests);
+
     // Create arrays of available years and months for filters
     const currentYear = new Date().getFullYear();
-    const years = Array.from({length: 5}, (_, i) => currentYear - i);
+    const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
     const months = [
         { value: 'all', label: 'All Months' },
         { value: 1, label: 'January' },
@@ -45,7 +50,7 @@ export default function Approvals({ auth, requests, filters }) {
         calendar: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>,
         analytics: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>,
     };
-    
+
     // Fetch analytics data with year and month filters
     const fetchAnalyticsData = () => {
         setIsLoading(true);
@@ -56,17 +61,17 @@ export default function Approvals({ auth, requests, filters }) {
                 category: selectedCategory !== 'all' ? selectedCategory : null
             }
         })
-        .then(response => {
-            setAnalyticsData(response.data);
-            if (response.data.categoryStats) {
-                setCategories(['all', ...response.data.categoryStats.map(c => c.category)]);
-            }
-            setIsLoading(false);
-        })
-        .catch(error => {
-            console.error('Error fetching analytics:', error);
-            setIsLoading(false);
-        });
+            .then(response => {
+                setAnalyticsData(response.data);
+                if (response.data.categoryStats) {
+                    setCategories(['all', ...response.data.categoryStats.map(c => c.category)]);
+                }
+                setIsLoading(false);
+            })
+            .catch(error => {
+                console.error('Error fetching analytics:', error);
+                setIsLoading(false);
+            });
     };
 
     // Process analytics data for charts
@@ -99,10 +104,10 @@ export default function Approvals({ auth, requests, filters }) {
                 }
             }]
         };
-        
+
         const statusSeries = [
             analyticsData.statusCounts.approved || 0,
-            analyticsData.statusCounts.rejected || 0, 
+            analyticsData.statusCounts.rejected || 0,
             analyticsData.statusCounts.pending || 0
         ];
 
@@ -139,7 +144,7 @@ export default function Approvals({ auth, requests, filters }) {
                 enabled: false
             }
         };
-        
+
         const monthlyTrendSeries = [
             {
                 name: 'Requests',
@@ -181,10 +186,10 @@ export default function Approvals({ auth, requests, filters }) {
 
         // Amount distribution histogram
         const amountRanges = ['0-1k', '1k-5k', '5k-10k', '10k-20k', '20k+'];
-        
+
         // Calculate amount distribution
         const amountDistribution = [0, 0, 0, 0, 0]; // Corresponds to the ranges above
-        
+
         analyticsData.requestsData?.forEach(request => {
             const amount = parseFloat(request.amount);
             if (amount < 1000) amountDistribution[0]++;
@@ -193,7 +198,7 @@ export default function Approvals({ auth, requests, filters }) {
             else if (amount < 20000) amountDistribution[3]++;
             else amountDistribution[4]++;
         });
-        
+
         const amountHistogramOptions = {
             chart: {
                 type: 'bar',
@@ -231,15 +236,15 @@ export default function Approvals({ auth, requests, filters }) {
                 }
             }
         };
-        
+
         const amountHistogramSeries = [{
             name: 'Requests',
             data: amountDistribution
         }];
-        
+
         // Processing Time Distribution (Days to Approval)
         const processingRanges = ['Same Day', '1-2 Days', '3-5 Days', '1-2 Weeks', '2+ Weeks'];
-        
+
         // Sample data - replace with actual calculation if you have the data
         const processingDistribution = analyticsData.processingTimeDistribution || [
             Math.round(analyticsData.statusCounts.approved * 0.3),
@@ -248,7 +253,7 @@ export default function Approvals({ auth, requests, filters }) {
             Math.round(analyticsData.statusCounts.approved * 0.07),
             Math.round(analyticsData.statusCounts.approved * 0.03)
         ];
-        
+
         const processingTimeOptions = {
             chart: {
                 type: 'bar',
@@ -286,22 +291,22 @@ export default function Approvals({ auth, requests, filters }) {
                 }
             }
         };
-        
+
         const processingTimeSeries = [{
             name: 'Requests',
             data: processingDistribution
         }];
-        
+
         // Weekly comparison (requests this week vs last week)
         const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        
+
         // Sample data - replace with actual calculation if you have the data
-        const thisWeekData = analyticsData.weeklyComparison?.thisWeek || 
+        const thisWeekData = analyticsData.weeklyComparison?.thisWeek ||
             Array(7).fill(0).map(() => Math.floor(Math.random() * 5));
-            
-        const lastWeekData = analyticsData.weeklyComparison?.lastWeek || 
+
+        const lastWeekData = analyticsData.weeklyComparison?.lastWeek ||
             Array(7).fill(0).map(() => Math.floor(Math.random() * 5));
-        
+
         const weeklyComparisonOptions = {
             chart: {
                 type: 'bar',
@@ -349,7 +354,7 @@ export default function Approvals({ auth, requests, filters }) {
                 }
             }
         };
-        
+
         const weeklyComparisonSeries = [
             {
                 name: 'This Week',
@@ -378,13 +383,13 @@ export default function Approvals({ auth, requests, filters }) {
         }
         setShowAnalytics(!showAnalytics);
     };
-    
+
     const handleFilterChange = (newStatus) => {
         setCurrentFilter(newStatus);
         router.get(
             route('petty-cash-requests.approvals'),
             { status: newStatus, sortOrder },
-            { 
+            {
                 preserveState: true,
                 preserveScroll: true,
                 only: ['requests']
@@ -397,7 +402,7 @@ export default function Approvals({ auth, requests, filters }) {
         router.get(
             route('petty-cash-requests.approvals'),
             { status: currentFilter, sortOrder: newOrder },
-            { 
+            {
                 preserveState: true,
                 preserveScroll: true,
                 only: ['requests']
@@ -408,10 +413,10 @@ export default function Approvals({ auth, requests, filters }) {
     const handleApproval = (id, newStatus) => {
         if (processingId) return;
         setProcessingId(id);
-        
+
         // Find the request in the requests array
         const requestObj = requests.data.find(req => req.id === id);
-        
+
         Swal.fire({
             title: `${newStatus === 'approved' ? 'Approve' : 'Reject'} Request?`,
             text: `Are you sure you want to ${newStatus === 'approved' ? 'approve' : 'reject'} this petty cash request?`,
@@ -470,11 +475,11 @@ export default function Approvals({ auth, requests, filters }) {
     const handleYearChange = (value) => {
         setSelectedYear(parseInt(value));
     };
-    
+
     const handleMonthChange = (value) => {
         setSelectedMonth(value);
     };
-    
+
     const handleCategoryChange = (value) => {
         setSelectedCategory(value);
     };
@@ -491,43 +496,43 @@ export default function Approvals({ auth, requests, filters }) {
             <Head title="Petty Cash Approvals" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-xl rounded-lg">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    <div className="overflow-hidden bg-white rounded-lg shadow-xl">
                         <div className="p-6 text-gray-900">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-medium flex items-center gap-2">
+                                <h3 className="flex gap-2 items-center text-lg font-medium">
                                     {icons.filter}
                                     Petty Cash Requests
                                 </h3>
                                 <div className="flex space-x-2">
                                     <button
                                         onClick={toggleAnalytics}
-                                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                                        className="inline-flex gap-2 items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md border border-transparent shadow-sm transition-all duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                     >
                                         {icons.analytics}
                                         {showAnalytics ? 'Hide Analytics' : 'Show Analytics'}
                                     </button>
                                     <button
                                         onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-                                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                                        className="inline-flex gap-2 items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm transition-all duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                     >
                                         {icons.filter}
                                         {isFiltersVisible ? 'Hide Filters' : 'Show Filters'}
                                     </button>
                                 </div>
                             </div>
-                            
+
                             {/* Analytics Dashboard */}
                             {showAnalytics && (
-                                <div className="bg-gray-50 rounded-lg shadow-inner mb-6 border border-gray-200">
+                                <div className="mb-6 bg-gray-50 rounded-lg border border-gray-200 shadow-inner">
                                     <div className="p-6">
                                         <div className="flex justify-between items-center mb-6">
-                                            <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                                            <h3 className="flex gap-2 items-center text-lg font-medium text-gray-900">
                                                 {icons.analytics}
                                                 Petty Cash Analytics Dashboard
                                             </h3>
-                                            <button 
-                                                onClick={refreshAnalytics} 
+                                            <button
+                                                onClick={refreshAnalytics}
                                                 className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -536,18 +541,18 @@ export default function Approvals({ auth, requests, filters }) {
                                                 Refresh
                                             </button>
                                         </div>
-                                        
+
                                         {/* Analytics Filters */}
-                                        <div className="bg-white p-4 rounded-lg shadow border border-gray-100 mb-6">
-                                            <h4 className="text-sm font-medium text-gray-700 mb-4">Filter Analytics</h4>
-                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div className="p-4 mb-6 bg-white rounded-lg border border-gray-100 shadow">
+                                            <h4 className="mb-4 text-sm font-medium text-gray-700">Filter Analytics</h4>
+                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                                                 {/* Date Range Filters */}
                                                 <div>
-                                                    <label className="block text-xs font-medium text-gray-700 mb-1">Year</label>
-                                                    <select 
+                                                    <label className="block mb-1 text-xs font-medium text-gray-700">Year</label>
+                                                    <select
                                                         value={selectedYear}
                                                         onChange={(e) => handleYearChange(e.target.value)}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                        className="px-3 py-2 w-full text-sm rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                                     >
                                                         {years.map((year, index) => (
                                                             <option key={index} value={year}>
@@ -557,11 +562,11 @@ export default function Approvals({ auth, requests, filters }) {
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-medium text-gray-700 mb-1">Month</label>
-                                                    <select 
+                                                    <label className="block mb-1 text-xs font-medium text-gray-700">Month</label>
+                                                    <select
                                                         value={selectedMonth}
                                                         onChange={(e) => handleMonthChange(e.target.value)}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                        className="px-3 py-2 w-full text-sm rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                                     >
                                                         {months.map((month, index) => (
                                                             <option key={index} value={month.value}>
@@ -570,14 +575,14 @@ export default function Approvals({ auth, requests, filters }) {
                                                         ))}
                                                     </select>
                                                 </div>
-                                                
+
                                                 {/* Category Filter */}
                                                 <div>
-                                                    <label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
-                                                    <select 
+                                                    <label className="block mb-1 text-xs font-medium text-gray-700">Category</label>
+                                                    <select
                                                         value={selectedCategory}
                                                         onChange={(e) => handleCategoryChange(e.target.value)}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                        className="px-3 py-2 w-full text-sm rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                                     >
                                                         {categories.map((cat, index) => (
                                                             <option key={index} value={cat}>
@@ -587,19 +592,19 @@ export default function Approvals({ auth, requests, filters }) {
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div className="mt-4 flex justify-end">
-                                                <button 
+                                            <div className="flex justify-end mt-4">
+                                                <button
                                                     onClick={refreshAnalytics}
-                                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                                                    className="inline-flex gap-2 items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md border border-transparent shadow-sm transition-all duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                                 >
                                                     Apply Filters
                                                 </button>
                                             </div>
                                         </div>
-                                        
+
                                         {isLoading ? (
-                                            <div className="text-center py-8">
-                                                <svg className="animate-spin -ml-1 mr-3 h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <div className="py-8 text-center">
+                                                <svg className="mx-auto mr-3 -ml-1 w-8 h-8 text-blue-500 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                 </svg>
@@ -608,11 +613,11 @@ export default function Approvals({ auth, requests, filters }) {
                                         ) : analyticsData ? (
                                             <div>
                                                 {/* Summary Cards */}
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                                                    <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
+                                                <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
+                                                    <div className="p-4 bg-white rounded-lg border border-gray-100 shadow">
                                                         <div className="flex items-center">
-                                                            <div className="flex-shrink-0 bg-blue-100 rounded-md p-3">
-                                                                <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                            <div className="flex-shrink-0 p-3 bg-blue-100 rounded-md">
+                                                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                                                 </svg>
                                                             </div>
@@ -622,10 +627,10 @@ export default function Approvals({ auth, requests, filters }) {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
+                                                    <div className="p-4 bg-white rounded-lg border border-gray-100 shadow">
                                                         <div className="flex items-center">
-                                                            <div className="flex-shrink-0 bg-green-100 rounded-md p-3">
-                                                                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                            <div className="flex-shrink-0 p-3 bg-green-100 rounded-md">
+                                                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                                 </svg>
                                                             </div>
@@ -638,10 +643,10 @@ export default function Approvals({ auth, requests, filters }) {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
+                                                    <div className="p-4 bg-white rounded-lg border border-gray-100 shadow">
                                                         <div className="flex items-center">
-                                                            <div className="flex-shrink-0 bg-yellow-100 rounded-md p-3">
-                                                                <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                            <div className="flex-shrink-0 p-3 bg-yellow-100 rounded-md">
+                                                                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                                 </svg>
                                                             </div>
@@ -651,10 +656,10 @@ export default function Approvals({ auth, requests, filters }) {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
+                                                    <div className="p-4 bg-white rounded-lg border border-gray-100 shadow">
                                                         <div className="flex items-center">
-                                                            <div className="flex-shrink-0 bg-indigo-100 rounded-md p-3">
-                                                                <svg className="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                            <div className="flex-shrink-0 p-3 bg-indigo-100 rounded-md">
+                                                                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                                                 </svg>
                                                             </div>
@@ -665,82 +670,82 @@ export default function Approvals({ auth, requests, filters }) {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 {/* Charts */}
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                                                     {/* Status Distribution */}
-                                                    <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
-                                                        <h4 className="text-lg font-medium text-gray-700 mb-4">Status Distribution</h4>
+                                                    <div className="p-4 bg-white rounded-lg border border-gray-100 shadow">
+                                                        <h4 className="mb-4 text-lg font-medium text-gray-700">Status Distribution</h4>
                                                         {getChartData() && (
-                                                            <Chart 
-                                                                options={getChartData().statusChart.options} 
-                                                                series={getChartData().statusChart.series} 
-                                                                type="donut" 
+                                                            <Chart
+                                                                options={getChartData().statusChart.options}
+                                                                series={getChartData().statusChart.series}
+                                                                type="donut"
                                                                 height={320}
                                                             />
                                                         )}
                                                     </div>
-                                                    
+
                                                     {/* Monthly Trend */}
-                                                    <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
-                                                        <h4 className="text-lg font-medium text-gray-700 mb-4">Monthly Trends</h4>
+                                                    <div className="p-4 bg-white rounded-lg border border-gray-100 shadow">
+                                                        <h4 className="mb-4 text-lg font-medium text-gray-700">Monthly Trends</h4>
                                                         {getChartData() && (
-                                                            <Chart 
-                                                                options={getChartData().monthlyTrendChart.options} 
-                                                                series={getChartData().monthlyTrendChart.series} 
-                                                                type="area" 
+                                                            <Chart
+                                                                options={getChartData().monthlyTrendChart.options}
+                                                                series={getChartData().monthlyTrendChart.series}
+                                                                type="area"
                                                                 height={320}
                                                             />
                                                         )}
                                                     </div>
-                                                    
+
                                                     {/* Category Distribution */}
-                                                    <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
-                                                        <h4 className="text-lg font-medium text-gray-700 mb-4">Category Distribution</h4>
+                                                    <div className="p-4 bg-white rounded-lg border border-gray-100 shadow">
+                                                        <h4 className="mb-4 text-lg font-medium text-gray-700">Category Distribution</h4>
                                                         {getChartData() && (
-                                                            <Chart 
-                                                                options={getChartData().categoryChart.options} 
-                                                                series={getChartData().categoryChart.series} 
-                                                                type="pie" 
+                                                            <Chart
+                                                                options={getChartData().categoryChart.options}
+                                                                series={getChartData().categoryChart.series}
+                                                                type="pie"
                                                                 height={320}
                                                             />
                                                         )}
                                                     </div>
-                                                    
+
                                                     {/* Amount Histogram */}
-                                                    <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
-                                                        <h4 className="text-lg font-medium text-gray-700 mb-4">Amount Distribution</h4>
+                                                    <div className="p-4 bg-white rounded-lg border border-gray-100 shadow">
+                                                        <h4 className="mb-4 text-lg font-medium text-gray-700">Amount Distribution</h4>
                                                         {getChartData() && (
-                                                            <Chart 
-                                                                options={getChartData().amountHistogram.options} 
-                                                                series={getChartData().amountHistogram.series} 
-                                                                type="bar" 
+                                                            <Chart
+                                                                options={getChartData().amountHistogram.options}
+                                                                series={getChartData().amountHistogram.series}
+                                                                type="bar"
                                                                 height={320}
                                                             />
                                                         )}
                                                     </div>
-                                                    
+
                                                     {/* Processing Time Histogram */}
-                                                    <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
-                                                        <h4 className="text-lg font-medium text-gray-700 mb-4">Processing Time Distribution</h4>
+                                                    <div className="p-4 bg-white rounded-lg border border-gray-100 shadow">
+                                                        <h4 className="mb-4 text-lg font-medium text-gray-700">Processing Time Distribution</h4>
                                                         {getChartData() && (
-                                                            <Chart 
-                                                                options={getChartData().processingTimeChart.options} 
-                                                                series={getChartData().processingTimeChart.series} 
-                                                                type="bar" 
+                                                            <Chart
+                                                                options={getChartData().processingTimeChart.options}
+                                                                series={getChartData().processingTimeChart.series}
+                                                                type="bar"
                                                                 height={320}
                                                             />
                                                         )}
                                                     </div>
-                                                    
+
                                                     {/* Weekly Comparison Bar Chart */}
-                                                    <div className="bg-white p-4 rounded-lg shadow border border-gray-100 col-span-1 lg:col-span-2">
-                                                        <h4 className="text-lg font-medium text-gray-700 mb-4">Weekly Comparison</h4>
+                                                    <div className="col-span-1 p-4 bg-white rounded-lg border border-gray-100 shadow lg:col-span-2">
+                                                        <h4 className="mb-4 text-lg font-medium text-gray-700">Weekly Comparison</h4>
                                                         {getChartData() && (
-                                                            <Chart 
-                                                                options={getChartData().weeklyComparisonChart.options} 
-                                                                series={getChartData().weeklyComparisonChart.series} 
-                                                                type="bar" 
+                                                            <Chart
+                                                                options={getChartData().weeklyComparisonChart.options}
+                                                                series={getChartData().weeklyComparisonChart.series}
+                                                                type="bar"
                                                                 height={350}
                                                             />
                                                         )}
@@ -748,8 +753,8 @@ export default function Approvals({ auth, requests, filters }) {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="text-center py-8">
-                                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div className="py-8 text-center">
+                                                <svg className="mx-auto w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                                 </svg>
                                                 <p className="mt-2 text-sm font-medium text-gray-900">No analytics data available</p>
@@ -759,15 +764,15 @@ export default function Approvals({ auth, requests, filters }) {
                                     </div>
                                 </div>
                             )}
-                            
+
                             {/* Filters Section */}
                             {isFiltersVisible && (
-                                <div className="bg-gray-50 rounded-lg shadow-inner mb-6 border border-gray-200">
+                                <div className="mb-6 bg-gray-50 rounded-lg border border-gray-200 shadow-inner">
                                     <div className="p-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                             {/* Status Filter */}
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                                <label className="block flex gap-2 items-center mb-2 text-sm font-medium text-gray-700">
                                                     {icons.filter}
                                                     Status
                                                 </label>
@@ -777,8 +782,8 @@ export default function Approvals({ auth, requests, filters }) {
                                                             key={status}
                                                             onClick={() => handleFilterChange(status)}
                                                             className={`px-4 py-2 rounded-md transition-all duration-200 ease-in-out shadow-sm
-                                                                ${currentFilter === status 
-                                                                    ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-600 ring-offset-2' 
+                                                                ${currentFilter === status
+                                                                    ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-600 ring-offset-2'
                                                                     : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
                                                                 }`}
                                                         >
@@ -790,14 +795,14 @@ export default function Approvals({ auth, requests, filters }) {
 
                                             {/* Sort Order */}
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                                <label className="block flex gap-2 items-center mb-2 text-sm font-medium text-gray-700">
                                                     {icons.sort}
                                                     Sort By Date Created
                                                 </label>
                                                 <select
                                                     value={sortOrder}
                                                     onChange={(e) => handleSortOrderChange(e.target.value)}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white"
+                                                    className="px-4 py-2 w-full bg-white rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                                 >
                                                     <option value="newest">Newest First</option>
                                                     <option value="oldest">Oldest First</option>
@@ -807,70 +812,73 @@ export default function Approvals({ auth, requests, filters }) {
                                     </div>
                                 </div>
                             )}
-                            
+
                             {/* Requests Table */}
                             {requests.data.length > 0 ? (
                                 <div className="overflow-x-auto rounded-lg border border-gray-200">
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                             <tr>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                                     Request #
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                                     Requestor
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                                     Department
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                                     Date Requested
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                                     Date Needed
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                                     Purpose
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                                     Amount
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                                     Status
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                                                    Attachments
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                                     Actions
                                                 </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {requests.data.map((request) => (
-                                                <tr key={request.id} className="hover:bg-gray-50 transition-colors duration-200">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                <tr key={request.id} className="transition-colors duration-200 hover:bg-gray-50">
+                                                    <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                                                         {request.request_number}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                                         {request.user.name}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                                         {request.department}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        <div className="flex items-center gap-1">
+                                                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                                        <div className="flex gap-1 items-center">
                                                             {icons.calendar}
                                                             {new Date(request.date_requested).toLocaleDateString()}
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        <div className="flex items-center gap-1">
+                                                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                                        <div className="flex gap-1 items-center">
                                                             {icons.calendar}
-                                                        {new Date(request.date_needed).toLocaleDateString()}
+                                                            {new Date(request.date_needed).toLocaleDateString()}
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                                         {request.purpose}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                                         ₱{parseFloat(request.amount).toFixed(2)}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -878,7 +886,46 @@ export default function Approvals({ auth, requests, filters }) {
                                                             {request.status}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        {
+                                                            request.attachments.length > 0 ? (
+                                                                <div className="flex gap-1 items-center">
+                                                                    {request.attachments.map((attachment) => (
+
+                                                                        <div className="flex gap-2 items-center">
+                                                                            <a
+                                                                                key={attachment.id}
+                                                                                href={attachment.file_path}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="text-blue-600 hover:underline"
+                                                                            >
+                                                                                <PaperClipIcon className="w-5 h-5" />
+                                                                            </a>
+
+
+                                                                            <a
+                                                                                key={attachment.id}
+                                                                                href={attachment.file_path}
+                                                                                target="_blank"
+                                                                                download
+                                                                                className="text-blue-600 hover:underline"
+                                                                            >
+                                                                                <ArrowDownTrayIcon className="w-5 h-5" />
+                                                                            </a>
+                                                                        </div>
+
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex gap-1 items-center">
+                                                                    {icons.file}
+                                                                    No attachments
+                                                                </div>
+                                                            )
+                                                        }
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                                                         {request.status === 'pending' && (
                                                             <div className="flex space-x-2">
                                                                 <button
@@ -904,15 +951,15 @@ export default function Approvals({ auth, requests, filters }) {
                                     </table>
                                 </div>
                             ) : (
-                                <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="py-12 text-center bg-gray-50 rounded-lg border-2 border-gray-300 border-dashed">
+                                    <svg className="mx-auto w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     <h3 className="mt-2 text-sm font-medium text-gray-900">No requests found</h3>
                                     <p className="mt-1 text-sm text-gray-500">No petty cash requests match your current filters.</p>
                                 </div>
                             )}
-                            
+
                             <div className="mt-6">
                                 <Pagination links={requests.links} />
                             </div>
@@ -922,4 +969,4 @@ export default function Approvals({ auth, requests, filters }) {
             </div>
         </AuthenticatedLayout>
     );
-} 
+}

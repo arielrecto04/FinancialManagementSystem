@@ -6,6 +6,7 @@ use App\Models\User;
 use Inertia\Inertia;
 use App\Models\AuditLog;
 use App\Models\HrExpense;
+use App\Models\Attachment;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
@@ -18,10 +19,7 @@ class HrExpenseController extends Controller
      * Display a listing of the HR expense requests.
      */
 
-    public function __construct(public GenerateRequestNumber $generateRequestNumber)
-    {
-
-    }
+    public function __construct(public GenerateRequestNumber $generateRequestNumber) {}
     public function index()
     {
         $user = Auth::user();
@@ -66,7 +64,7 @@ class HrExpenseController extends Controller
             $hrExpense = new HrExpense($validated);
             $hrExpense->user_id = $user->id;
             $hrExpense->requestor_name = $user->name;
-            $hrExpense->request_number = $this->generateRequestNumber->handle('hr_expense',new HrExpense());
+            $hrExpense->request_number = $this->generateRequestNumber->handle('hr_expense', new HrExpense());
             $hrExpense->status = 'pending';
             $hrExpense->save();
 
@@ -74,6 +72,22 @@ class HrExpenseController extends Controller
 
 
             $notifyUsers = User::where('role', 'admin')->orWhere('role', 'superadmin')->get();
+
+
+
+            if ($request->hasFile('receipt')) {
+
+                $path = $request->file('receipt')->storeAs('receipts', $request->file('receipt')->getClientOriginalName(), 'public');
+                Attachment::create([
+                    'file_name' => $request->file('receipt')->getClientOriginalName(),
+                    'file_path' => asset('storage/' . $path),
+                    'file_type' => $request->file('receipt')->getClientOriginalExtension(),
+                    'file_size' => $request->file('receipt')->getSize(),
+                    'file_extension' => $request->file('receipt')->getClientOriginalExtension(),
+                    'attachable_id' => $hrExpense->id,
+                    'attachable_type' => get_class($hrExpense),
+                ]);
+            }
 
             foreach ($notifyUsers as $user) {
                 Notification::create([
@@ -114,7 +128,6 @@ class HrExpenseController extends Controller
             );
 
             return redirect()->back()->with('success', 'HR expense request submitted successfully.');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Failed to submit HR expense request: ' . $e->getMessage());

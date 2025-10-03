@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\AuditLog;
+use App\Models\Attachment;
 use App\Models\Liquidation;
 use App\Models\Notification;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class LiquidationController extends Controller
 
     public function store(Request $request)
     {
+
 
 
 
@@ -61,6 +63,22 @@ class LiquidationController extends Controller
                     'category' => $item['category'],
                     'description' => $item['description'],
                     'amount' => $item['amount'],
+                ]);
+            }
+
+
+
+            if ($request->hasFile('receipt')) {
+
+                $path = $request->file('receipt')->storeAs('receipts', $request->file('receipt')->getClientOriginalName(), 'public');
+                Attachment::create([
+                    'file_name' => $request->file('receipt')->getClientOriginalName(),
+                    'file_path' => asset('storage/' . $path),
+                    'file_type' => $request->file('receipt')->getClientOriginalExtension(),
+                    'file_size' => $request->file('receipt')->getSize(),
+                    'file_extension' => $request->file('receipt')->getClientOriginalExtension(),
+                    'attachable_id' => $liquidation->id,
+                    'attachable_type' => get_class($liquidation),
                 ]);
             }
 

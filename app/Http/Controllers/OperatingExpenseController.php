@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Inertia\Inertia;
 use App\Models\AuditLog;
+use App\Models\Attachment;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Services\EmailService;
@@ -15,9 +16,7 @@ use App\Actions\GenerateRequestNumber;
 class OperatingExpenseController extends Controller
 {
 
-    public function __construct(public GenerateRequestNumber $generateRequestNumber)
-    {
-    }
+    public function __construct(public GenerateRequestNumber $generateRequestNumber) {}
     /**
      * Display a listing of the operating expense requests.
      */
@@ -40,6 +39,10 @@ class OperatingExpenseController extends Controller
      */
     public function store(Request $request)
     {
+
+
+
+
         try {
             $validated = $request->validate([
                 'date_of_request' => 'required|date',
@@ -63,6 +66,23 @@ class OperatingExpenseController extends Controller
             $operatingExpense->status = 'pending';
             $operatingExpense->request_number = $this->generateRequestNumber->handle('operating_expense', new OperatingExpense());
             $operatingExpense->save();
+
+
+
+
+            if ($request->hasFile('receipt')) {
+
+                $path = $request->file('receipt')->storeAs('receipts', $request->file('receipt')->getClientOriginalName(), 'public');
+                Attachment::create([
+                    'file_name' => $request->file('receipt')->getClientOriginalName(),
+                    'file_path' => asset('storage/' . $path),
+                    'file_type' => $request->file('receipt')->getClientOriginalExtension(),
+                    'file_size' => $request->file('receipt')->getSize(),
+                    'file_extension' => $request->file('receipt')->getClientOriginalExtension(),
+                    'attachable_id' => $operatingExpense->id,
+                    'attachable_type' => get_class($operatingExpense),
+                ]);
+            }
 
 
 
@@ -107,7 +127,6 @@ class OperatingExpenseController extends Controller
             );
 
             return redirect()->back()->with('success', 'Operating expense request submitted successfully.');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Failed to submit operating expense request: ' . $e->getMessage());

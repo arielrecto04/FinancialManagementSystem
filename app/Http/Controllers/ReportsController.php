@@ -367,7 +367,7 @@ class ReportsController extends Controller
                 'amount_to_reimburse' => $request->amount_to_reimburse,
                 'particulars' => $request->particulars,
                 'items' => $request->items,
-                'receipt_path' => $request->receipt_path,
+                'receipt_path' => $request->attachments()->first()?->file_path,
                 'model' => get_class($request),
                 'comments' => collect(
                     $request->comments
@@ -403,6 +403,7 @@ class ReportsController extends Controller
                 'breakdown' => $request->breakdown_of_expense,
                 'expected_payment_date' => $request->expected_payment_date,
                 'model' => get_class($request),
+                'receipt_path' => $request->attachments()->first()?->file_path,
                 'comments' => collect(
                     $request->comments
                 )->map(function ($comment) {
@@ -437,6 +438,7 @@ class ReportsController extends Controller
                 'receipt_path' => $request->receipt_path,
                 'expected_payment_date' => $request->expected_payment_date,
                 'breakdown_of_expense' => $request->breakdown_of_expense,
+                'receipt_path' => $request->attachments()->first()?->file_path,
                 'model' => get_class($request),
                 'comments' => collect(
                     $request->comments

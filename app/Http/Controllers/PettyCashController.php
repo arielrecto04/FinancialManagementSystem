@@ -10,14 +10,18 @@ use App\Services\EmailService;
 use App\Models\PettyCashRequest;
 use Illuminate\Support\Facades\DB;
 use App\Actions\GenerateRequestNumber;
+use App\Models\Attachment;
 
 class PettyCashController extends Controller
 {
 
-    public function __construct(public GenerateRequestNumber $generateRequestNumber){}
+    public function __construct(public GenerateRequestNumber $generateRequestNumber) {}
 
     public function store(Request $request)
     {
+
+
+
         $validated = $request->validate([
             'date' => 'required|date',
             'dateNeeded' => 'required|date',
@@ -47,6 +51,20 @@ class PettyCashController extends Controller
                 'description' => $validated['description'],
                 'status' => 'pending'
             ]);
+
+
+            if ($request->hasFile('receipt')) {
+                $path = $request->file('receipt')->storeAs('receipts', $pettyCashRequest->request_number . '.' . $request->file('receipt')->getClientOriginalExtension(), 'public');
+                Attachment::create([
+                    'file_name' => $request->file('receipt')->getClientOriginalName(),
+                    'file_path' =>  asset('storage/' . $path),
+                    'file_type' => $request->file('receipt')->getClientOriginalExtension(),
+                    'file_size' => $request->file('receipt')->getSize(),
+                    'file_extension' => $request->file('receipt')->getClientOriginalExtension(),
+                    'attachable_id' => $pettyCashRequest->id,
+                    'attachable_type' => get_class($pettyCashRequest),
+                ]);
+            }
 
 
             $superAdmin = User::where('role', 'superadmin')->first();
@@ -81,7 +99,6 @@ class PettyCashController extends Controller
             );
 
             return redirect()->back()->with('success', 'Petty cash request created successfully.');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Failed to create petty cash request: ' . $e->getMessage());

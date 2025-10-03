@@ -22,12 +22,15 @@ class PettyCashRequestController extends Controller
 
     public function index()
     {
-        $requests = PettyCashRequest::with(['user', 'approver'])
+        $requests = PettyCashRequest::with(['user', 'approver', 'attachments'])
             ->when(!Auth::user()->hasRole('admin'), function ($query) {
                 return $query->where('user_id', Auth::id());
             })
             ->latest()
             ->paginate(10);
+
+
+
 
         return Inertia::render('PettyCashRequests/Index', [
             'requests' => $requests
@@ -36,6 +39,9 @@ class PettyCashRequestController extends Controller
 
     public function store(Request $request)
     {
+
+
+
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0',
             'purpose' => 'required|string|max:255',
@@ -271,7 +277,7 @@ class PettyCashRequestController extends Controller
         $status = $request->get('status', 'all');
         $sortOrder = $request->get('sortOrder', 'newest');
 
-        $query = PettyCashRequest::with('user')
+        $query = PettyCashRequest::with(['user', 'attachments'])
             ->when($status !== 'all', function ($query) use ($status) {
                 return $query->where('status', $status);
             });
