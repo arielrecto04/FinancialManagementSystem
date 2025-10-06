@@ -123,8 +123,9 @@ export default function ChatIndex({ auth, conversations }) {
     const [typingUser, setTypingUser] = useState(null);
     const audio = new Audio("/messenger.mp3");
     const [editMessage, setEditMessage] = useState(null);
+    const [onlineUsers, setOnlineUsers] = useState([]);
 
-    console.log(conversationData, auth);
+
     //#endregion
 
     //#region useEffect
@@ -169,19 +170,132 @@ export default function ChatIndex({ auth, conversations }) {
         })
     }, [conversationData])
 
+
     useEffect(() => {
-        if (!selectedConversation) return;
-        window.Echo.private("conversation." + selectedConversation.id).listenForWhisper("typing", (e) => {
+        if (!selectedConversation) {
+            setOnlineUsers([]); // Clear online users when no conversation is selected
+            return;
+        }
+
+        const updateConversationStatus = (onlineUserList) => {
+            const onlineUserIds = new Set(onlineUserList.map(user => user.id));
+
+
+            console.log(onlineUserIds, "onlineUserIds");
+
+
+
+            setSelectedConversation(prevConversation => {
+                // Prevent updates if the conversation has changed from under us
+                if (!prevConversation || prevConversation.id !== selectedConversation.id) {
+                    return prevConversation;
+                }
+                return {
+                    ...prevConversation,
+                    owner: {
+                        ...prevConversation.owner,
+                        is_online: onlineUserIds.has(prevConversation.owner.id)
+                    },
+                    participants: prevConversation.participants.map(participant => ({
+                        ...participant,
+                        is_online: onlineUserIds.has(participant.id)
+                    }))
+                };
+            });
+
+
+            setConversationData((prev) => {
+                return prev.map((conversation) => {
+                    if (conversation.id === selectedConversation.id) {
+                        return {
+                            ...conversation,
+                            owner: {
+                                ...conversation.owner,
+                                is_online: onlineUserIds.has(conversation.owner.id)
+                            },
+                            participants: conversation.participants.map(participant => ({
+                                ...participant,
+                                is_online: onlineUserIds.has(participant.id)
+                            }))
+                        };
+                    }
+                    return conversation;
+                });
+            });
+        };
+
+        // CHANGE: Use Echo.join() to subscribe to a presence channel
+        const channel = window.Echo.join(`conversation.${selectedConversation.id}`);
+
+        channel
+            // .here() is called when you successfully join the channel.
+            // It gives you an array of all other users currently in the channel.
+            .here((users) => {
+                console.log("Currently online:", users);
+                setOnlineUsers((prevUsers) => {
+                    const newUsers = [...prevUsers, ...users];
+                    updateConversationStatus(newUsers);
+
+                    return newUsers;
+                });
+            })
+            // .joining() is called when a new user joins the channel.
+            .joining((user) => {
+                console.log(user.name, "joined the chat.");
+                setOnlineUsers((prevUsers) => {
+                    const newUsers = [...prevUsers, user];
+                    updateConversationStatus(newUsers);
+                    return newUsers;
+                });
+
+
+            })
+            // .leaving() is called when a user leaves the channel.
+            .leaving((user) => {
+                console.log(user.name, "left the chat.");
+                setOnlineUsers((prevUsers) => {
+                    const newUsers = prevUsers.filter(u => u.id !== user.id);
+                    updateConversationStatus(newUsers);
+                    return newUsers;
+                });
+            })
+            .error((error) => {
+                console.error("Presence channel connection error:", error);
+            });
+
+        // You can keep your existing listeners chained to the same channel object
+        channel.listenForWhisper("typing", (e) => {
             setTypingUser(e.user);
-            console.log(e.user, "e.user", 'typing');
             setTimeout(() => {
                 setTypingUser(null);
             }, 2000);
         });
+
+        // The cleanup function remains the same, it properly leaves the channel.
         return () => {
-            window.Echo.leave("conversation." + selectedConversation.id);
+            window.Echo.leave(`conversation.${selectedConversation.id}`);
         };
-    }, [selectedConversation]);
+
+
+    }, [selectedConversation?.id]);
+
+
+    console.log(selectedConversation, "selectedConversation")
+
+
+    // useEffect(() => {
+    //     if (!selectedConversation) return;
+    //     window.Echo.private("conversation." + selectedConversation.id).listenForWhisper("typing", (e) => {
+    //         setTypingUser(e.user);
+    //         console.log(e.user, "e.user", 'typing');
+    //         setTimeout(() => {
+    //             setTypingUser(null);
+    //         }, 2000);
+    //     });
+    //     return () => {
+    //         window.Echo.leave("conversation." + selectedConversation.id);
+    //     };
+    // }, [selectedConversation]);
 
     useEffect(() => {
 
@@ -538,6 +652,7 @@ export default function ChatIndex({ auth, conversations }) {
     };
 
 
+
     const MessageOptions = ({ onEdit, onDelete }) => {
         const [isOpen, setIsOpen] = useState(false);
         const dropdownRef = useRef(null);
@@ -588,7 +703,9 @@ export default function ChatIndex({ auth, conversations }) {
 
 
     const displayName = (conversation) => {
-        if (conversation.owner.id == auth.user.id) {
+
+
+        if (conversation.owner_id == auth.user.id) {
             if (conversation.participants.length > 1) {
                 return conversation.participants.join(', ');
             } else {
@@ -598,6 +715,31 @@ export default function ChatIndex({ auth, conversations }) {
 
         return conversation.owner.name;
     }
+
+
+
+    const isOneOnOneConversation = (conversation) => {
+        return conversation.participants.length === 1;
+    }
+
+
+    const isOwnerOrParticipantDisplayIsOnline = (conversation) => {
+        if (conversation.owner_id == auth.user.id) {
+            return isUserOnline(conversation.owner);
+        } else {
+            return isUserOnline(conversation.participants[0]);
+        }
+    }
+    const isUserOnline = (user) => {
+        // Check that user is a non-null object before using the 'in' operator
+        console.log(user)
+        if (user && typeof user === 'object' && 'is_online' in user) {
+            return user.is_online;
+        }
+        return false;
+    };
+
+
     //#endregion
 
     return (
@@ -749,9 +891,12 @@ export default function ChatIndex({ auth, conversations }) {
                                     >
                                         <div className="relative">
                                             {displayImageConversation(conversation, auth)}
-                                            {conversation?.isOnline && (
-                                                <span className="block absolute right-0 bottom-0 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white"></span>
-                                            )}
+
+                                            {
+                                                isOneOnOneConversation(conversation) && (
+                                                    <span className={`block absolute right-0 bottom-0 w-3 h-3 ${isOwnerOrParticipantDisplayIsOnline(conversation)  ? "bg-green-500" : "bg-gray-500"} rounded-full ring-2 ring-white`}></span>
+                                                )
+                                            }
                                         </div>
                                         <div className="flex-1 ml-4 min-w-0">
                                             <div className="flex justify-between items-center">
@@ -794,8 +939,8 @@ export default function ChatIndex({ auth, conversations }) {
                                             {displayName(selectedConversation)}
                                         </h3>
 
-                                        <p className="text-xs text-gray-500">
-                                            {selectedConversation.isOnline
+                                        <p className={`text-xs ${isOwnerOrParticipantDisplayIsOnline(selectedConversation) ? "text-green-500" : "text-gray-500"}`}>
+                                            {isOwnerOrParticipantDisplayIsOnline(selectedConversation)
                                                 ? "Online"
                                                 : "Offline"}
                                         </p>
