@@ -123,7 +123,7 @@ class HrExpenseController extends Controller
                     'additional_comment' => $validated['additional_comment'] ?? '',
                 ],
                 'HR Expenses',
-                $user->name,
+                $hrExpense->requestor_name,
                 $hrExpense->request_number
             );
 
