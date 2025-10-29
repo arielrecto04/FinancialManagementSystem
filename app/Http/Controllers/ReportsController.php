@@ -14,6 +14,7 @@ use App\Models\SupplyRequest;
 use App\Exports\RequestsExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\OperatingExpense;
+use App\Models\PettyCashRequest;
 use Illuminate\Support\Facades\DB;
 use App\Models\ReimbursementRequest;
 use Maatwebsite\Excel\Facades\Excel;
@@ -132,6 +133,9 @@ class ReportsController extends Controller
         ->sortByDesc('created_at')->forPage($page, $perPage)->values();
 
 
+
+
+
         $totalPages = ceil(count($allRequests) / $perPage);
 
         return Inertia::render('Reports', [
@@ -217,6 +221,8 @@ class ReportsController extends Controller
         $hrExpenseRequests = HrExpense::with('user');
         $operatingExpenseRequests = OperatingExpense::with('user');
 
+        $pettyCashRequests = PettyCashRequest::with('user');
+
 
 
         // Apply date filters
@@ -226,6 +232,7 @@ class ReportsController extends Controller
             $liquidationRequests = $liquidationRequests->whereBetween('created_at', [$startDate, $endDate]);
             $hrExpenseRequests = $hrExpenseRequests->whereBetween('created_at', [$startDate, $endDate]);
             $operatingExpenseRequests = $operatingExpenseRequests->whereBetween('created_at', [$startDate, $endDate]);
+            $pettyCashRequests = $pettyCashRequests->whereBetween('created_at', [$startDate, $endDate]);
         }
 
         // Apply status filter
@@ -235,6 +242,7 @@ class ReportsController extends Controller
             $liquidationRequests = $liquidationRequests->where('status', $status);
             $hrExpenseRequests = $hrExpenseRequests->where('status', $status);
             $operatingExpenseRequests = $operatingExpenseRequests->where('status', $status);
+            $pettyCashRequests = $pettyCashRequests->where('status', $status);
         }
 
         // Get filtered requests based on request type
@@ -253,6 +261,9 @@ class ReportsController extends Controller
         $operatingExpenseRequests = $requestType === 'all' || $requestType === 'operatingexpense' ?
             $operatingExpenseRequests->get()->map($this->transformOperatingExpenseRequest()) : collect([]);
 
+        $pettyCashRequests = $requestType === 'all' || $requestType === 'pettycash' ?
+            $pettyCashRequests->get()->map($this->transformPettyCashRequest()) : collect([]);
+
         // Get sort order from request
         $sortOrder = $request->input('sortOrder', 'newest');
 
@@ -262,7 +273,8 @@ class ReportsController extends Controller
         $sortedRequests = $supplyRequests->concat($reimbursementRequests)
             ->concat($liquidationRequests)
             ->concat($hrExpenseRequests)
-            ->concat($operatingExpenseRequests);
+            ->concat($operatingExpenseRequests)
+            ->concat($pettyCashRequests);
 
 
 
@@ -456,6 +468,38 @@ class ReportsController extends Controller
         };
     }
 
+    private function transformPettyCashRequest()
+    {
+        return function ($request) {
+            return [
+                'id' => $request->id,
+                'request_number' => $request->request_number,
+                'type' => 'Petty Cash',
+                'user_name' => $request->user->name,
+                'department' => $request->department,
+                'status' => $request->status,
+                'total_amount' => $request->amount,
+                'created_at' => $request->created_at->format('Y-m-d'),
+                'remarks' => $request->remarks,
+                'purpose' => $request->purpose,
+                'receipt_path' => $request->attachments()->first()?->file_path,
+                'model' => get_class($request),
+                'comments' => collect(
+                    $request->comments
+                )->map(function ($comment) {
+                    return [
+                        'id' => $comment->id,
+                        'content' => $comment->content,
+                        'created_at' => $comment->created_at->format('Y-m-d'),
+                        'model_path' => $comment->model_path,
+                        'user' => $comment->user,
+                        'replies' => $comment->replies,
+                    ];
+                }) ?? [],
+            ];
+        };
+    }
+
     private function formatNumber($number)
     {
         return number_format((float)$number, 2, '.', ',');
@@ -543,6 +587,15 @@ class ReportsController extends Controller
             }
 
             $requestAmount = $requestModel ? floatval($requestModel->total_amount) : 0;
+        } else if (strpos($type, 'pettycash') !== false || strpos($type, 'petty cash') !== false) {
+            $requestModel = PettyCashRequest::find($id);
+
+            // If not found, try to find by request_number
+            if (!$requestModel) {
+                $requestModel = PettyCashRequest::where('request_number', 'LIKE', "PC-%" . $id)->first();
+            }
+
+            $requestAmount = $requestModel ? floatval($requestModel->amount) : 0;
         }
 
         if (!$requestModel) {
