@@ -245,7 +245,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
         ],
         amount: "",
         description: "",
-        receipt: null,
+        receipt: [],
         remarks: "",
     });
 
@@ -270,7 +270,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
         total_amount: "0",
         expected_payment_date: "",
         additional_comment: "",
-        receipt: null,
+        receipt:[],
     });
 
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
@@ -313,7 +313,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
         total_amount_requested: "0",
         expected_payment_date: "",
         additional_comment: "",
-        receipt: null,
+        receipt: [],
     });
 
     //#endregion
@@ -329,31 +329,31 @@ export default function RequestForm({ auth, errors = {}, type }) {
         { id: "liquidation", label: "Liquidation", icon: icons.liquidation },
         ...(auth.user.role === "admin" || auth.user.role === "superadmin"
             ? [
-                {
-                    id: "pettycash",
-                    label: "Petty Cash Request",
-                    icon: icons.pettyCash,
-                },
-                {
-                    id: "hrExpenses",
-                    label: "HR Expenses Request",
-                    icon: icons.hrExpenses,
-                },
-                {
-                    id: "operatingExpenses",
-                    label: "Operating Expenses Request",
-                    icon: icons.operatingExpenses,
-                },
-            ]
+                  {
+                      id: "pettycash",
+                      label: "Petty Cash Request",
+                      icon: icons.pettyCash,
+                  },
+                  {
+                      id: "hrExpenses",
+                      label: "HR Expenses Request",
+                      icon: icons.hrExpenses,
+                  },
+                  {
+                      id: "operatingExpenses",
+                      label: "Operating Expenses Request",
+                      icon: icons.operatingExpenses,
+                  },
+              ]
             : []),
         ...(auth.user.role === "hr"
             ? [
-                {
-                    id: "hrExpenses",
-                    label: "HR Expenses Request",
-                    icon: icons.hrExpenses,
-                },
-            ]
+                  {
+                      id: "hrExpenses",
+                      label: "HR Expenses Request",
+                      icon: icons.hrExpenses,
+                  },
+              ]
             : []),
     ];
 
@@ -689,10 +689,11 @@ export default function RequestForm({ auth, errors = {}, type }) {
     // Helper components for buttons
     const PeriodButton = ({ icon, label, active }) => (
         <button
-            className={`flex items-center px-4 py-2 rounded-md transition-colors ${active
-                ? "text-white bg-blue-500"
-                : "text-gray-700 bg-gray-100 hover:bg-gray-200"
-                }`}
+            className={`flex items-center px-4 py-2 rounded-md transition-colors ${
+                active
+                    ? "text-white bg-blue-500"
+                    : "text-gray-700 bg-gray-100 hover:bg-gray-200"
+            }`}
         >
             <PeriodIcon icon={icon} />
             <span className="ml-2">{label}</span>
@@ -701,10 +702,11 @@ export default function RequestForm({ auth, errors = {}, type }) {
 
     const MobileMenuItem = ({ icon, label, active }) => (
         <button
-            className={`w-full flex items-center px-4 py-2 text-left ${active
-                ? "text-blue-500 bg-blue-50"
-                : "text-gray-700 hover:bg-gray-50"
-                }`}
+            className={`w-full flex items-center px-4 py-2 text-left ${
+                active
+                    ? "text-blue-500 bg-blue-50"
+                    : "text-gray-700 hover:bg-gray-50"
+            }`}
         >
             <PeriodIcon icon={icon} />
             <span className="ml-2">{label}</span>
@@ -930,16 +932,32 @@ export default function RequestForm({ auth, errors = {}, type }) {
         e.preventDefault();
         setReimbursementProcessing(true);
 
+        console.log(reimbursementData);
+
+        const formData = new FormData();
         try {
-            const formData = new FormData();
             for (let key in reimbursementData) {
+                const value = reimbursementData[key];
                 if (key === "expense_items") {
-                    formData.append(
-                        key,
-                        JSON.stringify(reimbursementData[key])
-                    );
+                    // Stringify your JSON data
+                    formData.append(key, JSON.stringify(value));
+                } else if (key === "receipt") {
+                    // *** THIS IS THE FIX ***
+                    // Handle the file array
+                    if (value && value.length > 0) {
+                        // Loop through the array of files
+                        value.forEach((file) => {
+                            // Append each file separately.
+                            // Using "receipt[]" tells the backend to treat this as an array.
+                            formData.append("receipt[]", file);
+                        });
+                    }
                 } else {
-                    formData.append(key, reimbursementData[key]);
+                    // Handle all other simple values (text, numbers, etc.)
+                    // Added a check to avoid appending "null" or "undefined"
+                    if (value !== null && value !== undefined) {
+                        formData.append(key, value);
+                    }
                 }
             }
             formData.append("request_number", `REM-${new Date().getTime()}`);
@@ -1386,10 +1404,11 @@ export default function RequestForm({ auth, errors = {}, type }) {
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
-                                className={`flex items-center justify-center px-4 py-3 rounded-lg transition-all w-full sm:w-auto ${formType === tab.id
-                                    ? "bg-blue-500 text-white shadow-lg"
-                                    : "bg-gray-100 hover:bg-gray-200"
-                                    }`}
+                                className={`flex items-center justify-center px-4 py-3 rounded-lg transition-all w-full sm:w-auto ${
+                                    formType === tab.id
+                                        ? "bg-blue-500 text-white shadow-lg"
+                                        : "bg-gray-100 hover:bg-gray-200"
+                                }`}
                                 onClick={() => setFormType(tab.id)}
                             >
                                 <svg
@@ -1677,6 +1696,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                 <form
                                     onSubmit={handleReimbursementSubmit}
                                     className="space-y-4"
+                                    encType="multipart/form-data"
                                 >
                                     <div className="mb-4">
                                         <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
@@ -1940,14 +1960,15 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                     <div>
                                         <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
                                             {icons.receipt}
-                                            Receipt
+                                            Receipt ( can upload multiple files)
                                         </label>
                                         <input
                                             type="file"
+                                            multiple
                                             onChange={(e) =>
                                                 setReimbursementData(
                                                     "receipt",
-                                                    e.target.files[0]
+                                                    [...e.target.files]
                                                 )
                                             }
                                             className="px-3 py-2 w-full rounded-md border border-gray-300"
@@ -2172,13 +2193,13 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                                             Math.max(
                                                                 0,
                                                                 cashAdvance -
-                                                                totalAmount
+                                                                    totalAmount
                                                             ).toFixed(2),
                                                         amount_to_reimburse:
                                                             Math.max(
                                                                 0,
                                                                 totalAmount -
-                                                                cashAdvance
+                                                                    cashAdvance
                                                             ).toFixed(2),
                                                     })
                                                 );
@@ -2324,7 +2345,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                                 type="number"
                                                 value={parseFloat(
                                                     liquidationData.total_amount ||
-                                                    0
+                                                        0
                                                 ).toFixed(2)}
                                                 className="block mt-1 w-full bg-gray-100 rounded-md border-gray-300"
                                                 readOnly
@@ -2338,7 +2359,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                                 type="number"
                                                 value={parseFloat(
                                                     liquidationData.amount_to_refund ||
-                                                    0
+                                                        0
                                                 ).toFixed(2)}
                                                 className="block mt-1 w-full bg-gray-100 rounded-md border-gray-300"
                                                 readOnly
@@ -2352,7 +2373,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                                 type="number"
                                                 value={parseFloat(
                                                     liquidationData.amount_to_reimburse ||
-                                                    0
+                                                        0
                                                 ).toFixed(2)}
                                                 className="block mt-1 w-full bg-gray-100 rounded-md border-gray-300"
                                                 readOnly
@@ -2360,18 +2381,18 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                         </div>
                                     </div>
 
-
                                     <div>
                                         <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
                                             {icons.receipt}
-                                            Receipt
+                                            Receipt ( can upload multiple files )
                                         </label>
                                         <input
                                             type="file"
+                                            multiple
                                             onChange={(e) =>
                                                 setLiquidationData({
                                                     ...liquidationData,
-                                                    "receipt": e.target.files[0]
+                                                    receipt: e.target.files,
                                                 })
                                             }
                                             className="px-3 py-2 w-full rounded-md border border-gray-300"
@@ -2383,8 +2404,6 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                             </div>
                                         )}
                                     </div>
-
-
 
                                     {/* Submit Button */}
                                     <div className="mt-6">
@@ -2597,14 +2616,16 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                         <div>
                                             <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
                                                 {icons.receipt}
-                                                Receipt
+                                                Receipt ( can upload multiple files )
                                             </label>
                                             <input
                                                 type="file"
+                                                multiple
                                                 onChange={(e) =>
                                                     setPettyCashData({
                                                         ...pettyCashData,
-                                                        "receipt": e.target.files[0]
+                                                        receipt:
+                                                            e.target.files,
                                                     })
                                                 }
                                                 className="px-3 py-2 w-full rounded-md border border-gray-300"
@@ -2919,18 +2940,18 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                         />
                                     </div>
 
-
                                     <div>
                                         <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
                                             {icons.receipt}
-                                            Receipt
+                                            Receipt ( can upload multiple files )
                                         </label>
                                         <input
                                             type="file"
+                                            multiple
                                             onChange={(e) =>
                                                 setHrExpensesData({
                                                     ...hrExpensesData,
-                                                    "receipt": e.target.files[0]
+                                                    receipt: e.target.files,
                                                 })
                                             }
                                             className="px-3 py-2 w-full rounded-md border border-gray-300"
@@ -2952,7 +2973,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                             Submit HR Expenses Request
                                         </button>
 
-                                        <button
+                                        {/* <button
                                             type="button"
                                             onClick={() =>
                                                 console.log(
@@ -2965,7 +2986,7 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                             className="px-4 py-2 w-full text-white bg-gray-500 rounded-md hover:bg-gray-600"
                                         >
                                             Debug Form Data
-                                        </button>
+                                        </button> */}
                                     </div>
                                 </form>
                             </div>
@@ -3265,18 +3286,18 @@ export default function RequestForm({ auth, errors = {}, type }) {
                                         />
                                     </div>
 
-
                                     <div>
                                         <label className="block flex gap-2 items-center text-sm font-medium text-gray-700">
                                             {icons.receipt}
-                                            Receipt
+                                            Receipt (can upload multiple files)
                                         </label>
                                         <input
                                             type="file"
+                                            multiple
                                             onChange={(e) =>
                                                 setOperatingExpensesData({
                                                     ...operatingExpensesData,
-                                                    "receipt": e.target.files[0]
+                                                    receipt: e.target.files,
                                                 })
                                             }
                                             className="px-3 py-2 w-full rounded-md border border-gray-300"

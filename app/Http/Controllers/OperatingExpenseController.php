@@ -15,7 +15,6 @@ use App\Actions\GenerateRequestNumber;
 
 class OperatingExpenseController extends Controller
 {
-
     public function __construct(public GenerateRequestNumber $generateRequestNumber) {}
     /**
      * Display a listing of the operating expense requests.
@@ -25,12 +24,10 @@ class OperatingExpenseController extends Controller
         $user = Auth::user();
 
         // Admin can see all requests, others can see their own
-        $operatingExpenses = $user->role === 'admin'
-            ? OperatingExpense::with('user')->latest()->paginate(10)
-            : OperatingExpense::where('user_id', $user->id)->latest()->paginate(10);
+        $operatingExpenses = $user->role === 'admin' ? OperatingExpense::with('user')->latest()->paginate(10) : OperatingExpense::where('user_id', $user->id)->latest()->paginate(10);
 
         return Inertia::render('OperatingExpenses/Index', [
-            'operatingExpenses' => $operatingExpenses
+            'operatingExpenses' => $operatingExpenses,
         ]);
     }
 
@@ -39,9 +36,6 @@ class OperatingExpenseController extends Controller
      */
     public function store(Request $request)
     {
-
-
-
 
         try {
             $validated = $request->validate([
@@ -67,24 +61,20 @@ class OperatingExpenseController extends Controller
             $operatingExpense->request_number = $this->generateRequestNumber->handle('operating_expense', new OperatingExpense());
             $operatingExpense->save();
 
-
-
-
             if ($request->hasFile('receipt')) {
-
-                $path = $request->file('receipt')->storeAs('receipts', $request->file('receipt')->getClientOriginalName(), 'public');
-                Attachment::create([
-                    'file_name' => $request->file('receipt')->getClientOriginalName(),
-                    'file_path' => asset('storage/' . $path),
-                    'file_type' => $request->file('receipt')->getClientOriginalExtension(),
-                    'file_size' => $request->file('receipt')->getSize(),
-                    'file_extension' => $request->file('receipt')->getClientOriginalExtension(),
-                    'attachable_id' => $operatingExpense->id,
-                    'attachable_type' => get_class($operatingExpense),
-                ]);
+                foreach ($request->file('receipt') as $file) {
+                    $path = $file->storeAs('receipts', $file->getClientOriginalName(), 'public');
+                    Attachment::create([
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => asset('storage/' . $path),
+                        'file_type' => $file->getClientOriginalExtension(),
+                        'file_size' => $file->getSize(),
+                        'file_extension' => $file->getClientOriginalExtension(),
+                        'attachable_id' => $operatingExpense->id,
+                        'attachable_type' => get_class($operatingExpense),
+                    ]);
+                }
             }
-
-
 
             $notifyUsers = User::where('role', 'admin')->orWhere('role', 'superadmin')->get();
 
@@ -95,7 +85,7 @@ class OperatingExpenseController extends Controller
                     'type' => 'new_operating_expense_request',
                     'title' => 'New Operating Expense Request',
                     'message' => 'A new operating expense request has been submitted',
-                    'url' => route('reports.index')
+                    'url' => route('reports.index'),
                 ]);
             }
 
@@ -108,7 +98,7 @@ class OperatingExpenseController extends Controller
                 'action' => 'Operating Expense Request Created',
                 'description' => 'Created new operating expense request for ' . $validated['expense_category'],
                 'amount' => $validated['total_amount'],
-                'ip_address' => $request->ip()
+                'ip_address' => $request->ip(),
             ]);
 
             // Send email notification to admin and superadmin users
@@ -123,12 +113,13 @@ class OperatingExpenseController extends Controller
                 ],
                 'Operating Expenses',
                 auth()->user()->name,
-                $operatingExpense->request_number
+                $operatingExpense->request_number,
             );
 
             return redirect()->back()->with('success', 'Operating expense request submitted successfully.');
         } catch (\Exception $e) {
-            return redirect()->back()
+            return redirect()
+                ->back()
                 ->with('error', 'Failed to submit operating expense request: ' . $e->getMessage());
         }
     }
@@ -141,7 +132,7 @@ class OperatingExpenseController extends Controller
         $this->authorize('view', $operatingExpense);
 
         return Inertia::render('OperatingExpenses/Show', [
-            'operatingExpense' => $operatingExpense->load('user')
+            'operatingExpense' => $operatingExpense->load('user'),
         ]);
     }
 
@@ -168,7 +159,7 @@ class OperatingExpenseController extends Controller
             'action' => 'Operating Expense Request ' . ucfirst($validated['status']),
             'description' => 'Operating expense request ' . $validated['status'] . ' by ' . auth()->user()->name,
             'amount' => $operatingExpense->total_amount,
-            'ip_address' => $request->ip()
+            'ip_address' => $request->ip(),
         ]);
 
         return redirect()->back()->with('success', 'Operating expense request status updated successfully.');
@@ -196,7 +187,7 @@ class OperatingExpenseController extends Controller
             'action' => 'Operating Expense Request Deleted',
             'description' => 'Deleted operating expense request for ' . $category,
             'amount' => $amount,
-            'ip_address' => request()->ip()
+            'ip_address' => request()->ip(),
         ]);
 
         return redirect()->route('operating-expenses.index')->with('success', 'Operating expense request deleted successfully.');
@@ -210,35 +201,41 @@ class OperatingExpenseController extends Controller
         $operatingExpense = OperatingExpense::where('request_number', $requestNumber)->firstOrFail();
 
         $user = auth()->user();
-        $canEdit =
-            $user->role === 'superadmin' ||
-            $user->role === 'admin' ||
-            ($user->id === $operatingExpense->user_id && $operatingExpense->status === 'pending');
+        $canEdit = $user->role === 'superadmin' || $user->role === 'admin' || ($user->id === $operatingExpense->user_id && $operatingExpense->status === 'pending');
 
         if (!$canEdit) {
-            return response()->json([
-                'message' => 'You are not authorized to edit this request'
-            ], 403);
+            return response()->json(
+                [
+                    'message' => 'You are not authorized to edit this request',
+                ],
+                403,
+            );
         }
 
         $breakdown = $request->input('breakdown_of_expense');
         if (!$breakdown) {
-            return response()->json([
-                'message' => 'The breakdown field is required',
-                'errors' => ['breakdown_of_expense' => ['The breakdown field is required']]
-            ], 422);
+            return response()->json(
+                [
+                    'message' => 'The breakdown field is required',
+                    'errors' => ['breakdown_of_expense' => ['The breakdown field is required']],
+                ],
+                422,
+            );
         }
 
         $validated = [
             'breakdown_of_expense' => $breakdown,
-            'total_amount' => $request->input('total_amount')
+            'total_amount' => $request->input('total_amount'),
         ];
 
         if (!is_numeric($validated['total_amount']) || $validated['total_amount'] < 0) {
-            return response()->json([
-                'message' => 'The total amount must be a positive number',
-                'errors' => ['total_amount' => ['The total amount must be a positive number']]
-            ], 422);
+            return response()->json(
+                [
+                    'message' => 'The total amount must be a positive number',
+                    'errors' => ['total_amount' => ['The total amount must be a positive number']],
+                ],
+                422,
+            );
         }
 
         $operatingExpense->update($validated);

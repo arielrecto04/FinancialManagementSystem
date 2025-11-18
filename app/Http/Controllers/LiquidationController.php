@@ -24,8 +24,6 @@ class LiquidationController extends Controller
     {
 
 
-
-
         $validated = $request->validate([
             'department' => 'required|string',
             'date' => 'required|date',
@@ -69,17 +67,18 @@ class LiquidationController extends Controller
 
 
             if ($request->hasFile('receipt')) {
-
-                $path = $request->file('receipt')->storeAs('receipts', $request->file('receipt')->getClientOriginalName(), 'public');
-                Attachment::create([
-                    'file_name' => $request->file('receipt')->getClientOriginalName(),
-                    'file_path' => asset('storage/' . $path),
-                    'file_type' => $request->file('receipt')->getClientOriginalExtension(),
-                    'file_size' => $request->file('receipt')->getSize(),
-                    'file_extension' => $request->file('receipt')->getClientOriginalExtension(),
-                    'attachable_id' => $liquidation->id,
-                    'attachable_type' => get_class($liquidation),
-                ]);
+                foreach ($request->file('receipt') as $file) {
+                    $path = $file->storeAs('receipts', $file->getClientOriginalName(), 'public');
+                    Attachment::create([
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => asset('storage/' . $path),
+                        'file_type' => $file->getClientOriginalExtension(),
+                        'file_size' => $file->getSize(),
+                        'file_extension' => $file->getClientOriginalExtension(),
+                        'attachable_id' => $liquidation->id,
+                        'attachable_type' => get_class($liquidation),
+                    ]);
+                }
             }
 
 

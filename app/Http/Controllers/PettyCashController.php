@@ -14,12 +14,10 @@ use App\Models\Attachment;
 
 class PettyCashController extends Controller
 {
-
     public function __construct(public GenerateRequestNumber $generateRequestNumber) {}
 
     public function store(Request $request)
     {
-
 
 
         $validated = $request->validate([
@@ -31,8 +29,6 @@ class PettyCashController extends Controller
             'description' => 'required|string',
             'department' => 'required|string',
         ]);
-
-
 
         try {
             // Generate request number
@@ -49,36 +45,34 @@ class PettyCashController extends Controller
                 'department' => $validated['department'],
                 'category' => $validated['category'],
                 'description' => $validated['description'],
-                'status' => 'pending'
+                'status' => 'pending',
             ]);
 
-
             if ($request->hasFile('receipt')) {
-                $path = $request->file('receipt')->storeAs('receipts', $pettyCashRequest->request_number . '.' . $request->file('receipt')->getClientOriginalExtension(), 'public');
-                Attachment::create([
-                    'file_name' => $request->file('receipt')->getClientOriginalName(),
-                    'file_path' =>  asset('storage/' . $path),
-                    'file_type' => $request->file('receipt')->getClientOriginalExtension(),
-                    'file_size' => $request->file('receipt')->getSize(),
-                    'file_extension' => $request->file('receipt')->getClientOriginalExtension(),
-                    'attachable_id' => $pettyCashRequest->id,
-                    'attachable_type' => get_class($pettyCashRequest),
-                ]);
+                foreach ($request->file('receipt') as $file) {
+                    $path = $file->storeAs('receipts', $pettyCashRequest->request_number . '.' . $file->getClientOriginalExtension(), 'public');
+                    Attachment::create([
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => asset('storage/' . $path),
+                        'file_type' => $file->getClientOriginalExtension(),
+                        'file_size' => $file->getSize(),
+                        'file_extension' => $file->getClientOriginalExtension(),
+                        'attachable_id' => $pettyCashRequest->id,
+                        'attachable_type' => get_class($pettyCashRequest),
+                    ]);
+                }
             }
-
 
             $superAdmin = User::where('role', 'superadmin')->first();
 
             if ($superAdmin) {
-
-
                 Notification::create([
                     'user_id' => auth()->id(),
                     'notify_to' => $superAdmin->id,
                     'type' => 'new_petty_cash_request',
                     'title' => 'New Petty Cash Request',
                     'message' => 'A new petty cash request has been submitted',
-                    'url' => route('petty-cash-requests.approvals')
+                    'url' => route('petty-cash-requests.approvals'),
                 ]);
             }
 
@@ -95,12 +89,13 @@ class PettyCashController extends Controller
                 ],
                 'Petty Cash',
                 auth()->user()->name,
-                $requestNumber
+                $requestNumber,
             );
 
             return redirect()->back()->with('success', 'Petty cash request created successfully.');
         } catch (\Exception $e) {
-            return redirect()->back()
+            return redirect()
+                ->back()
                 ->with('error', 'Failed to create petty cash request: ' . $e->getMessage());
         }
     }

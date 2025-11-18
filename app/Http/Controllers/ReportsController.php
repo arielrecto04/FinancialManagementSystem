@@ -344,6 +344,7 @@ class ReportsController extends Controller
                 'expense_items' => $request->expense_items,
                 'receipt_path' => $request->receipt_path,
                 'model' => get_class($request),
+                'attachments' => $request->attachments,
                 'comments' => collect(
                     $request->comments
                 )->map(function ($comment) {
@@ -379,7 +380,8 @@ class ReportsController extends Controller
                 'amount_to_reimburse' => $request->amount_to_reimburse,
                 'particulars' => $request->particulars,
                 'items' => $request->items,
-                'receipt_path' => $request->attachments()->first()?->file_path,
+                'receipt_path' => null,
+                'attachments' => $request->attachments,
                 'model' => get_class($request),
                 'comments' => collect(
                     $request->comments
@@ -415,7 +417,8 @@ class ReportsController extends Controller
                 'breakdown' => $request->breakdown_of_expense,
                 'expected_payment_date' => $request->expected_payment_date,
                 'model' => get_class($request),
-                'receipt_path' => $request->attachments()->first()?->file_path,
+                'receipt_path' => null,
+                'attachments' => $request->attachments,
                 'comments' => collect(
                     $request->comments
                 )->map(function ($comment) {
@@ -451,6 +454,7 @@ class ReportsController extends Controller
                 'expected_payment_date' => $request->expected_payment_date,
                 'breakdown_of_expense' => $request->breakdown_of_expense,
                 'receipt_path' => $request->attachments()->first()?->file_path,
+                'attachments' => $request->attachments,
                 'model' => get_class($request),
                 'comments' => collect(
                     $request->comments
@@ -483,6 +487,7 @@ class ReportsController extends Controller
                 'remarks' => $request->remarks,
                 'purpose' => $request->purpose,
                 'receipt_path' => $request->attachments()->first()?->file_path,
+                'attachments' => $request->attachments,
                 'model' => get_class($request),
                 'comments' => collect(
                     $request->comments

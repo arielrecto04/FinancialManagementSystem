@@ -42,6 +42,8 @@ class PettyCashRequestController extends Controller
 
 
 
+
+
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0',
             'purpose' => 'required|string|max:255',

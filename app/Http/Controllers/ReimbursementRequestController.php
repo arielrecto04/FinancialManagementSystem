@@ -9,14 +9,13 @@ use Illuminate\Http\Request;
 use App\Services\EmailService;
 use App\Models\ReimbursementRequest;
 use App\Actions\GenerateRequestNumber;
+use App\Models\Attachment;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Notification;
 
 class ReimbursementRequestController extends Controller
 {
-
-    public function __construct(public GenerateRequestNumber $generateRequestNumber){}
-
+    public function __construct(public GenerateRequestNumber $generateRequestNumber) {}
 
     public function store(Request $request)
     {
@@ -32,16 +31,43 @@ class ReimbursementRequestController extends Controller
                 'expense_items' => 'required|json',
             ]);
 
-            $reimbursement = new ReimbursementRequest($request->except(['receipt']));
-            $reimbursement->user_id = auth()->id();
-            $reimbursement->request_number = $this->generateRequestNumber->handle('reimbursement_request', $reimbursement);
-            $reimbursement->status = 'pending';
+
+
+            $reimbursement = ReimbursementRequest::create([
+                'user_id' => auth()->id(),
+                'request_number' => $this->generateRequestNumber->handle('reimbursement_request', new ReimbursementRequest()),
+                'status' => 'pending',
+                'department' => $validated['department'],
+                'expense_date' => $validated['expense_date'],
+                'expense_type' => $validated['expense_type'],
+                'amount' => $validated['amount'],
+                'description' => $validated['description'],
+                'remarks' => $validated['remarks'] ?? '',
+                'expense_items' => $validated['expense_items'],
+            ]);
+
 
             if ($request->hasFile('receipt')) {
-                $reimbursement->receipt_path = $request->file('receipt')->store('receipts', 'public');
-            }
+                if (count($request->receipt) > 1) {
+                    foreach ($request->receipt as $receipt) {
+                        $name = 'receipt_' . Str::random(10) . '.' . $receipt->getClientOriginalExtension();
+                        $path = $receipt->storeAs('receipts', $name, 'public');
 
-            $reimbursement->save();
+                        Attachment::create([
+                            'file_name' => $name,
+                            'file_path' => asset('storage/' . $path),
+                            'file_type' => $receipt->getClientOriginalExtension(),
+                            'file_size' => $receipt->getSize(),
+                            'file_extension' => $receipt->getClientOriginalExtension(),
+                            'attachable_id' => $reimbursement->id,
+                            'attachable_type' => ReimbursementRequest::class,
+                        ]);
+                    }
+                } else {
+                    $reimbursement->receipt_path = $request->file('receipt')->store('receipts', 'public');
+                    $reimbursement->save();
+                }
+            }
 
             // Log the reimbursement request creation
             AuditLog::create([
@@ -52,9 +78,8 @@ class ReimbursementRequestController extends Controller
                 'action' => 'Reimbursement Request Created',
                 'description' => 'Created new reimbursement request for ' . $validated['expense_type'],
                 'amount' => $validated['amount'],
-                'ip_address' => $request->ip()
+                'ip_address' => $request->ip(),
             ]);
-
 
             $notifyUsers = User::where('role', 'admin')->orWhere('role', 'superadmin')->get();
 
@@ -65,7 +90,7 @@ class ReimbursementRequestController extends Controller
                     'type' => 'new_reimbursement_request',
                     'title' => 'New Reimbursement Request',
                     'message' => 'A new reimbursement request has been submitted',
-                    'url' => route('reports.index')
+                    'url' => route('reports.index'),
                 ]);
             }
 
@@ -81,19 +106,17 @@ class ReimbursementRequestController extends Controller
                 ],
                 'Reimbursement',
                 auth()->user()->name,
-                $validated['request_number']
+                $validated['request_number'],
             );
 
             return redirect()->back()->with('success', 'Reimbursement request submitted successfully!');
-
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()
-                ->withErrors($e->errors())
-                ->withInput();
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             \Log::error('Reimbursement submission error: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'Failed to submit reimbursement request')
+            return redirect()
+                ->back()
+                ->with('error', 'Failed to submit reimbursement request ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -104,12 +127,12 @@ class ReimbursementRequestController extends Controller
 
         $validated = $request->validate([
             'status' => 'required|in:approved,rejected',
-            'remarks' => 'required|string'
+            'remarks' => 'required|string',
         ]);
 
         $reimbursement->update([
             'status' => $validated['status'],
-            'remarks' => $validated['remarks']
+            'remarks' => $validated['remarks'],
         ]);
 
         // Log the status change
@@ -121,7 +144,7 @@ class ReimbursementRequestController extends Controller
             'action' => 'Reimbursement Request ' . ucfirst($validated['status']),
             'description' => 'Reimbursement request ' . $validated['status'] . ' by ' . auth()->user()->name,
             'amount' => $reimbursement->amount,
-            'ip_address' => $request->ip()
+            'ip_address' => $request->ip(),
         ]);
 
         return redirect()->back()->with('success', 'Reimbursement request status updated successfully.');
@@ -146,7 +169,7 @@ class ReimbursementRequestController extends Controller
             'action' => 'Reimbursement Request Deleted',
             'description' => 'Deleted reimbursement request for ' . $type,
             'amount' => $amount,
-            'ip_address' => request()->ip()
+            'ip_address' => request()->ip(),
         ]);
 
         return redirect()->back()->with('success', 'Reimbursement request deleted successfully.');
