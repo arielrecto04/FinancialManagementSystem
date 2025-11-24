@@ -236,7 +236,7 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         $supply = SupplyRequest::with(['comments' => function ($query) {
-            $query->with(['user', 'replies', ]);
+            $query->with(['user', 'replies',]);
         }, 'attachments'])->where('user_id', $user->id)->get()->map(function ($item) {
             $item->type = 'Supply Request';
             $item->model = get_class($item);
@@ -284,5 +284,37 @@ class DashboardController extends Controller
             'auth' => ['user' => $user],
             'requests' => $paginatedRequests,
         ]);
+    }
+
+    public function deleteRequest($model, $id)
+    {
+
+
+        $modelClass = $model;
+
+
+        if (!in_array($modelClass, [
+            SupplyRequest::class,
+            ReimbursementRequest::class,
+            Liquidation::class
+        ])) {
+            return response()->json(['message' => 'Invalid model type.'], 400);
+        }
+
+        $item = $modelClass::find($id);
+
+
+        if (!$item) {
+            return response()->json(['message' => 'Request not found.'], 404);
+        }
+
+        // Optional: Check if the authenticated user is the owner of the request
+        if ($item->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized action.'], 403);
+        }
+
+        $item->delete();
+
+        return response()->json(['message' => 'Request deleted successfully.'], 200);
     }
 }

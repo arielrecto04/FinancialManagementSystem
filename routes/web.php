@@ -43,7 +43,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard route should be at the top
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+
     Route::get('/requests/history', [DashboardController::class, 'showAllRequests'])->name('requests.history');
+    Route::delete('/requests/{model}/{id}', [DashboardController::class, 'deleteRequest'])->name('requests.destroy');
 
     // User management routes (admin only)
     Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->group(function () {

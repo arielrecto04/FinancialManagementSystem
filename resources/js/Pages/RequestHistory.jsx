@@ -265,6 +265,56 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
             });
         }
     };
+
+    // Add: delete request handler
+    const handleDeleteRequest = async (request) => {
+        try {
+            const result = await Swal.fire({
+                title: "Delete request?",
+                text: "This action cannot be undone.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, delete",
+                cancelButtonText: "Cancel",
+            });
+
+            console.log("User confirmation result:", request);
+
+            if (!result.isConfirmed) return;
+
+            // const type = request.type.toLowerCase().replace(" ", "");
+
+            console.log(
+                `Deleting request of type: ${request.model} with ID: ${request.id}`
+            );
+            await axios.delete(
+                route("requests.destroy", {
+                    model: request.model,
+                    id: request.id,
+                })
+            );
+
+            Swal.fire({
+                icon: "success",
+                title: "Request deleted",
+                showConfirmButton: false,
+                timer: 1200,
+            });
+
+            // refresh list preserving current filters/state
+            router.reload({
+                only: ["requests"],
+                preserveState: true,
+                preserveScroll: true,
+            });
+        } catch (error) {
+            Swal.fire({
+                icon: "error",
+                title: "Unable to delete request",
+                text: error?.response?.data?.message || "An error occurred.",
+            });
+        }
+    };
     //#endregion
 
     return (
@@ -358,28 +408,56 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
                                                         setSelectedRequest(
                                                             request
                                                         );
-                                                        
+
                                                         setIsModalOpen(true);
 
                                                         if (unreadCount > 0) {
-                                                            const type = request.type.toLowerCase().replace(" ","");
-                                                            axios.post(route("comments.markAsRead",{type,  id: request.id,}))
+                                                            const type =
+                                                                request.type
+                                                                    .toLowerCase()
+                                                                    .replace(
+                                                                        " ",
+                                                                        ""
+                                                                    );
+                                                            axios
+                                                                .post(
+                                                                    route(
+                                                                        "comments.markAsRead",
+                                                                        {
+                                                                            type,
+                                                                            id: request.id,
+                                                                        }
+                                                                    )
+                                                                )
                                                                 .then(() => {
                                                                     // 4. On success, refresh the data to hide the badge
-                                                                    router.reload({
-                                                                            only: ["requests",],
+                                                                    router.reload(
+                                                                        {
+                                                                            only: [
+                                                                                "requests",
+                                                                            ],
                                                                             preserveState: true,
                                                                             preserveScroll: true,
                                                                         }
                                                                     );
                                                                 })
-                                                                .catch((error) => {console.error("Failed to mark comments as read:", error);
+                                                                .catch(
+                                                                    (error) => {
+                                                                        console.error(
+                                                                            "Failed to mark comments as read:",
+                                                                            error
+                                                                        );
                                                                     }
                                                                 );
                                                         }
                                                     }}
-                                                       className={`transition-colors duration-150 cursor-pointer hover:bg-gray-50
-                                                                ${unreadCount > 0 ? 'font-bold text-gray-900' : 'text-gray-500'}`}
+                                                    className={`transition-colors duration-150 cursor-pointer hover:bg-gray-50
+                                                                ${
+                                                                    unreadCount >
+                                                                    0
+                                                                        ? "font-bold text-gray-900"
+                                                                        : "text-gray-500"
+                                                                }`}
                                                 >
                                                     <td className="px-6 py-4 text-sm font-medium text-gray-800 whitespace-nowrap">
                                                         <span className="flex items-center gap-2">
@@ -416,16 +494,51 @@ export default function RequestHistory({ auth, requests, filters = {} }) {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-sm font-medium text-left whitespace-nowrap">
-                                                        {request.status === "pending" && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    const type = request.type.toLowerCase().replace(' ', '');
-                                                                    router.get(route("requests.edit", {type, id: request.id}));
-                                                                }}
-                                                                className="text-indigo-600 hover:text-indigo-900">
-                                                                Edit
-                                                            </button>
+                                                        {request.status ===
+                                                            "pending" && (
+                                                            <div className="flex items-center gap-3">
+                                                                <button
+                                                                    onClick={(
+                                                                        e
+                                                                    ) => {
+                                                                        e.stopPropagation();
+                                                                        const type =
+                                                                            request.type
+                                                                                .toLowerCase()
+                                                                                .replace(
+                                                                                    " ",
+                                                                                    ""
+                                                                                );
+                                                                        router.get(
+                                                                            route(
+                                                                                "requests.edit",
+                                                                                {
+                                                                                    type,
+                                                                                    id: request.id,
+                                                                                }
+                                                                            )
+                                                                        );
+                                                                    }}
+                                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                                >
+                                                                    Edit
+                                                                </button>
+
+                                                                <button
+                                                                    onClick={(
+                                                                        e
+                                                                    ) => {
+                                                                        e.stopPropagation();
+                                                                        handleDeleteRequest(
+                                                                            request
+                                                                        );
+                                                                    }}
+                                                                    className="text-red-600 hover:text-red-800"
+                                                                    title="Delete request"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
                                                         )}
                                                     </td>
                                                 </tr>
