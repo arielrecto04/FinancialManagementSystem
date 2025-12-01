@@ -26,7 +26,7 @@ export default function InnovatoSSO() {
         verifyAuth();
 
         const script = document.createElement("script");
-        script.src = "https://staging-dtr.iits.website/SSO/v1/SSO.js";
+        script.src = "https://dtr.iits.website/SSO/v1/SSO.js";
         script.async = true;
         script.onload = () => {
             const clientId = import.meta.env.VITE_SSO_CLIENT_ID;
@@ -39,7 +39,7 @@ export default function InnovatoSSO() {
                 container: "innovato-sso-button",
                 theme: "light",
                 size: "normal",
-                baseUrl: "https://staging-dtr.iits.website",
+                baseUrl: "https://dtr.iits.website",
             });
             sso.login()
                 .then((response) => {
