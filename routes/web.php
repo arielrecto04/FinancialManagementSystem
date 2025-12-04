@@ -39,9 +39,15 @@ Route::get('/', function () {
     ]);
 });
 
+
+Route::get('sso-login', [SSOController::class, 'ssoLogin'])->name('sso.login');
+
+
+
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard route should be at the top
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 
 
     Route::get('/requests/history', [DashboardController::class, 'showAllRequests'])->name('requests.history');

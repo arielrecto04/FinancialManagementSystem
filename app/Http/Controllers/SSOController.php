@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Encryption\Encrypter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -72,5 +73,52 @@ class SSOController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    public function ssoLogin(Request $request)
+    {
+        $token = $request->query('token');
+
+
+
+        if (!$token) {
+            return redirect()->route('login')->withErrors(['error' => 'SSO token is missing.']);
+        }
+
+        $encrypter = new Encrypter(env('SSO_SECRET_KEY'), config('app.cipher'));
+
+
+        $dedodeToken = json_decode($encrypter->decrypt($token));
+
+
+
+
+        if ($dedodeToken->expiry < now()->timestamp) {
+            return redirect()->route('login')->withErrors(['error' => 'SSO token has expired.']);
+        }
+
+
+        if (env('VITE_SSO_CLIENT_ID') != $dedodeToken->client_id && env('SSO_SECRET_KEY') != $dedodeToken->client_secret) {
+            return redirect()->route('login')->withErrors(['error' => 'Invalid SSO client ID or secret key.']);
+        }
+
+        $localUser = User::updateOrCreate(
+            [
+                'email' => $dedodeToken->email,
+                'name' => $dedodeToken->name,
+                'role' => $dedodeToken->roles[0]->name
+            ],
+            [
+                'email' => $dedodeToken->email,
+                'name' => $dedodeToken->name,
+                'role' => $dedodeToken->roles[0]->name,
+                'password' => Hash::make(str()->random(32)),
+                'external_id' => $dedodeToken->user_id
+            ]
+        );
+
+        Auth::login($localUser);
+
+        return redirect()->route('dashboard');
     }
 }
